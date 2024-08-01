@@ -1,0 +1,20 @@
+<%doc> This is a -*- mason -*- template.
+Query a script from the database.  The name of the script is specified in
+the first *positional* argument.
+</%doc>
+
+<%once>;
+my ($sth, $name, $script);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("SELECT script FROM scripts WHERE name=?");
+}
+
+($name) = @_;
+$sth->execute($name);
+($script) = $sth->fetchrow_array;
+$sth->finish;
+return $script;
+</%init>

@@ -1,0 +1,120 @@
+<%doc> This is a -*- mason -*- template.
+This page showing user results.
+</%doc>
+
+<%args>
+$neptun => $data->{NEPTUN}	# passed through 'action_show_page'
+</%args>
+
+<!-- ######################  Elért pontok  ###################### -->
+
+<h3 class="topic"> <% $name %> (<% $neptun %>) eredményei</h3>
+
+<H4>Elért pontok</H4>
+<BLOCKQUOTE>
+<TABLE width="100%">
+% @scores = $m->comp('/sub/get_score', neptun => $neptun,
+%                    ids => [ map { $_->{id} } @$scores_meta ]);
+% for ($i = 0; $i <= $#scores; $i++) {
+% if (defined $scores[$i]) {
+<& TR, \$row, $scores_meta->[$i]{basic} ? '' : 'style="{ font-weight: bold }"'  &>
+<TD width="*"><% $scores_meta->[$i]{name} %>
+<TD width="40" align=right><% $scores[$i] %>
+% }
+% }
+</TABLE>
+</BLOCKQUOTE>
+
+<H4>Beadott házi feladatok</H4>
+<BLOCKQUOTE>
+<& hw_show_submissions, neptun => $neptun &>
+</BLOCKQUOTE>
+
+<!-- #################### Beadott feladatok #################### -->
+
+<!-- #################### Megoldott gyakorlófeladatok #################### -->
+
+<H4>Megoldott gyakorlófeladatok</H4>
+<BLOCKQUOTE>
+<TABLE WIDTH="100%">
+
+% $row = 0;
+% foreach $i (sort by_category values %progress) {
+<& TR, \$row &>
+<TD width="*"><% $i->{name} %>
+<TD width="40" align="right"><% $i->{done} %>
+% }
+
+</TABLE>
+</BLOCKQUOTE>
+
+<%once>
+my ($get_name, $name);
+# Elért pontok
+my ($get_meta, $scores_meta, @scores);
+# Megoldott feladatok
+my ($get_categories, $get_progress);
+my ($row, $limit, %progress, $i);
+
+sub by_category {
+    $a->{chapter} <=> $b->{chapter}
+      or
+    $a->{name} cmp $b->{name};
+}
+</%once>
+
+<%init>
+if (!defined $get_meta) {
+   $get_meta = # get list of score types
+	$dbh->prepare("SELECT id, name, formula IS NULL AS basic
+                       FROM scores_meta ORDER BY idx");
+   $get_categories = # get list of available categories
+       $dbh->prepare("SELECT categories.id AS id, name, chapter
+                      FROM categories LEFT JOIN exercises
+                      ON categories.id = exercises.category
+                      WHERE chapter <= ?
+                      GROUP BY categories.id
+                      HAVING COUNT(data) > 0
+		      ORDER BY chapter, id");
+   $get_progress = # get progress info about the specified person
+       $dbh->prepare("SELECT category, done FROM progress WHERE neptun=?");
+   $get_name = # get personal information
+       $dbh->prepare("SELECT name FROM people WHERE neptun=?");
+}
+
+$get_name->execute($neptun);
+($name) = $get_name->fetchrow_array;
+$get_name->finish;
+
+$get_meta->execute();
+$scores_meta = $get_meta->fetchall_arrayref({});
+$get_meta->finish;
+
+# Determine last chapter (the last category to be shown)
+$limit = 9999;
+if (!$m->comp('/sub/is_admin')) {
+    open Pipe, "$ENV{ETS_ROOT}/bin/current_chapter.sh |";
+    chomp ($limit = <Pipe>);
+    $limit = 9999 if $limit !~ /[0-9]+/;
+    close Pipe;
+}
+
+# initialize %progress hash
+%progress = ();
+$get_categories->execute($limit);
+while (defined ($i = $get_categories->fetchrow_hashref)) {
+    $progress{$i->{id}} = { name => $i->{name},
+			    chapter => $i->{chapter},
+			    done => 0 };
+}
+$get_categories->finish;
+
+# fill %progress hash
+$get_progress->execute($neptun);
+while (defined ($i = $get_progress->fetchrow_hashref)) {
+    $progress{$i->{category}}{done} = $i->{done};
+}
+$get_progress->finish;
+
+$row = 0;
+</%init>

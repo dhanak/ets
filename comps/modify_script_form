@@ -1,0 +1,32 @@
+<%doc> This is a -*- mason -*- template.
+Create a form to modify script of ID $data->{SCRIPT}.
+</%doc>
+
+<%args>
+$id				# passed through 'action_show_page'
+</%args>
+
+<h3 class="topic">'<% $name %>' szkript módosítása</h3>
+
+<!-- <h4 align=center><% $name %><h4> -->
+<& form, action => "action_modify_script", hidden => { id => $id }  &>
+<P align=center>
+<TEXTAREA NAME=file ROWS=10 cols=50><% $str %></TEXTAREA>
+<P ALIGN=center>
+<INPUT TYPE=submit NAME=modify VALUE="Módosít">
+<INPUT TYPE=submit NAME=delete VALUE=" Töröl ">
+</FORM>
+
+<%once>
+my ($sth, $str, $name);
+</%once>
+
+<%init>
+if (!defined $sth) {
+	$sth = $dbh->prepare("SELECT script, name FROM scripts WHERE id=?");
+}
+
+$sth->execute($id);
+($str, $name) = $sth->fetchrow_array;
+$sth->finish;
+</%init>

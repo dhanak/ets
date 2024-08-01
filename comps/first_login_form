@@ -1,0 +1,23 @@
+<%doc> This is a -*- mason -*- template.
+First login: ask e-mail address, generate password and send it to the
+specified mail address.
+</%doc>
+
+<%args>
+$neptun				# from 'action_login'
+$email => ""
+</%args>
+
+<h3 align=center>Első belépés</h3>
+
+Üdvözöllek a rendszerben az első belépésed alkalmából!  Kérlek add meg az
+(egyik rendszeresen olvasott) e-mail címedet.  Az űrlap kitöltése és a
+megadott cím megerősítése után a rendszer generál egy jelszót, és elküldi a
+címedre.  Ezt a jelszót írd be a másodikként megjelenő űrlapba a megadott
+e-mail cím és a jelszó véglegesítéséhez.  A generált jelszót a későbbiekben
+módodban áll megváltoztatni az <i>Adataim</i> menüpont alatt.<P>
+
+<& form, action => "action_first_login", hidden => { neptun => uc $neptun } &>
+<B>E-mail:&nbsp;</B><INPUT TYPE=text NAME=email VALUE="<% $email %>" SIZE=50>
+<INPUT TYPE=submit NAME=submit VALUE="Mehet">
+</FORM>

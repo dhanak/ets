@@ -1,0 +1,72 @@
+<%doc> This is a -*- mason -*- template.
+Display a submitted homework version or a report log.
+</%doc>
+
+<%args>
+$neptun
+$semester
+$class
+$file    => undef
+$version => undef
+$suite   => undef
+</%args>
+
+<%once>;
+use File::MMagic;
+use Encode::Detect::Detector;
+
+my $mm = new File::MMagic;
+
+sub cmdout {
+    my ($output, $error) = runcmd($_[0], "");
+    my $ct = "text/plain";
+    my $en = "UTF-8";
+    $ct = $mm->checktype_contents($output) if defined $mm;
+    $en = Encode::Detect::Detector::detect($output) if defined $mm;
+    $ct = "text/plain; charset=utf-8" if $ct eq "text/plain" and $en eq "UTF-8";
+    $ct = "application/octet-stream;" if $ct eq "application/octet-stream";
+    $r->content_type($ct);
+    if (exists $_[1]) {
+	$r->headers_out()->{"Content-Disposition"} = "inline; filename=\"$_[1]\"";
+    }
+    $m->out($output);
+}
+</%once>
+
+<%init>;
+if (!$m->comp('/sub/check_perm', item => "download_submission", neptun => $neptun)) {
+    $data->{MSG} = "<span class=bad>Nem vagy jogosult a beadott feladatok megtekintésére!</span>";
+    $data->{SCREEN} = "news";
+    $m->comp('html_page');
+} else {
+    my $name = $m->comp('/sub/canonical_name', neptun => $neptun);
+    my $basedir = "$ENV{ETS_ROOT}/guts/hwks/$semester/$class";
+
+    if ($version) {
+	$_ = "$basedir/mails/$name.$version";
+	if (-r && -f) {
+	    if (!$file) {
+		open IN, "<$_";
+		my @parts = split(/ +/, <IN>);
+		chomp($file = $parts[2]);
+		close IN;
+	    }
+	    cmdout("uudecode -o- '$_'", $file);
+	} else {
+	    $data->{MSG} = "<span class=bad>Nem találtam ilyen beadott verziót!</span>";
+	    $data->{SCREEN} = "hw_submit";
+	    $m->comp('html_page');
+	}
+    } else {
+	$_ = "$basedir/reports/$suite/$name";
+	if (-r && -f) {
+	    cmdout("cat '$_'", "${class}_log.txt");
+	} else {
+	    $data->{MSG} = "<span class=bad>Nem találtam ilyen tesztnaplót!</span>";
+	    $data->{SCREEN} = "hw_submit";
+	    $m->comp('html_page');
+	}
+    }
+}
+</%init>
+

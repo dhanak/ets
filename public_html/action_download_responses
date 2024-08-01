@@ -1,0 +1,43 @@
+<%doc> This is a -*- mason -*- template.
+Download responses to a query (list it on the screen).
+</%doc>
+
+<%args>
+$query
+$type
+</%args>
+
+<%once>;
+my ($sth, $response);
+</%once>
+
+<%init>
+if (!defined $sth) {
+    $sth = 
+	$dbh->prepare("SELECT user, name, answer, time FROM responses, people
+                       WHERE responses.user=people.neptun AND query=?
+                       ORDER BY name");
+}
+
+if (!$m->comp('/sub/check_perm', item => "query_mgmt")) {
+    $data->{MSG} = "Erre nem vagy jogosult!";
+    $data->{SCREEN} = 'news';
+    $m->comp('html_page');
+} else {
+    $r->content_type("text/plain");
+    $sth->execute($query);
+    while (defined ($response = $sth->fetchrow_hashref)) {
+	$m->out(sprintf "%-10s", $response->{user});
+	$m->out(sprintf "%-30s", $response->{name});
+	$m->out(sprintf "%-25s", $response->{time});
+	if ($type eq "yesno") {
+	    $m->out(uc $response->{answer} eq "Y" ? "Igen" : "Nem");
+	} else {
+	    $m->out($response->{answer});
+	}
+	$m->out('
+');
+    }
+}
+return;
+</%init>

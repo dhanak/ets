@@ -1,0 +1,26 @@
+<%doc> This is a -*- mason -*- template.
+</%doc>
+
+<& html_page, type => $type, lines => \@lines &>
+
+<%args>
+$type
+</%args>
+
+<%once>;
+use ScoreParser;
+
+my ($fh, @lines);
+</%once>
+
+<%init>;
+if (!$m->comp('/sub/check_perm', item => "upload_scores_form")) {
+    $data->{MSG} = "Nem vagy jogosult pontszámok feltöltésére!";
+    $data->{SCREEN} = "news";
+} else {
+    $fh = $m->cgi_object->upload('file');
+    @lines = parseScores $fh;
+    close $fh;
+    $data->{SCREEN} = "upload_scores";
+}
+</%init>

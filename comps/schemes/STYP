@@ -1,0 +1,148 @@
+<%doc> This is a -*- mason -*- template.
+Handler of the SML What's It's Type (STYP) scheme.
+</%doc>
+<%method longname>SML mi-a-típusa</%method>
+
+<%args> $exdata </%args>
+
+Az alábbi SML-parancs(ok) kiértékelése után mi lesz az <code>x</code>-szel
+jelölt érték típusa?
+<!--
+<P><TABLE>
+<TR><TD>Ha például a kérdés ez:
+<TD><font color=magenta><code>fun x (a, b) = b a</code></font>,
+<TR><TD>akkor helyes ez a válasz:
+<TD><font color=magenta><code>'a * ('a -> 'b) -> 'b</code></font>.
+</TABLE>
+-->
+<P>
+% if (defined $exdata->{PREDEC}) {
+<PRE><% $exdata->{PREDEC} %>;</PRE>
+% }
+<PRE><% $exdata->{EXPR} %></PRE>
+
+<%method answers>
+<%args>
+$exdata
+$type => ""
+</%args>
+<CODE>&gt; val x : </CODE>
+<INPUT TYPE=text NAME=type size=60 value="<% $type %>">
+</%method>
+
+<%method check>
+<%args>
+$exdata
+$type
+</%args>
+<%init>;
+my ($input, $output) = ("/tmp/$sid.sml");
+my $mosml_timeout = $ENV{ETS_ROOT} . "/bin/timeout_sml.pl";
+
+# Write type as a signature first
+open SML, ">$input";
+print SML "signature expr = sig val x : $type end\n";
+close SML;
+open Reader, "$mosml_timeout $input |";
+$output = join "", <Reader>;
+close Reader;
+unlink $input;
+if ($output =~ /! Toplevel/) {
+    return ["SYNTAX", $output];
+}
+
+# Compare the type of the expression
+open SML, ">$input";
+print SML <<EOF;
+$exdata->{PREDEC};
+structure expr : sig val y : $exdata->{TYPE} end = struct
+  $exdata->{EXPR}
+  val y : $type = x
+end
+EOF
+close SML;
+open Reader, "$mosml_timeout $input |";
+$output = join "", <Reader>;
+close Reader;
+unlink $input;
+if ($output =~ /! Type clash/) {
+    return ["MISMATCH"];
+} elsif ($output =~ /! Signature mismatch/) {
+    return ["SPECIFIC"];
+}
+return undef;
+</%init>
+</%method>
+
+<%method errstr>
+<%args>
+$exdata
+$error
+</%args>
+% if ($error->[0] eq "SYNTAX") {
+Szintaktikai hiba:<BR>
+<PRE><% $error->[1] %></PRE>
+% } elsif ($error->[0] eq "MISMATCH") {
+A megadott típus nem illeszkedik <CODE>x</CODE> értékére, vagy túl általános!
+% } elsif ($error->[0] eq "SPECIFIC") {
+A megadott típus túlságosan konkrét!
+% }
+</%method>
+
+<%method describe>
+<%args>
+$exdata
+</%args>
+% if (defined $exdata->{PREDEC}) {
+<% $exdata->{PREDEC} %>;
+% }
+<% $exdata->{EXPR} %>
+</%method>
+
+<%method params>
+<%args>
+$exdata
+</%args>
+Előzetes deklaráció (maradhat üres):<BR>
+<TEXTAREA NAME=predec ROWS=5 COLS=50><% $exdata->{PREDEC} %></TEXTAREA>
+<P>Az <CODE>x</CODE> érték deklarációja:<BR>
+<TEXTAREA NAME=expr ROWS=5 COLS=50><% $exdata->{EXPR} %></TEXTAREA>
+% if (defined $exdata->{TYPE}) {
+<P>A jelenlegi típusa: <CODE><% $exdata->{TYPE} %></CODE>
+% }
+
+</%method>
+
+<%method calcdata>
+<%args>
+$predec
+$expr
+</%args>
+<%init>;
+my ($input, $output, %data) = ("/tmp/$sid.sml");
+my $mosml_timeout = $ENV{ETS_ROOT} . "/bin/timeout_sml.pl";
+
+$data{EXPR} = $expr;
+$data{PREDEC} = $predec if $predec ne "";
+
+open SML, ">$input";
+print SML <<EOF;
+$predec;
+structure check = struct
+$expr
+end
+EOF
+close SML;
+open Reader, "$mosml_timeout $input |";
+$output = join "", <Reader>;
+close Reader;
+unlink $input;
+
+if ($output =~ /! Toplevel/) {
+    chomp $output;
+    return { %data, ERROR => "<PRE>$output</PRE>" };
+} else {
+    return { %data, TYPE => $output =~ /{val.*x : (.*)}/ };
+}
+</%init>
+</%method>

@@ -1,0 +1,73 @@
+<%doc> This is a -*- mason -*- template.
+The main body of each page.  Passes all of the arguments to the subpage
+defined in $data->{SCREEN}.
+</%doc>
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML>
+
+<!-- #################### Page Head #################### -->
+
+<HEAD>
+<TITLE><% $ENV{SITENAME} %></TITLE>
+<LINK REL="stylesheet" HREF="include/ets.css" TYPE="text/css">
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=utf-8">
+<META NAME="author" CONTENT="David Hanak <mailto:dhanak@gmail.com>">
+<META NAME="description" CONTENT="<% $ENV{SITENAME} %>">
+% if ($screen->attr_exists('prototype_js') || $screen->attr_exists('effects_js') ||
+%     $screen->attr_exists('controls_js') || $screen->attr_exists('window_js')) {
+<script type="text/javascript" src="include/prototype.js"></script>
+% }
+% if ($screen->attr_exists('effects_js') || $screen->attr_exists('controls_js') ||
+%     $screen->attr_exists('window_js')) {
+<script type="text/javascript" src="include/effects.js"></script>
+% }
+% if ($screen->attr_exists('controls_js')) {
+<script type="text/javascript" src="include/controls.js"></script>
+% }
+% if ($screen->attr_exists('window_js')) {
+<script type="text/javascript" src="include/window.js"></script>
+<link href="include/window.css" rel="stylesheet" type="text/css">
+<link href="include/alphacube.css" rel="stylesheet" type="text/css"> 
+% }
+</HEAD>
+
+<BODY>
+
+<!-- #################### Page Body #################### -->
+
+<TABLE class="frame" width="100%">
+
+<!-- header -->
+<TR><TD id="header" class="window" colspan="2">
+<TABLE width="100%" cellspacing="0" height="50"><TR>
+<TD id="loginfo" width="250"><& login_info &>
+<TD id="message" width="*"><% $data->{MSG} || "&nbsp;" %>
+% delete $data->{MSG};
+</TABLE>
+
+<!-- actionbar & main screen -->
+<TR>
+<TD id="actionbar" class="window"><& actionbar &>
+<TD id="screen" class="window"><& $data->{SCREEN}, %ARGS &>
+
+<!-- footer -->
+<TR><TD id="footer" colspan="2">
+<ADDRESS><% $ENV{SITENAME} %> - <% $ENV{CONTACT} %></ADDRESS>
+
+</TABLE>
+</BODY>
+
+<!-- #################### Page End #################### -->
+
+</HTML>
+
+<%once>;
+my ($screen);
+</%once>
+
+<%init>
+$data->{SCREEN} = "news" if !defined $data->{SCREEN};
+$screen = $m->fetch_comp($data->{SCREEN});
+$r->content_type("text/html; charset=utf-8");
+</%init>

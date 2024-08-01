@@ -1,0 +1,39 @@
+<%doc> This is a -*- mason -*- template.
+Produce a confirm "dialog".
+
+%hidden is a hash.  Each key will be the name of a hidden field, the
+corresponding value will be the value of the entry.
+
+%options is a hash.  Each key will be the name of a checkbox, the
+corresponding value will be the label.  Those keys that appear in %checked
+will be checked by default.
+</%doc>
+
+<%args>
+$question
+$action
+$yes     => "Igen"
+$no      => "Nem"
+%hidden  => ()
+%options => ()
+%checked => ()
+</%args>
+
+<H3 align=center>Művelet megerősítése</H3>
+
+<% $question %><P>
+
+<CENTER>
+<& form, action => $action, hidden => \%hidden &>
+<TABLE>
+<TR>
+<TD width="50%" align=center><INPUT TYPE=submit NAME="confirmed" VALUE="<% $yes %>">
+<TD width="50%" align=center><INPUT TYPE=submit NAME="unconfirmed" VALUE="<% $no %>">
+<TR><TD>&nbsp;
+% foreach (keys %options) {
+<TR><TD><INPUT TYPE=checkbox NAME=<% $_ %> VALUE="Y"
+<% exists $checked{$_} ? "checked" : "" %>><% $options{$_} %>
+% }
+</TABLE>
+</FORM>
+</CENTER>

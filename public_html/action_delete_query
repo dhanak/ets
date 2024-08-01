@@ -1,0 +1,42 @@
+<%doc> This is a -*- mason -*- template.
+Delete query and show query management page.
+</%doc>
+
+<%args>
+$query
+$wipe      => undef
+$confirmed => undef
+$return    => undef
+</%args>
+
+<%once>
+my ($delete_query, $delete_responses);
+</%once>
+
+<%init>;
+if (!defined $delete_query) {
+    $delete_query = $dbh->prepare("DELETE FROM queries WHERE id=?");
+    $delete_responses = $dbh->prepare("DELETE FROM responses WHERE query=?");
+}
+
+if (!$m->comp('/sub/check_perm', item => "query_mgmt")) {
+    $data->{MSG} = "Nem vagy jogosult kérdés törlésére!";
+    redirect("news");
+} else {
+    if (defined $confirmed) {	# delete query & optionally responses
+	if ($delete_query->execute($query) != 1) {
+	    $data->{MSG} = "A kérdést nem sikerült törölni.";
+	} else {
+	    $m->comp('/sub/log', "delete query", query => $query);
+	    $data->{MSG} = "Kérdés törölve.";
+	}
+	if (defined $wipe) {
+	    $delete_responses->execute($query);
+	}
+	redirect("query_mgmt");
+    } else {			# return to query details
+	$data->{MSG} = "Kérdés törlése visszavonva.";
+	redirect($return || "query_mgmt", query => $query);
+    }
+}
+</%init>

@@ -1,0 +1,38 @@
+<%doc> This is a -*- mason -*- template.
+Check whether user is authorized to log in.
+</%doc>
+
+<%args>
+$accept
+</%args>
+
+<%once>;
+my ($get_email, $set_flag, $email, $mailer);
+</%once>
+
+<%init>;
+if (!defined $get_email) {
+ $get_email = $dbh->prepare("SELECT email FROM people WHERE neptun=?");
+ $set_flag  = $dbh->prepare("UPDATE people SET licence='Y' WHERE neptun=?");
+}
+
+$get_email->execute($data->{NEPTUN});
+($email) = $get_email->fetchrow_array;
+$get_email->finish;
+
+$set_flag->execute($data->{NEPTUN});
+
+$mailer = new Mail::Mailer;
+$mailer->open({ To      => $email,
+		From    => 'dp@iit.bme.hu',
+		Subject => 'SICStus licenc',
+		'Content-Type' => 'text/plain; charset=utf-8',
+		'Content-Transfer-Encoding' => '8bit' });
+print $mailer <<EOF;
+<<<<<ide kell berakni a licenc szoveget>>>>>>
+EOF
+$mailer->close;
+
+$data->{MSG} = "Licenc-adatok elküldve.";
+redirect("news");
+</%init>

@@ -1,0 +1,31 @@
+<%doc> This is a -*- mason -*- template.
+Provide a category group listing and a possibility to add, modify and
+delete category groups.
+</%doc>
+
+<%args>
+$name
+$selected => undef
+</%args>
+
+<SELECT NAME="<% $name %>">
+% while (($i) = $sth->fetchrow_array) {
+<OPTION <% ($selected eq $i) ? "selected" : "" %>><% $i %>
+% }
+</SELECT>
+
+<%once>;
+my ($sth, $i);
+</%once>
+
+<%init>
+if (!defined $sth) {
+    $sth = $dbh->prepare("SELECT name FROM scripts ORDER by name");
+}
+
+$sth->execute;
+</%init>
+
+<%cleanup>
+$sth->finish;
+</%cleanup>

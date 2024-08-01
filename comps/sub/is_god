@@ -1,0 +1,25 @@
+<%doc> This is a -*- mason -*- template.
+Determine whether a specific user is GOD or not.
+</%doc>
+
+<%args>
+$neptun => undef
+</%args>
+
+<%once>;
+my ($sth, $god);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+	$sth = $dbh->prepare("SELECT god FROM people WHERE neptun=?");
+    }
+if (!defined $neptun) {
+    return (defined $data->{NEPTUN} && $data->{GOD});
+} else {
+    $sth->execute(uc $neptun);
+    ($god) = $sth->fetchrow_array;
+    $sth->finish;
+    return ($god eq "Y");
+}
+</%init>

@@ -1,0 +1,63 @@
+<%doc> This is a -*- mason -*- template.
+List score types and offer editing.
+</%doc>
+<%attr>
+window_js => 1
+</%attr>
+
+<h3 class="topic">Pontszámtípusok</h3>
+
+<TABLE width="100%">
+<TR>
+<TH width=16>
+<TH>Azonosító
+<TH>Leírás
+<TH>Képlet (származtatott pontszámokhoz)
+<TH width=16>
+
+% $lastidx = 0;
+% while (defined ($meta = $get_meta->fetchrow_hashref)) {
+<& TR, \$row &>
+<TD align=center>
+% if ($lastidx > 0) {
+<& link, href   => 'action_reorder_meta_scores', img => "up.png", text => "Föl",
+         params => { idx => $meta->{idx} } &>
+% }
+<TD><% $meta->{id}  %>
+<TD><% $meta->{name} %>
+<TD><% $meta->{formula} %>
+<TD align=center>
+<& js_confirm, img => "delete.png", text => "Töröl",
+    question => "Biztosan törölni akarod a(z) '$meta->{id}' pontszámtípust?",
+    action => "action_delete_meta_score",
+    hidden => { idx => $meta->{idx} } &>
+% $lastidx = $meta->{idx};
+% }
+<& TR, \$row &>
+<& form, action => "action_add_meta_score",
+         hidden => { idx => $lastidx + 1 } &>
+<TD>
+<TD><INPUT TYPE=text NAME=id SIZE=10 MAXLENGTH=10>
+<TD><INPUT TYPE=text NAME=name SIZE=30 MAXLENGTH=64>
+<TD colspan=2><INPUT TYPE=text NAME=formula SIZE=50>&nbsp;&nbsp;
+<INPUT TYPE=submit VALUE="Felvesz">
+</TABLE>
+
+<%once>;
+my ($get_meta, $row, $meta, $lastidx);
+</%once>
+
+<%init>
+if (!defined $get_meta) {
+    $get_meta =
+	$dbh->prepare("SELECT idx, id, name, formula FROM scores_meta
+                       ORDER BY idx");
+}
+
+$row = 0;
+$get_meta->execute;
+</%init>
+
+<%cleanup>
+$get_meta->finish;
+</%cleanup>

@@ -1,0 +1,35 @@
+<%doc> This is a -*- mason -*- template.
+Delete news entry from the database.
+</%doc>
+
+<%args>
+$id
+$confirmed => undef
+</%args>
+
+<%once>;
+my $sth;
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("DELETE FROM news WHERE id=?");
+}
+
+if (!$m->comp('/sub/check_perm', item => 'delete_news')) {
+    $data->{MSG} = "Nem vagy jogosult hír törlésére!";
+} else {
+  if (defined $confirmed) {
+    if ($sth->execute($id)) {
+	$data->{MSG} = "Hír törölve.";
+	$m->comp('/sub/log', "news article deleted");
+    } else {
+	$data->{MSG} = "A hírt nem sikerült törölni.";
+    }
+  } else {
+    $data->{MSG} = "Hír törlése visszavonva.";
+  }
+}
+
+redirect("news");
+</%init>

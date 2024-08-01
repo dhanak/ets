@@ -1,0 +1,195 @@
+<%doc> This is a -*- mason -*- template.
+A page showing user details.  If $data->{LASTCHAPTER} is defined, it
+specifies the last chapter to be listed.
+</%doc>
+
+<%args>
+$neptun => $data->{NEPTUN}	# passed through 'action_show_page'
+</%args>
+
+<!-- #################### Személyes adatok #################### -->
+
+<h3 class="topic"> <% $name %> adatai</h3>
+
+<H4>Személyes adatok</H4>
+<BLOCKQUOTE>
+<TABLE>
+
+% if ($m->comp('sub/check_perm', item => "edit_user", neptun=>$neptun)) {
+% # modification form
+
+<& form, action => "action_modify_user", hidden => { neptun => $neptun } &>
+<TR><TD CLASS="spec" ALIGN=right>Neptun kód:
+<TD><% $neptun %>
+<TR><TD CLASS="spec" ALIGN=right>Név:
+<TD><INPUT TYPE=text SIZE=60 NAME=name VALUE="<% $name %>">
+<TR><TD CLASS="spec" ALIGN=right>E-mail:
+<TD><INPUT TYPE=text SIZE=60 NAME=email VALUE="<% $email %>">
+<TR><TD CLASS="spec" ALIGN=right>Jogkör:
+<TD><SELECT NAME="admin">
+<OPTION value="Y" <% $priv eq "Y" && "selected" %>>Adminisztrátor</OPTION>
+<OPTION value="N" <% $priv ne "Y" && "selected" %>>Felhasználó</OPTION>
+</SELECT>
+<TR><TD><TD><INPUT type=submit NAME=modify VALUE="Módosít">
+</FORM>
+
+% } else {
+% # static information
+
+% if ($m->comp('/sub/check_perm', item => "change_email", neptun => $neptun)) {
+<& form, action => "action_show_page", hidden => { page => "change_email", neptun => $neptun } &>
+% }
+<TR><TD CLASS="spec" ALIGN=right>Neptun kód: <TD><% $neptun %>
+<TR><TD CLASS="spec" ALIGN=right>Név:        <TD><% $name %>
+<TR><TD CLASS="spec" ALIGN=right>E-mail:
+%   if ($m->comp('/sub/check_perm', item => "change_email", neptun => $neptun)) {
+    <TD><INPUT TYPE=text NAME=email VALUE="<% $email %>" SIZE=30>
+    <TD><INPUT type=submit NAME=modify VALUE="Módosít">
+    </form>
+%   } else {
+    <TD><% $email %>
+%   }
+<TR><TD CLASS="spec" ALIGN=right>Jogkör:
+    <TD><% $priv eq "Y" ? "Adminisztrátor" : "Felhasználó" %>
+
+% }
+
+% if ($#groups >= 0) {
+<TR><TD class="spec" ALIGN=right>Csoport<% $#groups > 0 ? "ok" : "" %>:
+<TD>
+% for (@groups) {
+<% $_->{groupID} %>
+% if ($m->comp('/sub/check_perm', item => "group_mgmt")) {
+<& link, href=>"action_show_page", img=>"details.png", text=>"Részletek",
+         params=>{ page=>"list_group", groupID=>$_->{groupID} } &>
+% }
+(<% $_->{name} %>
+<a href="mailto:<% $_->{email} %>"><img src="pic/mail.png" border="0" alt="e-mail" title="e-mail"></a>)
+% }
+% }
+
+</TABLE>
+</BLOCKQUOTE>
+
+% if ($#groups >= 0) {
+<h4>Jelenléti nyilvántartás</h4>
+<blockquote>
+% my $gr;
+% foreach $gr (@groups) {
+<table>
+<tr>
+<th>
+%   $get_times->execute($gr->{groupID});
+%   my $times = $get_times->fetchall_arrayref({});
+%   $get_times->finish;
+%   foreach (@$times) {
+%     my ($month, $day) = $_->{startsAt} =~ /^[0-9]+-([0-9]+)-([0-9]+).*$/;
+<th><% $month %>.<% $day %>.
+%   } # foreach (@$times)
+<& TR, \$row &>
+<th><% $gr->{groupID} %>. csoport
+<& presence_row, neptun => $neptun, times => $times &>
+% } # foreach (@groups)
+</table>
+</blockquote>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "change_password", neptun=>$neptun)) {
+   <H4>Jelszócsere</H4>
+   <BLOCKQUOTE>
+   <TABLE>
+   <& change_password_form &>
+   </TABLE>
+   </BLOCKQUOTE>
+% }
+
+<!-- #################### Körkérdések #################### -->
+
+% if (@$queries) {
+% my $editable = $m->comp('/sub/check_perm', item => "set_responses",
+%			  neptun => $neptun);
+% my $disabled = $editable ? "" : "disabled";
+<H4>Körkérdések</H4>
+<BLOCKQUOTE>
+
+<TABLE>
+<& form, action => "action_set_responses",
+    hidden => { neptun => $neptun,
+		queries => join ",", map {$_->{id}} @$queries } &>
+% foreach $i (@$queries) {
+    <TR>
+    <TD align=right>
+    <& date:query, $i->{deadline} &>
+    <TD>
+%   if ($i->{type} eq 'yesno') {
+      <% $i->{text} %>:
+      <TD>
+      <INPUT TYPE=checkbox NAME="<% $i->{id} %>" VALUE="Y" <% $disabled %>
+      <% uc $i->{answer} eq "Y" ? "checked" : "" %>>
+%   } elsif ($i->{type} eq 'text') {
+      <% $i->{text} %>:
+      <TD>
+      <INPUT TYPE=text NAME="<% $i->{id} %>" SIZE=40 VALUE="<% $i->{answer} %>" <% $disabled %>>
+%   } elsif ($i->{type} eq 'multichoice') {
+%     my ($q, $a) = split /: */, $i->{text};
+      <% $q %>:
+      <TD>
+      <SELECT NAME="<% $i->{id} %>" <% $disabled %>>
+%     foreach (split /\|/, $a) {
+        <OPTION <% $i->{answer} eq $_ ? "selected" : "" %>>
+        <% $_ %></OPTION>
+%     } # foreach
+      </SELECT>
+%   } # if
+% } # foreach
+</TABLE>
+
+% if ($editable) {
+<BR><INPUT TYPE=submit NAME=change VALUE="Módosít">
+% }
+
+</FORM>
+</BLOCKQUOTE>
+% }
+
+<%once>
+my ($get_personal_info, $get_queries, $get_groups, $get_times);
+my ($name, $priv, $email, $row, $queries, $i); #, $files);
+my (@groups);
+
+</%once>
+
+<%init>
+if (!defined $get_personal_info) {
+    $get_personal_info = # get personal information
+	$dbh->prepare("SELECT name, admin, email FROM people WHERE neptun=?");
+    $get_queries = # get current queries
+	$dbh->prepare("SELECT id, type, text, answer, deadline
+                       FROM queries LEFT JOIN responses
+                       ON queries.id = responses.query AND user = ?
+                       WHERE deadline >= NOW()-1
+                       ORDER BY deadline DESC");
+    $get_groups =
+	$dbh->prepare("SELECT gm.groupID, p.name, p.email
+                       FROM group_members AS gm, groups AS g, people AS p
+                       WHERE gm.neptun=? AND g.groupID=gm.groupID AND g.head=p.neptun");
+    $get_times =
+	$dbh->prepare("SELECT groupTimeID as id, startsAt FROM group_times
+                       WHERE groupID=? ORDER BY startsAt");
+}
+
+$get_personal_info->execute($neptun);
+($name, $priv, $email) = $get_personal_info->fetchrow_array;
+$get_personal_info->finish;
+
+# get queries in advance
+$get_queries->execute($neptun);
+$queries = $get_queries->fetchall_arrayref({});
+$get_queries->finish;
+
+$get_groups->execute($neptun);
+@groups = @{ $get_groups->fetchall_arrayref({}) };
+$get_groups->finish;
+
+$row = 0;
+</%init>

@@ -1,0 +1,127 @@
+<%doc> This is a -*- mason -*- template.
+Check whether the user has right to preform specific operations.
+</%doc>
+
+<%args>
+$item
+$neptun => undef # the optional target user
+</%args>
+
+<%init>;
+# Login is only possible if not already logged in.
+if ($item eq "login") {
+    return !$m->comp('/sub/logged_in');
+
+# These are always available to anyone.
+} elsif ($item eq "news"           ||             # component
+	 $item eq "links"          ||		  # component
+	 $item eq "do_exercise_select") {         # component
+    return 1;
+
+# These are available to all registered users logged in.
+} elsif (
+	 $item eq "hw_submit"      ||		  # component
+	 $item eq "licence") {	                  # component
+#	 $item eq "upload"         ||
+#	 $item eq "change_password") {
+    return $m->comp('/sub/logged_in');
+
+# These are only available for administrators
+} elsif ($item eq "edit_news_form" 	  ||	  # component
+	 $item eq "category_mgmt"    	  ||	  # component
+	 $item eq "list_category"    	  ||	  # component
+	 $item eq "catgroup_mgmt"    	  ||	  # component
+	 $item eq "modify_catgroup_form"  ||	  # component
+	 $item eq "script_mgmt"           ||	  # component
+	 $item eq "modify_script_form"    ||	  # component
+	 $item eq "hw_mgmt"               ||	  # component
+	 $item eq "meta_scores_mgmt"	  ||	  # component
+	 $item eq "scores_list_form"	  ||	  # component
+	 $item eq "scores_list"      	  ||	  # component
+	 $item eq "upload_scores_form" 	  ||	  # component
+	 $item eq "query_mgmt"       	  ||	  # component
+	 $item eq "query_details"    	  ||	  # component
+	 $item eq "search_form"      	  ||	  # component
+	 $item eq "db_archive_form"       ||	  # component
+	 $item eq "set_parameter"         ||
+	 $item eq "delete_news"      	  ||
+	 $item eq "modify_news"      	  ||
+	 $item eq "add_exercise"     	  ||
+	 $item eq "delete_exercise"    	  ||
+	 $item eq "modify_exercise"       ||
+         $item eq "group_mgmt"            ||
+         $item eq "list_group") {
+    return $m->comp('/sub/is_admin');
+
+# These are only available if the target is yourself
+} elsif ($item eq "set_responses"	||
+	 $item eq "change_password"     ||
+	 $item eq "change_email") {
+    return $data->{NEPTUN} eq uc $neptun;
+
+# Checking the user list is also available for non-admin GODs
+} elsif ($item eq "user_mgmt") {		  # component
+    return $m->comp('/sub/is_admin') ||
+	   $m->comp('/sub/is_god');
+
+# Viewing a user profile is possible if:
+#   - either you are an administrator or GOD
+#   - or you are a supervisor of the given person
+#   - or you are logged in and trying to view your own data
+} elsif ($item eq "user_details"     ||
+	 $item eq "user_results") {		  # component
+    return $m->comp('/sub/is_admin') ||
+	   $m->comp('/sub/is_god')   ||
+	   $m->comp('/sub/is_supervisor', neptun => $neptun) ||
+	   ($m->comp('/sub/logged_in') &&
+            $data->{NEPTUN} eq uc $neptun);
+
+# Editing a user profile is possible if either:
+#   - you are declared as GOD
+# or:
+#   - you are an administrator
+#   - the user you wish to edit is not yourself
+#   - the user you wish to edit is not declared as GOD
+} elsif ($item eq "edit_user") {
+    return $m->comp('/sub/is_god')        ||
+	   ($m->comp('/sub/is_admin')     &&
+	    $data->{NEPTUN} ne uc $neptun &&
+	    !$m->comp('/sub/is_god', neptun => $neptun));
+
+# Deleting a user profile is allowed if:
+#   - you are an administrator
+#   - you don't want to delete yourself
+#   - you don't want to delete someone decalred as GOD
+} elsif ($item eq "delete_user") {
+    return $m->comp('/sub/is_admin')     &&
+	   $data->{NEPTUN} ne uc $neptun &&
+           !$m->comp('/sub/is_god', neptun => $neptun);
+
+# Listing supervised students of someone is allowed if:
+#   - you are an admin and that someone has supervised students
+#   - that someone is you and you have supervised students
+} elsif ($item eq "list_supervised_students") {
+    return ($m->comp('/sub/is_admin') &&
+            $m->comp('/sub/is_supervisor', supervisor => $neptun)) || 
+	   ($data->{NEPTUN} eq uc $neptun &&
+            $m->comp('/sub/is_supervisor'));
+
+# Downloading submissions is allowed if:
+#   - you are an administrator
+#   - you are a supervisor of the target
+#   - you are downloading your own submissions
+} elsif ($item eq "download_submission") {
+    return $m->comp('/sub/is_admin') ||
+	   $m->comp('/sub/is_supervisor', neptun => $neptun) ||
+           $data->{NEPTUN} eq uc $neptun;
+
+
+#} elsif ($item eq "delete_file" ||
+#  	 $item eq "download_file") {
+#    return $m->comp('/sub/is_admin') ||
+#           ($m->comp('/sub/logged_in') &&
+#            $data->{NEPTUN} eq uc $neptun);
+}
+
+return 0;
+</%init>

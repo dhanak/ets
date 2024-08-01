@@ -1,0 +1,70 @@
+<%doc> This is a -*- mason -*- template.
+List current queries and offer form to add new query.
+</%doc>
+<%attr>
+window_js => 1
+</%attr>
+
+<h3 class="topic">Körkérdések</h3>
+
+<TABLE width="100%">
+<TR>
+<TH width="20%">Típus
+<TH width="40%">Kérdés
+<TH width="30%">Határidő
+<TH width="3%">
+<TH width="3%">
+
+% while (defined ($q = $sth->fetchrow_hashref)) {
+<& TR, \$row &>
+<TD align=center><% $types{$q->{type}} %>
+<TD><% $q->{text} %>
+<TD align=center><& date:display, $q->{deadline} &>
+<TD align=center>
+<& link, img => "details.png", href => "action_show_page", text => "Részletek",
+    params => { page => "query_details", query => $q->{id} } &>
+<TD align=center>
+<& js_confirm, img => "delete.png", text => "Töröl",
+    question => "Biztosan törölni akarod a(z) '$q->{text}' kérdést?",
+    options  => { wipe => "a válaszokkal együtt" },
+    checked  => { wipe => 1 },
+    action   => "action_delete_query",
+    hidden   => { query => $q->{id} } &>
+% }
+
+<& TR, \$row &>
+<& form, action => "action_add_query" &>
+<TD align=center><SELECT NAME=type>
+% foreach (sort { $types{$a} cmp $types{$b} } keys %types) {
+<OPTION value="<% $_ %>"><% $types{$_} %></OPTION>
+% }
+</SELECT>
+<TD><INPUT TYPE=text NAME=text SIZE=40>
+<TD align=center><& date &>
+<TD align=center colspan=2><INPUT TYPE=submit NAME=submit VALUE="Felvesz">
+</FORM>
+
+</TABLE>
+
+<%once>;
+use utf8;
+my %types = ( yesno       => "eldöntendő",
+	      text        => "megválaszolandó",
+	      multichoice => "kiválasztandó" );
+
+my ($sth, $row, $q);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("SELECT id, type, text, deadline FROM queries
+		          ORDER BY deadline DESC");
+}
+
+$sth->execute;
+$row = 0;
+</%init>
+
+<%cleanup>;
+$sth->finish;
+</%cleanup>

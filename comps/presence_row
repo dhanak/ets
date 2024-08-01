@@ -1,0 +1,36 @@
+<%doc> This is a -*- mason -*- template.
+List presence information for a particular user in a particular group
+</%doc>
+
+<%args>
+$neptun
+$times
+</%args>
+
+% foreach (@$times) {
+%   $get_presence->execute(${neptun}, $_->{id});
+%   my $pr = $get_presence->fetchrow_hashref;
+%   $get_presence->finish;
+<td align="center">
+%   if (!defined $pr) {
+&nbsp;
+%   } elsif (defined $pr->{startsAt}) {
+%    my ($month, $day) = $pr->{startsAt} =~ /^[0-9]+-([0-9]+)-([0-9]+).*$/;
+<% $month %>.<% $day %>.
+%   } else {
+<img src="pic/<% $pr->{status} eq "present" ? "check" : "cross" %>.png" width="16" height="16">
+%   }
+% }
+
+<%once>;
+my ($get_presence);
+</%once>
+
+<%init>;
+if (!defined $get_presence) {
+    $get_presence =
+	$dbh->prepare("SELECT status, startsAt FROM presence LEFT JOIN group_times
+                       ON actualTimeID=groupTimeID WHERE neptun=? AND scheduledTimeID=?
+                       LIMIT 1");
+}
+</%init>

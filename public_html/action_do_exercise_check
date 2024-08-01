@@ -1,0 +1,68 @@
+<%doc> This is a -*- mason -*- template.
+Checks a solution of an exercise.
+</%doc>
+
+<%args>
+$level => "%"			# % matches anything
+$another => undef		# defined if another exercise is requested
+</%args>
+
+<& html_page, next_level => $level &>
+
+<%once>
+my ($fetch_data, $update_progress, $update_complete);
+my ($category, $scheme, $exdata, $okay, $result);
+</%once>
+
+<%init>;
+if (!defined $fetch_data) {
+    $fetch_data = # fetch exercise data
+	$dbh->prepare("SELECT category, scheme, data
+                              FROM exercises WHERE id=?");
+    $update_progress = # update progress information
+	$dbh->prepare("INSERT INTO progress (neptun,category,done)
+                              VALUES (?,?,1)
+                       ON DUPLICATE KEY UPDATE done=done+1");
+    $update_complete = # update exercise completion information
+	$dbh->prepare("INSERT INTO complete (neptunSID,exercise,count)
+                              VALUES (?,?,1)
+                       ON DUPLICATE KEY UPDATE count=count+1");
+}
+
+if (defined $another) {		# Give another exercise
+  if (substr($data->{CATEGORY},0,2) eq "PG") {
+	if ($m->comp('/sub/logged_in')) {
+	    $update_progress->execute($data->{NEPTUN}, $data->{CATEGORY});
+	}
+	$update_complete->execute($data->{NEPTUN} || $sid, $data->{EXID});
+  } 
+  $m->comp('/sub/select_exercise', level => $level);
+} else {			# Check the solution
+    $fetch_data->execute($data->{EXID});
+    ($category, $scheme, $exdata) = $fetch_data->fetchrow_array;
+    $fetch_data->finish;
+    { no strict; $exdata = eval $exdata; use strict; }
+    
+    $okay = $m->comp($scheme . ':check', exdata => $exdata, %ARGS);
+    if (!defined $okay) {
+	$result = "OK";
+	$data->{MSG} = "<span class=good>Helyes megoldás</span>";
+	
+	if ($m->comp('/sub/logged_in')) {
+	    $update_progress->execute($data->{NEPTUN}, $category);
+	}
+	$update_complete->execute($data->{NEPTUN} || $sid, $data->{EXID});
+	
+	$m->comp('/sub/select_exercise', level => $level);
+    } else {
+	$result = "Bad";
+	$data->{MSG} = "<span class=bad>Hibás megoldás</span>";
+	$data->{SOLVERR}{DATA} = $exdata;
+	$data->{SOLVERR}{ANSWER} = \%ARGS;
+	$data->{SOLVERR}{ERROR} = $okay;
+    }
+    
+    $m->comp('/sub/log', "submit exercise", category => $category,
+	     id => $data->{EXID}, result => $result);
+}
+</%init>

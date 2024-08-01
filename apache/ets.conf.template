@@ -1,0 +1,44 @@
+LoadModule perl_module modules/mod_perl.so
+LoadModule rewrite_module modules/mod_rewrite.so
+
+SetEnv PERLLIB "${ETS_ROOT}/modules"
+SetEnv PERL5LIB "${ETS_ROOT}/modules"
+
+# Mason
+PerlChildInitHandler HTML::Mason::childinit
+PerlRequire ${ETS_ROOT}/apache/startup.pl
+PerlModule HTML::Mason::ApacheHandler
+PerlSetVar MasonDataDir ${ETS_ROOT}/mason
+PerlAddVar MasonCompRoot "main => ${ETS_ROOT}/comps"
+PerlAddVar MasonCompRoot "actions => ${ETS_ROOT}/public_html"
+PerlAddVar MasonCompRoot "schemes => ${ETS_ROOT}/comps/schemes"
+
+# UTF-8 support
+# http://www.cybaea.net/Blogs/TechNotes/Mason-utf-8-clean.html
+AddCharset utf-8 .js
+PerlSetVar MasonPreamble "use utf8;"
+PerlAddVar MasonPlugins "MasonX::Plugin::UTF8"
+
+# Document root and main handler
+DocumentRoot "${ETS_ROOT}/public_html"
+<Directory ${ETS_ROOT}/public_html>
+  SetHandler perl-script
+  PerlHandler HTML::Mason::ApacheHandler
+  PassEnv DB_HOST DB_USER DB_PASSWORD DB_DATABASE
+  PassEnv CONTACT SITENAME SICSTUS
+  Require all granted
+</Directory>
+
+# don't pass files in /pic through perl
+<Directory ${ETS_ROOT}/public_html/pic>
+  SetHandler none
+</Directory>
+
+# don't pass files in /include through perl
+<Directory ${ETS_ROOT}/public_html/include>
+  SetHandler none
+</Directory>
+
+# basic rewrite rule for root
+RewriteEngine on
+RewriteRule ^/$ /index.html [R]

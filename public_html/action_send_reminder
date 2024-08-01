@@ -1,0 +1,27 @@
+<%doc> This is a -*- mason -*- template.
+Send a reminder to the user.
+</%doc>
+
+<%args>
+$neptun
+</%args>
+
+<%once>;
+my ($sth, $password, $email);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("SELECT password, email FROM people WHERE neptun=?");
+}
+
+$sth->execute($neptun);
+($password, $email) = $sth->fetchrow_array;
+$sth->finish;
+
+$m->comp('/sub/send_reminder', email    => $email,
+                               password => $password);
+
+$data->{MSG} = "Emlékeztető elküldve.";
+redirect("news");
+</%init>

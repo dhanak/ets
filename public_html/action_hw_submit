@@ -1,0 +1,48 @@
+<%doc> This is a -*- mason -*- template.
+Submit a homework file for a student.
+</%doc>
+
+<%args>
+$conf
+$class
+$file
+$fname => $file
+$neptun => undef
+</%args>
+
+<%once>
+my ($fh, $name, $input, $output, $error);
+</%once>
+
+<%init>;
+if (!$m->comp('/sub/check_perm', item => "hw_submit") ||
+    ($neptun && !$m->comp('/sub/is_supervisor', neptun => $neptun)
+     && !$m->comp('/sub/is_admin'))) {
+    $data->{MSG} = "Nem vagy jogosult HF beadására!";
+    redirect("news");
+} else {
+    $fh = $m->cgi_object->upload('file');
+    $input = join "", <$fh>;
+    close $fh;
+
+    if (length $input == 0) {
+	$error = "Hiányzó vagy 0 byte hosszúságú file!";
+    } else {
+	$fname =~ s@^.*[\\/]@@;
+
+	$name = $m->comp('/sub/canonical_name', $neptun ? (neptun => $neptun) : ());
+	($output, $error) = runcmd("uuencode $fname | $ENV{ETS_ROOT}/guts/guts " .
+				   "submit '$ENV{ETS_ROOT}/$conf' '$class' '$name'",
+				   $input);
+    }
+    if ($error) {
+	$data->{MSG} = "<span class=bad>Sikertelen HF beadás</span>";
+	$data->{ERROR} = $error;
+    } else {
+	$data->{MSG} = "<span class=good>Sikeres HF beadás $fname néven</span>";
+	$data->{OUTPUT} = $output;
+    }
+
+    redirect("hw_submit", neptun => $neptun);
+}
+</%init>

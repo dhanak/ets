@@ -1,0 +1,63 @@
+<%doc> This is a -*- mason -*- template.
+List the specified scores in the database for all students. 'DP Admin '
+and demonstrators whose names end in '(d)' are not listed.
+@ids stores the IDs of the scores to fetch, $formulae is a newline
+separated list of additional formulae of the form "column=formula".
+</%doc>
+
+<%args>
+@ids => ()
+$formulae
+</%args>
+
+<h3 class="topic">Hallgatók pontszámai</h3>
+
+<p align="center">DP Admin és a (d)-vel megjelölt demonstrátorok pontszámai nélkül.</p>
+
+<TABLE width="100%">
+<TR>
+<TH>Neptun kód
+<TH>Név
+<% map { "<TH>" . $_ } @ids %>
+
+% while (defined ($i = $get_people->fetchrow_hashref)) {
+% if ((rindex($i->{name},'(d)') == -1) && (rindex($i->{name},'DP Admin') == -1)) {
+<& TR, \$row &>
+<TD><% $i->{neptun} %>
+<TD><% $i->{name} %>
+% foreach ($m->comp('/sub/get_score', neptun => $i->{neptun}, formulae => \@formulae)) {
+<TD align=right><% $_ %>
+% }
+% }
+% }
+</TABLE>
+
+<%once>
+my ($get_people, $person, @formulae, $i, $row);
+</%once>
+
+<%init>
+if (!defined $get_people) {
+    $get_people = $dbh->prepare("SELECT neptun, name FROM people ORDER BY name");
+}
+
+@formulae = ();
+foreach (@ids) {
+    push @formulae, $m->comp('/sub/get_full_formula', formula => "[[$_]]");
+}
+
+foreach (split /^/m, $formulae) {
+    chomp;
+    next if /^$/;		# skip empty lines
+    next unless /(.*?) *= *(.*)/; # match formula
+    push @ids, $1;
+    push @formulae, $m->comp('/sub/get_full_formula', formula => $2);
+}
+
+$get_people->execute;
+$row = 0;
+</%init>
+
+<%cleanup>;
+$get_people->finish;
+</%cleanup>

@@ -1,0 +1,33 @@
+<%doc> This is a -*- mason -*- template.
+Modify news entry to the database.
+</%doc>
+
+<%args>
+$article
+$id
+$submit => undef
+</%args>
+
+<%once>;
+my $sth;
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("UPDATE news
+                                 SET text=?, poster=?, ptime=NOW()
+                                 WHERE id=?");
+}
+
+if (defined $submit) {
+  if (!$m->comp('/sub/check_perm', item=>"modify_news")) {
+    $data->{MSG} = "Nem vagy jogosult hír módosítására!";
+  } else {
+    $sth->execute($article, $data->{NEPTUN}, $id);
+    $data->{MSG} = "Hír módosítva.";
+    $m->comp('/sub/log', "news article modified");
+  }
+}
+
+redirect("news");
+</%init>

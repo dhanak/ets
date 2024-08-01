@@ -1,0 +1,38 @@
+<%doc> This is a -*- mason -*- template.
+Determine whether a person is a supervisor of someone else or not.
+</%doc>
+
+<%args>
+$supervisor => $data->{NEPTUN}
+$neptun => undef
+</%args>
+
+<%once>;
+my ($get_group, $get_member);
+</%once>
+
+<%init>;
+if (!defined $get_group) {
+    $get_group =
+	$dbh->prepare("SELECT 1 FROM groups WHERE head=? LIMIT 1");
+    $get_member = 
+	$dbh->prepare("SELECT 1 FROM groups g, group_members gm
+                       WHERE g.head=? AND g.groupID=gm.groupID AND gm.neptun=?
+                       LIMIT 1");
+}
+
+if (!defined $neptun) {
+    # Check whether $supervisor has at least one group
+    $get_group->execute($supervisor);
+    $_ = $get_group->fetchrow_hashref;
+    $get_group->finish;
+
+    return defined $_;
+} else {
+    $get_member->execute($supervisor, $neptun);
+    $_ = $get_member->fetchrow_hashref;
+    $get_member->finish;
+    
+    return defined $_;		 # success if row existed in database
+}
+</%init>

@@ -1,0 +1,21 @@
+<%doc> This is a -*- mason -*- template.
+This is the system logger.
+</%doc>
+
+<%once>;
+my ($sth, $event, %args, $text, $i);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("INSERT INTO log (user, stamp, event, params)
+                                 VALUES (?, NOW(), ?, ?)");
+}
+
+($event, %args) = @_;
+$text = "";
+for $i (keys %args) {
+    $text .= $i . '="' . $args{$i} . '"; ';
+}
+$sth->execute($data->{NEPTUN}, $event, $text);
+</%init>

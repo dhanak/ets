@@ -1,0 +1,152 @@
+<%doc> This is a -*- mason -*- template.
+Used as a wrapper for ALL mason pages.  $m->call_next is embedding call.
+</%doc>
+
+<%once>;
+use CGI::Cookie;
+use UUID qw(uuid);
+
+my ($dsn, %statements, %cookies);
+
+sub session_initialize {
+    if (!defined $dbh) {
+        $dsn = "DBI:MariaDB:database=$ENV{DB_DATABASE};host=$ENV{DB_HOST}";
+        $dbh = DBI->connect($dsn, $ENV{DB_USER}, $ENV{DB_PASSWORD});
+        if (!defined $dbh) {
+            $r->log_error("Error in DB connect: $DBI::errstr");
+            return undef;
+        }
+    }
+
+    $statements{NEW} =
+        $dbh->prepare('INSERT INTO session (sid, data, last)
+                       VALUES (?, ?, NOW())')
+        if !defined $statements{NEW};
+
+    $statements{DESTROY} =
+        $dbh->prepare('DELETE FROM session WHERE sid=?')
+        if !defined $statements{DESTROY};
+
+    $statements{READ} =
+        $dbh->prepare('SELECT data FROM session WHERE sid=?')
+        if !defined $statements{READ};
+
+    $statements{WRITE} =
+        $dbh->prepare('UPDATE session SET data=?, last=NOW() WHERE sid=?')
+        if !defined $statements{WRITE};
+
+    return 1;
+}
+
+sub session_new {
+    my ($text, $sth, $cookie);
+
+    $sth = $statements{NEW};
+    $sid = uuid();
+    $text = Dumper($data);
+    if ($sth->execute($sid, $text) != 1) {
+        return undef;
+    }
+    $cookie = CGI::Cookie->new(-name => 'ETS_SESSION_ID', -value => $sid);
+    $cookie->bake($r);
+    $r->warn("Created new session with ID $sid");
+
+    return 1;
+}
+
+sub session_read() {
+    my (@list, $text, $sth);
+
+    $sth = $statements{READ};
+    if ($sth->execute($sid) == undef) {
+        return undef;
+    }
+
+    @list = $sth->fetchrow_array;
+    $sth->finish;
+    if (scalar @list == 0) {
+        return undef;
+    }
+
+    $text = $list[0];
+    {
+        no strict;
+        $data = eval($text);
+        use strict;
+    }
+}
+
+sub session_write() {
+    my ($text, $lines, $sth);
+
+    $sth = $statements{WRITE};
+
+    $text = Dumper($data);
+    $lines = $sth->execute($text, $sid);
+
+    if (!defined $lines) {
+        return undef;
+    }
+
+    if ($lines != 1) {
+        return undef;
+    }
+}
+
+sub valid_sid {
+    my ($s, $uuid) = @_;
+    return UUID::parse($s, $uuid) == 0;
+}
+
+sub redirect($%) {
+    my ($page, %params) = @_;
+    my $uc = "A-Za-z0-9_-";
+    my $args = "";
+
+    for my $i (keys %params) {
+        if ($params{$i}) {
+            $args .= "&" . uri_escape_utf8($i, "^$uc") . "=" .
+                uri_escape_utf8($params{$i}, "^$uc");
+        }
+    }
+
+    session_write();            # store %$data hash before proceeding
+
+    if ($page !~ /^action/) {   # use action_show_page to display plain comps
+        $args = '&page=' . $page . $args;
+        $page = "action_show_page";
+    }
+    $args =~ s/^&/?/;
+    $m->redirect($page . $args);
+}
+
+my $main_comp;
+</%once>
+<%init>;
+session_initialize();
+
+%cookies = CGI::Cookie->fetch($r);
+$sid = $cookies{'ETS_SESSION_ID'} ? $cookies{'ETS_SESSION_ID'}->value : "";
+
+if (!valid_sid($sid)) {
+    session_new();
+    $data = { SCREEN => "news" };
+} else {
+    if (!defined session_read()) {
+        session_new();
+        $data = { SCREEN => "news",
+                  MSG    => "Túl sokáig voltál tétlen, a kapcsolatod adatai elavultak."
+                };
+    };
+}
+
+# Allow access to components only in the public_html directory, everything
+# else is hidden by returning 404 (page not found) error.
+$main_comp = $m->fetch_next();
+if ($main_comp->source_dir !~ /public_html$/) {
+    $m->clear_and_abort(404);
+}
+$m->call_next();
+
+session_write();
+</%init>

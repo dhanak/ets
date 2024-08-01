@@ -1,0 +1,32 @@
+<%doc> This is a -*- mason -*- template.
+Modify the head of a group.
+</%doc>
+
+<%args>
+$groupID
+$head
+</%args>
+
+<%once>
+my ($sth);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("UPDATE groups SET head=? WHERE groupID=?");
+}
+
+if (!$m->comp('/sub/check_perm', item => "group_mgmt")) {
+    $data->{MSG} = "Nem vagy jogosult csoportok módosítására!";
+    redirect("news");
+} else {
+    if ($sth->execute($head, $groupID)) {
+	$data->{MSG} = "Csoport módosítva.";
+	$m->comp('/sub/log', "modify group head", groupID=>$groupID, head=>$head);
+    } else { 
+	$data->{MSG} = "A csoportot nem sikerült módosítani.";
+    }
+}
+
+redirect("list_group", groupID => $groupID);
+</%init>

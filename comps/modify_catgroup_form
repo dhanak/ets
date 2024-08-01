@@ -1,0 +1,53 @@
+<%doc> This is a -*- mason -*- template.
+Provide a form to modify category group.
+</%doc>
+
+<%args>
+$catgroup			# passed through 'action_show_page'
+</%args>
+
+<h3 class="topic">'<% $cg->{name} %>' témacsoport módosítása</h3>
+
+<TABLE>
+<& form, action => "action_modify_catgroup", hidden => { rank => $catgroup } &>
+<TR><TD class=spec>Név:
+<TD><INPUT TYPE=text NAME=name SIZE=45 VALUE="<% $cg->{name} %>">
+
+<TR><TD valign=middle class=spec>Tagok:
+<TD><SELECT NAME=members SIZE=10 MULTIPLE>
+% while (defined ($cat = $get_cats->fetchrow_hashref)) {
+<OPTION VALUE="<% $cat->{id} %>"
+  <% exists $members{$cat->{id}} ? "selected" : "" %>>
+<% $cat->{name} %></OPTION>
+% }
+</SELECT>
+
+<TR><TD><INPUT type=submit NAME=submit VALUE="Módosít">
+</FORM>
+
+</TABLE>
+
+<%once>;
+my ($get_cg, $get_cats, $cg, $cat, %members);
+</%once>
+
+<%init>;
+if (!defined $get_cg) {
+    $get_cg = # fetch category group data
+	$dbh->prepare("SELECT name, members FROM catgroups WHERE rank=?");
+    $get_cats = # fetch name and id of categories
+	$dbh->prepare("SELECT id, name FROM categories ORDER BY chapter, id");
+}
+
+$get_cg->execute($catgroup);
+$cg = $get_cg->fetchrow_hashref;
+$get_cg->finish;
+%members = ();			# clear test hash
+@members{split /\|/, $cg->{members}} = ();
+
+$get_cats->execute;
+</%init>
+
+<%cleanup>;
+$get_cats->finish;
+</%cleanup>

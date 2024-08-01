@@ -1,0 +1,54 @@
+<%doc> This is a -*- mason -*- template.
+Add category according to the filled form.
+</%doc>
+
+<%args>
+$send => undef
+$SQL_command
+$subject_form
+$letter_form
+$help_letter => undef
+$search => undef
+$email_addr => undef
+</%args>
+
+% if (!defined $help_letter) {
+    <& html_page &>
+% } else {
+    <& action_show_page, page=>"search_form",
+       SQL_command => $SQL_command, letter_form => $letter_form,
+       help_letter => $help_letter, search => $search,
+       subject_form => $subject_form, email_addr => $email_addr &>
+% }
+
+<%once>
+my($sth, $member, $mailer, $letter, $subject);
+</%once>
+
+<%init>;
+if (defined $send) {
+  my $cmd;
+  ($cmd = $SQL_command) =~ s/&quot;/"/g; # unescape quotes (")
+  $sth = $dbh->prepare("SELECT $cmd");
+  $sth->execute;
+  while (defined ($member = $sth -> fetchrow_hashref)) {
+    $letter = $letter_form;
+    $subject = $subject_form;
+    foreach (keys %$member) {
+       $subject =~ s/\[\[$_\]\]/$member->{$_}/g;
+       $letter =~ s/\[\[$_\]\]/$member->{$_}/g;
+    }
+    $mailer = new Mail::Mailer;
+    $mailer->open({ To      => $member->{email},
+		    From    => 'dp@iit.bme.hu',
+		    Subject => $subject,
+		    'Content-Type' => 'text/plain; charset=utf-8',
+		    'Content-Transfer-Encoding' => '8bit' });
+    print $mailer $letter;
+    $mailer->close;
+  }
+}
+
+$data->{SCREEN} = "news";
+
+</%init>

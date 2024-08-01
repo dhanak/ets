@@ -1,0 +1,79 @@
+<%doc> This is a -*- mason -*- template.
+Offer selection of a category group and optionally subcategory
+</%doc>
+
+<%args>
+$limit				# the ID of the last chapter to be listed
+</%args>
+
+<TABLE>
+% while (defined ($qrow = $get_cgs->fetchrow_hashref)) {
+%   @members = map { exists $cats{$_} ? $_ : () } split /\|/, $qrow->{members};
+%   next if !@members;
+%   $cgsize = 0;
+%   for (@members) { $cgsize += $cats{$_}->{size}; }
+
+<& TR, \$row &>
+
+<TD><% $qrow->{name} %>:
+<& form, action => "action_do_exercise" &>
+
+% if (@members > 1) { # consists of more than one category
+
+<TD><SELECT NAME=category>
+<OPTION value="<% $qrow->{members} %>">
+vegyesen (<% $cgsize %>)
+</OPTION>
+% for (@members) {
+<OPTION value="<% $_ %>">
+<% $cats{$_}->{name} %> (<% $cats{$_}->{size} %>)
+</OPTION>
+% }
+</SELECT>
+
+% } else { # Category group consists of a single category
+
+<INPUT TYPE=hidden NAME=category VALUE="<% $members[0] %>">
+<TD><% $cats{$members[0]}->{name} %> (<% $cgsize %>)
+
+% }
+
+<TD><INPUT TYPE=submit NAME="Submit" VALUE="Gyakorlás">
+</FORM>
+
+% }
+</TABLE>
+
+<%once>;
+my ($get_cgs, $get_cats, %cats, $qrow, @members, $cgsize, $row);
+</%once>
+
+<%init>;
+if (!defined $get_cgs) {
+    $get_cgs = # fetch category groups
+	$dbh->prepare("SELECT name, members FROM catgroups ORDER BY rank");
+    $get_cats = # fetch categories
+	$dbh->prepare("SELECT categories.id AS category, name, chapter,
+                              COUNT(data) AS size
+                       FROM categories LEFT JOIN exercises
+                       ON categories.id = exercises.category
+                       WHERE chapter <= ?
+                       GROUP BY categories.id
+                       HAVING size > 0
+		       ORDER BY chapter, category");
+}
+
+$get_cats->execute($limit);
+%cats = ();
+while (defined ($qrow = $get_cats->fetchrow_hashref)) {
+    $cats{$qrow->{category}} = $qrow;
+}
+$get_cats->finish;
+
+$get_cgs->execute;
+$row = 0;
+</%init>
+
+<%cleanup>;
+$get_cgs->finish;
+</%cleanup>

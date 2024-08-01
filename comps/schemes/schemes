@@ -1,0 +1,8 @@
+<%doc> This is a -*- mason -*- template.
+Return a list of schemes.
+</%doc>
+
+<%init>;
+return map { s(.*/)(); $_ }
+           (glob $m->current_comp->source_dir . "/[A-Z][A-Z][A-Z][A-Z]");
+</%init>

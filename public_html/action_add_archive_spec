@@ -1,0 +1,37 @@
+<%doc> This is a -*- mason -*- template.
+Add/modify an archive specification in the database.
+</%doc>
+
+<%args>
+$name
+$spec
+</%args>
+
+<%once>;
+my ($get, $set, $specs);
+</%once>
+
+<%init>;
+if (!defined $get) {
+    $get = $dbh->prepare('SELECT value FROM parameters WHERE id="archspecs"');
+    $set = $dbh->prepare('REPLACE INTO parameters (id,value) VALUES ("archspecs",?)');
+}
+
+if (!$m->comp('/sub/check_perm', item=>"db_archive_form")) {
+    $data->{MSG} = "Nem vagy jogosult archiválásra!";
+    redirect("news");
+} else {
+    $get->execute;
+    ($specs) = $get->fetchrow_array;
+    $get->finish;
+    
+    { no strict; $specs = eval ($specs || "{}"); use strict; }
+    $specs->{$name} = $spec;
+    $specs = Dumper($specs);
+    
+    $set->execute($specs);
+
+    $data->{MSG} = "Specifikáció felvéve.";
+    redirect("db_archive_form");
+}
+</%init>

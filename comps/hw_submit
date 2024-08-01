@@ -1,0 +1,88 @@
+<%doc> This is a -*- mason -*- template.
+Offer a form to submit homeworks and acknowledge prior submission.
+</%doc>
+
+<%args>
+$neptun => undef
+</%args>
+
+<h3 class="topic">HF beadás<% $neptun ? " $studname ($neptun) nevében" : "" %></h3>
+
+% if (exists $data->{ERROR}) {
+<DIV class="error">
+A HF beadásakor az alábbi hiba történt:</p>
+<PRE><% $data->{ERROR} %></PRE>
+</DIV>
+%   delete $data->{ERROR};
+% } elsif (exists $data->{OUTPUT}) {
+<H4>Státusz</H4>
+<BLOCKQUOTE>
+<% $data->{OUTPUT} %>
+</BLOCKQUOTE>
+%   delete $data->{OUTPUT};
+% }
+
+% if (!@classes) {
+Jelenleg egyik HF típusnak sincs beadási időszaka.
+% } else {
+% foreach $class (@classes) {
+<H4><% ucfirst $class->{name} %></H4>
+<BLOCKQUOTE>
+Beadható <b><& date:display, $class->{start} &> 12:00</b> és
+<b><&  date:display, $class->{end} &> 23:59</b> között.
+% if (exists $class->{file}) {
+Az állomány neve <tt><% $class->{file} %></tt>.
+% }
+<% $class->{opts} =~ /doc\((.+?)\)/ %>
+
+<p><& form, action => "action_hw_submit", enctype => "multipart/form-data",
+    hidden => { conf => $conf, class => $class->{class},
+		exists $class->{file} ? (fname => $class->{file}) : (),
+                $neptun ? (neptun => $neptun) : () } &>
+<INPUT TYPE=file NAME=file SIZE=60>
+<INPUT TYPE=submit NAME=submit VALUE="Mehet">
+</FORM>
+</BLOCKQUOTE>
+% }
+% }
+
+<h3 class="topic">Beadott feladatok</h3>
+<& hw_show_submissions, $neptun ? (neptun => $neptun) : () &>
+
+<%once>;
+my ($get_conf, $conf, $class, @classes, $year, $month, $day, $today, $row);
+my ($get_name, $studname);
+</%once>
+
+<%init>;
+if (!defined $get_conf) {
+    $get_conf =
+	$dbh->prepare("SELECT value FROM parameters WHERE id='submit.conf'");
+    $get_name =
+	$dbh->prepare("SELECT name FROM people WHERE neptun=?");
+}
+
+$get_conf->execute;
+($conf) = $get_conf->fetchrow_array;
+$get_conf->finish;
+
+if ($neptun && ($m->comp('/sub/is_supervisor', neptun => uc $neptun) ||
+                $m->comp('/sub/is_admin'))) {
+    $neptun = uc $neptun;
+    $get_name->execute($neptun);
+    ($studname) = $get_name->fetchrow_array;
+    $get_name->finish;
+} else {
+    $neptun = undef
+}
+
+@classes = ();
+($day, $month, $year) = (localtime)[3..5];
+$today = sprintf "%4d-%02d-%02d", $year + 1900, $month+1, $day;
+foreach $class (@{ $m->comp('/sub/parse_hw_classes', conf => $conf) }) {
+    push @classes, $class if $neptun || ($class->{start} le $today &&
+			                 $today le $class->{end});
+}
+
+$row = 0;
+</%init>

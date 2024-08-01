@@ -1,0 +1,109 @@
+<%doc> This is a -*- mason -*- template.
+List a particular student group.
+</%doc>
+<%attr>
+controls_js => 1
+window_js => 1
+</%attr>
+
+<%args>
+$groupID
+</%args>
+
+<h3 class="topic"><% $groupID %> sorszámú csoport</h3>
+
+<h4>Adatok</h4>
+<blockquote>
+<table>
+<tr><td class="spec" align="right">Sorszám:
+  <td><% $groupID %>
+<tr id="static_headrow"><td class="spec" align="right">Vezető:
+  <td><% $head->{name} %> (<% $head->{neptun} %>)
+    <a href="#" onclick="Element.hide('static_headrow'); Element.show('dynamic_headrow');">
+      <img src="pic/edit.png" border="0" alt="Módosít" title="Módosít">
+    </a>
+<tr id="dynamic_headrow" style="display:none;"><td class="spec" align="right">Vezető:
+  <td><& form, action => "action_modify_group_head", hidden => { groupID=>$groupID } &>
+      <input type="text" name="head" id="grouphead" size="30" value="<% $head->{neptun} %>">
+      <input type="submit" value="Módosít">
+      <& autocomplete, inputID => "grouphead", suffix => "1",
+         href => "autocomplete_people", params => {field=>"head"} &>
+      </form>
+</table>
+</blockquote>
+
+<h4>Időpontok</h4>
+<blockquote>
+  <table>
+    <tr>
+      <th>Időpont
+      <th>Terem
+      <th>Típus
+      <th width="16">
+% foreach (@times) {
+%   my ($date, $time) = split / /, $_->{startsAt};
+<& TR, \$row &>
+<td><& date:display, $date &><% join ":", (split /:/, $time)[0..1] %>
+<td><% $_->{room} %>
+<td><% $_->{type} eq "class" ? "tantermi" : "laboratóriumi" %> gyakorlat
+<td align="center">
+  <& js_confirm, img => "delete.png", text => "Töröl",
+      question => "Biztosan törölni akarod a <b>" . $_->{startsAt} .
+                  "</b> időpontot a <b>$groupID</b> csoportból?",
+      action   => "action_modify_group_times",
+      hidden   => { action => "remove", groupID => $groupID, timeID => $_->{id} } &>
+% }
+<& TR, \$row &>
+<& form, action => "action_modify_group_times",
+    hidden => { action => "add", groupID => $groupID, confirmed => "1" } &>
+  <td><& date &>.
+      <select name="hour">
+% foreach (8..20) {
+<option><% sprintf "%02d", $_ %></option>
+% }
+      </select>:
+      <select name="minute">
+% foreach (0,15,30,45) {
+<option><% sprintf "%02d", $_ %></option>
+% }
+      </select>
+  <td><input type="text" name="room" size="10">
+  <td><select name="type">
+      <option value="class" selected>tantermi gyakorlat</option>
+      <option value="lab">laboratóriumi gyakorlat</option>
+    </select>
+  <td><input type="Submit" value="Felvesz">
+  </form>
+  </table>
+</blockquote>
+% $row = 0;
+
+<h4>Tagok</h4>
+<blockquote>
+  <& group_members, groupID => $groupID, modify => 1 &>
+</blockquote>
+
+<%once>;
+my ($get_group_head, $head, $row, $get_group_times, @times);
+</%once>
+
+<%init>;
+if (!defined $get_group_head) {
+    $get_group_head =
+	$dbh->prepare('SELECT head as neptun, name FROM groups g, people p
+                       WHERE groupID=? AND head=neptun');
+    $get_group_times =
+	$dbh->prepare("SELECT groupTimeID as id, startsAt, room, type FROM group_times
+                       WHERE groupID=? ORDER BY startsAt");
+}
+
+$get_group_head->execute($groupID);
+$head = $get_group_head->fetchrow_hashref;
+$get_group_head->finish;
+
+$get_group_times->execute($groupID);
+@times = @{ $get_group_times->fetchall_arrayref({}) };
+$get_group_times->finish;
+
+$row = 0;
+</%init>

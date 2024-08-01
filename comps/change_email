@@ -1,0 +1,58 @@
+<%doc> This is a -*- mason -*- template.
+Request e-mail change confirmation from user: send out email with
+confirmation string, and request it in a form entry. If it is confirmed,
+change e-mail.
+</%doc>
+
+<%args>
+$neptun
+$email
+$setnewpwd => 0
+</%args>
+
+<h3 align="center">E-mail cím<% $setnewpwd ? " és jelszó" : "" %> megerősítése</h3>
+
+A megadott új e-mail cím helyességének ellenőrzéséhez elküldtem a
+<b><% $email %></b> címre egy
+% if ($setnewpwd) {
+frissen generált jelszót. Ezt írd be az alábbi mezőbe az e-mail cím és a
+jelszó véglegesítéséhez.
+% } else {
+rövid karaktersorozatot. A változtatás véglegesítéséhez ezt a sorozatot
+másold be az alábbi mezőbe.
+% }
+
+<blockquote>
+<& form, action => "action_change_email", hidden => { neptun => $neptun,
+email => $email, hash => $hash } &>
+<input type=<% $setnewpwd ? "password" : "text" %> name=password>
+<input type=submit name=mehet value="Mehet!">
+</form>
+</blockquote>
+
+<%once>;
+my ($hash, $password);
+my $mailer = new Mail::Mailer;
+</%once>
+
+<%init>;
+$password = "";
+for (1 .. 16) {
+    $password .= ('A' .. 'Z', 'a' .. 'z')[int rand 52];
+}
+$hash = crypt($email . $password, $password);
+
+if ($setnewpwd) {
+    $m->comp('/sub/send_reminder', email => $email, password => $password);
+} else {
+    $mailer->open({ To      => $email,
+		    From    => 'dp@iit.bme.hu',
+		    Subject => '=?utf-8?Q?ETS e-c=EDm meger=F5s=EDt=E9se?=',
+		    'Content-Type' => 'text/plain; charset=utf-8',
+		    'Content-Transfer-Encoding' => '8bit' });
+		    print $mailer <<EOF;
+Az űrlapban a megerősítéshez használandó kulcs: '$password'.
+EOF
+}
+$mailer->close;
+</%init>

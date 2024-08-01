@@ -1,0 +1,54 @@
+<%doc> This is a -*- mason -*- template.
+Manage HW testclasses and hand-in periods.
+</%doc>
+
+<H3 class="topic">HF tesztosztályok</H3>
+<& form, action => "action_set_parameter", hidden => { id => "submit.conf" } &>
+GUTS konfigurációs állomány:</P>
+<CENTER>
+<tt><% $ENV{ETS_ROOT} %>/</tt>
+<INPUT TYPE=text NAME=value SIZE=60 VALUE="<% $conf %>"></P>
+<INPUT TYPE=submit NAME=submit VALUE="  Beállít  ">
+</CENTER>
+</FORM>
+
+% $_ = "$ENV{ETS_ROOT}/$conf";
+% if (-r && -f) {
+<TABLE width="100%">
+<TR>
+<TH width="15%">Osztály
+<TH width="30%">Név
+<TH width="20%">-tól
+<TH width="20%">-ig
+<TH width="15%">File
+
+% foreach $class (@{ $m->comp('/sub/parse_hw_classes', conf => $conf) }) {
+<& TR, \$row &>
+<TD><% $class->{class} %>
+<TD><% $class->{name} %>
+<TD align=center><& date:display, $class->{start} &>
+<TD align=center><& date:display, $class->{end} &>
+<TD><% $class->{file} %>
+% }
+</TABLE>
+% } else {
+<DIV class="error">
+A konfigurációs állomány nem olvasható!
+</DIV>
+% }
+
+<%once>;
+my ($sth, $conf, $row, $class);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("SELECT value FROM parameters WHERE id='submit.conf'");
+}
+
+$sth->execute;
+($conf) = $sth->fetchrow_array();
+$sth->finish;
+
+$row = 0;
+</%init>

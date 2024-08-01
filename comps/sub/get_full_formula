@@ -1,0 +1,49 @@
+<%doc> This is a -*- mason -*- template.
+Get a formula describing a aggregate score and resolve all references to
+other aggregate scores recursively, leaving only only references to basic
+scores.  The only argument is the id of the aggregate score.
+</%doc>
+
+<%args>
+$formula
+</%args>
+
+<%once>
+use utf8;
+use List::Util qw[min max];
+use Math::Round;
+
+my ($get_formula);
+
+sub resolve ($$) {
+    my $id = shift;		# the ID of the score to resolve
+    my $optional = shift;	# whether score is optional
+    my $formula;
+
+    if (!$get_formula->execute($id)) {
+	$data->{MSG} = "Hibás pontszám azonosító: $id";
+	return undef;
+    }
+    
+    ($formula) = $get_formula->fetchrow_array;
+    $get_formula->finish;
+    if (!defined $formula) {	# NULL value means it is not an aggregate score
+	return "([[$id$optional]])";
+    }
+
+    # Find references with minimal match, resolve references recursively.
+    # e flag causes s/// to evaluate the replacement field before repacing.
+    $formula =~ s/\[\[(.*?)(\??)\]\]/&resolve($1, $optional || $2)/ge;
+    return "($formula)";
+}
+</%once>
+
+<%init>
+if (!defined $get_formula) {
+    $get_formula = $dbh->prepare("SELECT formula FROM scores_meta WHERE id=?");
+}
+
+# Find references with minimal match, resolve references.
+$formula =~ s/\[\[(.*?)(\??)\]\]/&resolve($1, $2)/ge;
+return $formula;
+</%init>

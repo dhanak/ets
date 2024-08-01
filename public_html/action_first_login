@@ -1,0 +1,33 @@
+<%doc> This is a -*- mason -*- template.
+First login: set email address, generate password and send it to the
+address.
+</%doc>
+
+<& html_page, neptun => $neptun, email => $email, setnewpwd => 1 &>
+
+<%args>
+$neptun
+$email
+</%args>
+
+<%once>;
+my ($get, $oldpwd, $password);
+</%once>
+
+<%init>;
+if (!defined $get) {
+    $get = $dbh->prepare("SELECT password FROM people WHERE neptun=?");
+}
+
+$get->execute($neptun);
+($oldpwd) = $get->fetchrow_array;
+$get->finish;
+
+# refuse to overwrite an existing account
+if (!defined $data->{NEPTUN} && $oldpwd eq "") {
+    $data->{SCREEN} = "change_email";
+} else {
+    $data->{MSG} = "Erre nem vagy jogosult!";
+    redirect("news");
+}
+</%init>

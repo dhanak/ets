@@ -1,0 +1,69 @@
+<%doc> This is a -*- mason -*- template.
+Manage student groups.
+</%doc>
+<%attr>
+controls_js => 1
+window_js => 1
+</%attr>
+
+<h3 class="topic">Csoportok</h3>
+
+<table width="80%">
+<tr>
+<th>Sorszám
+<th>Vezető
+<th>Méret
+<th width=16>
+<th width=16>
+</tr>
+% foreach $group (sort { $a <=> $b } keys %groups) {
+<& TR, \$row &>
+<td><% $group %>
+<td><% $groups{$group}->{headname} %> (<% $groups{$group}->{head} %>)
+<td><% $groups{$group}->{size} %> fő
+<td align="center">
+  <& link, href=>"action_show_page", img => "details.png", text=> "Részletek",
+       params => { page => "list_group", groupID => $group } &>
+<td align="center">
+  <& js_confirm, img => "delete.png", text => "Töröl",
+      question => "Biztosan törölni akarod a(z) <b>$group</b> sorszámú csoportot?",
+      action   => "action_delete_group",
+      hidden   => { groupID => $group } &>
+% }
+<& TR, \$row &>
+<& form, action => "action_add_group" &>
+<td><input type="text" name="groupID" size="4">
+<td colspan="2"><input type="text" name="head" id="grouphead" size="30">
+<& autocomplete, inputID => "grouphead", throbberID => undef,
+  href => "autocomplete_people", params => {field=>"head"} &>
+<td colspan="2"><input type="submit" value="Felvesz">
+</form>
+</table>
+
+<%once>;
+my ($get_groups, $group_size, %groups, $group, $row);
+</%once>
+
+<%init>;
+if (!defined $get_groups) {
+    $get_groups = # get group IDs
+	$dbh->prepare("SELECT groupID, head, name as headname FROM groups g, people p
+                       WHERE g.head=p.neptun");
+    $group_size =
+	$dbh->prepare("SELECT COUNT(*) FROM group_members WHERE groupID=?");
+}
+
+%groups = ();
+$get_groups->execute;
+while ($group = $get_groups->fetchrow_hashref) {
+    $group_size->execute($group->{groupID});
+    $groups{$group->{groupID}} = {
+	head => $group->{head},
+	headname => $group->{headname},
+	size => $group_size->fetchrow_arrayref->[0]
+    };
+    $group_size->finish;
+}
+$get_groups->finish;
+$row = 0;
+</%init>

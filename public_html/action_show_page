@@ -1,0 +1,26 @@
+<%doc> This is a -*- mason -*- template.
+Switch to a generic page specified in $page argument.
+</%doc>
+
+<%args>
+$page => "news"
+</%args>
+
+<& html_page, %args &>
+
+<%once>;
+my %args;
+</%once>
+
+<%init>;
+%args = %ARGS;
+delete $args{page};
+
+if ($m->comp('/sub/check_perm', item => $page, %args)) {
+    $data->{SCREEN} = $page;
+} else {
+    $m->comp('/sub/log', 'illegal page request', page => $page, %args);
+    $data->{MSG} = "Erre nem vagy jogosult!";
+    $data->{SCREEN} = "news";
+}
+</%init>

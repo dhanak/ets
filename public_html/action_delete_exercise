@@ -1,0 +1,36 @@
+<%doc> This is a -*- mason -*- template.
+Delete the specified exercise from the database
+</%doc>
+
+<%args>
+$exid
+$origcat
+$confirmed => undef
+</%args>
+
+<%once>
+my ($delete_ex);
+</%once>
+
+<%init>;
+if (!defined $delete_ex) {
+    $delete_ex = $dbh->prepare("DELETE FROM exercises WHERE id=?");
+}
+
+if (defined $confirmed) {
+    if (!$m->comp('/sub/check_perm', item => "delete_exercise")) {
+	$data->{MSG} = "Nem vagy jogosult feladatok törlésére!";
+    } else {
+	if ($delete_ex->execute($exid) != 1) {
+	    $data->{MSG} = "A feladatot nem sikerült törölni.";
+	} else {
+	    $data->{MSG} = "Feladat törölve.";
+	    $m->comp('/sub/log', "delete exercise", id => $exid);
+	}
+    }
+} else {
+    $data->{MSG} = "A feladat törlése visszavonva.";
+}
+
+redirect("list_category", category => $origcat);
+</%init>

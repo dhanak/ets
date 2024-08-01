@@ -1,0 +1,141 @@
+<%doc> This is a -*- mason -*- template.
+Handler of the SML Function Definition (SDEF) scheme.
+</%doc>
+<%method longname>SML mi-a-definíciója</%method>
+
+<%args> $exdata </%args>
+
+Mi lehet a definíciója (törzse) egy SML függvénynek, ha a típusa és a feje
+az alábbi?  (Gyakran több jó válasz is van, ilyenkor bármelyiket megadhatod.)
+<BR>
+<PRE>
+(* val <% $exdata->{TYPE} %>
+ *)</PRE>
+
+<%method answers>
+<%args>
+$exdata
+$body => ""
+</%args>
+<CODE><% $exdata->{HEAD} %> = </CODE>
+% $body =~ s/"/&quot;/g;
+<INPUT TYPE=text NAME=body size=60 VALUE="<% $body %>">
+</%method>
+
+<%method check>
+<%args>
+$exdata
+$body
+</%args>
+<%init>
+my ($input, $output) = ("/tmp/$sid.sml");
+my $mosml_timeout = $ENV{ETS_ROOT} . "/bin/timeout_sml.pl";
+
+# Check answer syntactically
+open SML, ">$input";
+print SML "$exdata->{HEAD} = $body\n";
+close SML;
+open Reader, "$mosml_timeout $input |";
+$output = join "", <Reader>;
+close Reader;
+unlink $input;
+if ($output eq "TIMEOUT") {
+    return ["TIMEOUT"];
+} elsif ($output =~ /! Toplevel/) {
+    return ["SYNTAX", $output];
+}
+	 
+# Check for type match
+open SML, ">$input";
+print SML <<EOF;
+structure prog : sig val $exdata->{TYPE} end =
+struct
+$exdata->{HEAD} = $body
+end
+EOF
+close SML;
+open Reader, "$mosml_timeout $input |";
+$output = join "", <Reader>;
+close Reader;
+unlink $input;
+if ($output eq "TIMEOUT") {
+    return ["TIMEOUT"];
+} elsif ($output =~ /! Toplevel/) {
+    $output =~ s/^.*! Scheme mismatch/! Scheme mismatch/s;
+    return ["TYPE", $output];
+}
+return undef;
+</%init>
+</%method>
+
+<%method errstr>
+<%args>
+$exdata
+$error
+</%args>
+% if ($error->[0] eq "TIMEOUT") {
+Időtúllépés (végtelen ciklus?)
+% } elsif ($error->[0] eq "SYNTAX") {
+Szintaktikai hiba:<BR>
+<PRE><% $error->[1] %></PRE>
+% } elsif ($error->[0] eq "TYPE") {
+A definíció típusa nem felel meg az előírtnak:
+<PRE><% $error->[1] %></PRE>
+% }
+</%method>
+
+<%method describe>
+<%args>
+$exdata
+</%args>
+val <% $exdata->{TYPE} %>; <% $exdata->{HEAD} %> = ?
+</%method>
+
+<%method params>
+<%args>
+$exdata
+</%args>
+<TABLE>
+<TR><TD>A függvény feje:
+% $exdata->{HEAD} =~ s/"/&quot;/g if defined $exdata->{HEAD};
+<TD><INPUT TYPE=text NAME=head SIZE=50 VALUE="<% $exdata->{HEAD} %>">
+<CODE>=</CODE>
+<TR><TD>A törzse:
+<TD><INPUT TYPE=text NAME=body SIZE=50 VALUE="<% $exdata->{BODY} %>">
+% if (defined $exdata->{TYPE}) {
+<TR><TD>A jelenlegi típusa:
+<TD><CODE><% $exdata->{TYPE} %></CODE>
+% }
+</TABLE>
+</%method>
+
+<%method calcdata>
+<%args>
+$head
+$body
+</%args>
+<%init>
+my ($input, $output, %data) = ("/tmp/$sid.sml");
+my $mosml_timeout = $ENV{ETS_ROOT} . "/bin/timeout_sml.pl";
+
+@data{'HEAD','BODY'} = ($head, $body);
+
+open SML, ">$input";
+print SML <<EOF;
+structure check = struct
+$head = $body
+end
+EOF
+open Reader, "$mosml_timeout $input |";
+$output = join "", <Reader>;
+close Reader;
+unlink $input;
+
+if ($output =~ /! Toplevel/) {
+    chomp $output;
+    return { %data, ERROR => "<PRE>$output</PRE>" };
+} else {
+    return { %data, TYPE => $output =~ /{val.* ([A-Za-z0-9_]* : .*)}/ };
+}
+</%init>
+</%method>

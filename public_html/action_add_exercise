@@ -1,0 +1,46 @@
+<%doc> This is a -*- mason -*- template.
+Add the specified exercise to the database and return to the form.
+</%doc>
+
+<%args>
+$scheme
+$category
+$level
+</%args>
+
+<%once>
+my ($sth, $retval);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("INSERT INTO exercises (category, scheme, level, data)
+    		                 VALUES (?, ?, ?, ?)");
+}
+
+# remember parameters
+$data->{CATEGORY} = $category;
+$data->{LEVEL} = $level;
+
+if (!$m->comp('/sub/check_perm', item => "add_exercise")) {
+    $data->{MSG} = "Nem vagy jogosult feladatok felvételére!";
+    redirect("news");
+} else {
+    $data->{SCHEME} = $scheme;
+    $retval = $m->comp($scheme . ":calcdata", %ARGS);
+    if (defined $retval->{ERROR}) {
+	$data->{MSG} = '<SPAN class="bad">A feladatot nem sikerült felvenni.</SPAN>';
+	$data->{ERROR} = $retval->{ERROR};
+	delete $retval->{ERROR};
+	$data->{EXDATA} = $retval;
+    } else {
+	delete $data->{EXDATA};
+	if ($sth->execute($category, $scheme, $level, Dumper($retval)) != 1) {
+	    $data->{MSG} = '<SPAN class="bad">A feladatot nem sikerült felvenni.</SPAN>';
+	} else {
+	    $data->{MSG} = '<SPAN class="good">Feladat felvéve.</SPAN>';
+	}
+    }
+    redirect("action_add_exercise_form");
+}
+</%init>

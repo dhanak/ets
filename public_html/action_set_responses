@@ -1,0 +1,48 @@
+<%doc> This is a -*- mason -*- template.
+Add/modify query responses
+</%doc>
+
+<%args>
+$neptun
+$queries
+</%args>
+
+<%once>
+my ($sth);
+</%once>
+
+<%init>
+if (!defined $sth) {
+    $sth = $dbh->prepare("REPLACE INTO responses (query, user, answer, time)
+                          VALUES (?, ?, ?, NOW())");
+}
+
+if (!$m->comp('/sub/check_perm', item => "set_responses", neptun => $neptun)) {
+    $data->{MSG} = "Nem vagy jogosult a felhasználó válaszainak beállítására!";
+    redirect("news");
+} else {
+    my (@succ, @fail);
+
+  ARGS:
+    foreach (sort split /,/, $queries) {
+	if ($sth->execute($_, $neptun, $ARGS{$_})) {
+	    push @succ, $_;
+	} else {
+	    push @fail, $_;
+	}
+    }
+
+    if (!@succ) {
+	$data->{MSG} = "A válaszokat nem sikerült beállítani.";
+    } elsif (@fail) {
+	$data->{MSG} = "A válaszok egy részét nem sikerült beállítani.";
+    } else {
+	$data->{MSG} = "Válaszok beállítva.";
+    }
+    $m->comp('/sub/log', "set responses", neptun => $neptun,
+	     queries => \@succ);
+
+    redirect("user_details", neptun => $neptun);
+
+}
+</%init>

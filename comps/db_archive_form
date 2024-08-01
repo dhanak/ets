@@ -1,0 +1,104 @@
+<%doc> This is a -*- mason -*- template.
+Offer a list of archive specifications and archive files.  Select a spec
+to create an archive, select an archive to restore it, or modify the list
+of specifications.
+</%doc>
+<%attr>
+window_js => 1
+</%attr>
+
+<h3 class="topic">Archiválás</h3>
+
+<h4>Specifikációk</h4>
+
+Egy archiválandó tábla megadása:
+<pre>
+  tábla[sorrend][spec]
+</pre>
+<dl>
+<dt><code>sorrend</code> formája:
+<dd><code>:[^]&lt;mező1&gt;[,[^]&lt;mező2&gt;...]</code>
+  mezők szerint rendezve (^ = csökkenő sorrendben)
+<dt><code>spec</code> formája:
+<dd><code>+&lt;mező1&gt;[,&lt;mező2&gt;,...]</code>
+  csak a megadott mezőket archiválja<br>
+  <code>-&lt;mező1&gt;[,&lt;mező2&gt;,...]</code>
+  a megadott mezőket <strong>ne</strong> archiválja
+</dl>
+A teljes specifikáció valahány archiválandó tábla szóközzel elválasztott
+listája.</p>
+
+<table>
+<tr>
+<th>Név
+<th>Specifikáció
+% foreach $name (sort keys %$specs) {
+<& TR, \$row &>
+<td><% $name %>
+<td><% $specs->{$name} %>
+<td align=center>
+  <& js_confirm, img => "delete.png", text => "Töröl",
+      question => "Biztosan törölni akarod a '$name' nevű archíválás specifikációt?",
+      action   => "action_delete_archive_spec",
+      hidden   => { name => $name } &>
+<td align=center>
+  <& link, img => "save.png", text => "Archivál", href => "action_save_archive",
+     params => { name => $name, spec => $specs->{$name} } &>
+% }
+<& TR, \$row &>
+<& form, action => "action_add_archive_spec" &>
+<td><input type=text name=name size=10>
+<td><input type=text name=spec size=80>
+<td align=center colspan=2><input type=submit name=add value="Felvesz">
+</form>
+</table>
+
+<h4>Archívumok</h4>
+% $row = 0;
+<table width="100%">
+<tr>
+<th>Név
+<th>Specifikáció
+<th>Dátum
+% while (<$ENV{ETS_ROOT}/sql/archive/*.bz2>) {
+%   next unless open ARCH, "bunzip2 -c $_ |";
+%   my $archline = <ARCH>;
+%   close ARCH;
+%   chomp $archline;
+%   ($name, $spec, $date) = split / !!! /, $archline;
+%   next if !defined $date;
+<& TR, \$row &>
+<td><% $name %>
+<td><% $spec %>
+<td><% $date %>
+<td align=center>
+<& js_confirm, img => "delete.png", text => "Töröl", 
+    question => "Biztosan törölni akarod a '$name ($date)' archívumot?",
+    action  => "action_delete_archive",
+    hidden  => { file => $_ } &>
+<td align=center>
+<& js_confirm, img => "restore.png", text => "Helyreállít", 
+    question => "Biztosan helyre akarod állítani a '$name ($date)' archívumot?",
+    action  => "action_restore_archive",
+    options => { replace => "Az érintett táblák felülírása (hozzáírás helyett)" },
+    checked => { replace => 1 },
+    hidden  => { file => $_ } &>
+% }
+</table>
+
+<%once>
+my ($get, $row, $specs, $name, $spec, $date);
+</%once>
+
+<%init>
+if (!defined $get) {
+    $get = $dbh->prepare('SELECT value FROM parameters WHERE id="archspecs"');
+}
+
+$get->execute;
+($specs) = $get->fetchrow_array;
+$get->finish;
+{ no strict; $specs = eval ($specs || "{}"); use strict; }
+
+$row = 0;
+</%init>

@@ -1,0 +1,54 @@
+<%doc> This is a -*- mason -*- template.
+Offer the administrator to select the score types which should be listed.
+</%doc>
+
+<h3 class="topic">Hallgatók pontszámai</h3>
+
+<& form, action => "action_show_page", hidden => { page => "scores_list" } &>
+Válaszd ki, hogy az alábbiak közül mely pontszámokra vagy kíváncsi!<p>
+<table width="70%" align=center>
+% while (defined ($score = $get_meta->fetchrow_hashref)) {
+<& TR, \$row, $score->{basic} ? '' : 'style="{ font-weight: bold }"' &>
+<td align=center><input type=checkbox name=ids value="<% $score->{id} %>">
+<td><% $score->{id} %>
+<td><% $score->{name} %>
+% }
+</table>
+<p>
+
+Az alábbi mezőben megadhatsz saját formulákat is, soronként egyet.  Egy
+sor<code> <i>oszlopnév</i> = <i>formula</i> </code> alakú, ahol<code><i>
+formula </i></code>tetszőleges Perl szintaktikájú kifejezés, benne<code>
+[[<i>pontszámnév</i>]] </code>vagy<code> [[<i>pontszámnév?</i>]] </code>alakú hivatkozásokkal.
+Az opcionális '?' hatására 0 ad eredményül (és nem hibát dob), ha a<code> [[<i>pontszámnév</i>]]
+</code> pontszámtípus nem létezik.<br>
+
+Mivel csak létező pontszámtípusok jelennek meg a hallgatók eredménylistájában, rejtett mezőket
+("lokális változókat") hozhatunk létre úgy, hogy a formulát nem létező pontszámtípus-névvel kezdjük
+(pl. rejtett = [[hidden]] || ...). Ha erre egy másik formulában [[rejtett?]]-ként hivatkozunk, akkor
+az értéke meg fog jelenni, mert a ? rekurzív terjesztése miatt a nem létező pontszámtípusok eredménye
+0 lesz.<p>
+
+<center>
+<textarea name=formulae cols=50 rows=5></textarea><p>
+<input type=submit name=submit value="Mehet">
+</center>
+</form>
+
+<%once>
+my ($get_meta, $score, $row);
+</%once>
+
+<%init>
+if (!defined $get_meta) {
+    $get_meta = $dbh->prepare("SELECT id, name, formula IS NULL AS basic
+                               FROM scores_meta ORDER BY idx");
+}
+
+$get_meta->execute;
+$row = 0;
+</%init>
+
+<%cleanup>;
+$get_meta->finish;
+</%cleanup>

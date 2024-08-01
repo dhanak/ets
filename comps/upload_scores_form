@@ -1,0 +1,43 @@
+<%doc> This is a -*- mason -*- template.
+Offer a form for score upload
+</%doc>
+
+<h3 class="topic">Pontszámok feltöltése</h3>
+
+<DIV class="error" align="center">
+FIGYELEM!</p>
+A pontszámok feltöltése visszavonhatatlanul módosítja a pontszámadatbázist!<br>
+Feltöltés előtt készíts biztonsági másolatot az
+<& link, text => "Archiválás", href => "action_show_page",
+    params => { page => "db_archive_form" } &>
+menüpont segítségével!
+</DIV>
+
+A feltöltendő állomány formátuma a következő:
+<ul>
+<li>minden sor egy hallgatónak felel meg;
+<li>a sorok szerkezete a következő:
+<pre>
+NEPTUN:P1:P2:P3:P4:lang=LANG,group=GROUP,corr=CORR
+</pre>
+ahol NEPTUN a neptunkód, P1, P2, P3 és P4 a négy feladatra adott pontszám,
+LANG az adott programnyelv, GROUP a javított csoport, CORR pedig a javító
+monogramja.
+<li>tetszőleges sorban lehet megjegyzés, % jelet követően a sor végéig;
+<li>az üres sorok nem számítanak.
+</ul>
+
+<& form, action => "action_upload_scores", enctype => "multipart/form-data" &>
+<TABLE>
+<TR><TD>A pontszámok típusa:
+<TD><SELECT NAME=type size=1>
+<OPTION SELECTED>nzh</OPTION>
+<OPTION>pzh</OPTION>
+<OPTION>ppzh</OPTION>
+<OPTION>besz</OPTION>
+</SELECT>
+<TR><TD>A pontszámok állománya:
+<TD><INPUT TYPE=file NAME=file SIZE=60>
+<TR><TD colspan=2><INPUT TYPE=submit NAME=submit VALUE="Feltölt">
+</TABLE>
+</FORM>

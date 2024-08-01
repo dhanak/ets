@@ -1,0 +1,25 @@
+<%doc> This is a -*- mason -*- template.
+Determine whether a person is administrator or not.
+</%doc>
+
+<%args>
+$neptun => undef
+</%args>
+
+<%once>;
+my ($sth, $adm);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("SELECT admin FROM people WHERE neptun=?");
+}
+if (!defined $neptun) {
+    return (defined $data->{NEPTUN} && $data->{ADMIN});
+} else {
+    $sth->execute(uc $neptun);
+    ($adm) = $sth->fetchrow_array;
+    $sth->finish;
+    return ($adm eq "Y");
+}
+</%init>

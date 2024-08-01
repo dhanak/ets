@@ -1,0 +1,40 @@
+<%doc> This is a -*- mason -*- template.
+Delete a group.
+</%doc>
+
+<%args>
+$groupID
+$confirmed => undef
+</%args>
+
+<%once>
+my ($delete_group, $delete_members);
+</%once>
+
+<%init>
+if (!defined $delete_group) {
+    $delete_group =
+	$dbh->prepare("DELETE FROM groups WHERE groupID=?");
+    $delete_members = # delete progress information on person
+	$dbh->prepare("DELETE FROM group_members WHERE groupID=?");
+}
+
+if (defined $confirmed) {
+    if (!$m->comp('/sub/check_perm', item => "group_mgmt")) {
+	$data->{MSG} = "Nem vagy jogosult csoportok törlésére!";
+	redirect("news");
+    } else {
+	if ($delete_group->execute($groupID) != 1) {
+	    $data->{MSG} = "A csoportot nem sikerült törölni.";
+	} else {
+	    $delete_members->execute($groupID);
+	    $m->comp('/sub/log', "delete group", groupID => $groupID);
+	    $data->{MSG} = "Csoport törölve.";
+	}
+    }
+} else {
+    $data->{MSG} = "Csoport törlése visszavonva.";
+}
+
+redirect("group_mgmt");
+</%init>

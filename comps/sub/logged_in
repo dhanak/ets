@@ -1,0 +1,7 @@
+<%doc> This is a -*- mason -*- template.
+Check whether this is guest user or someone logged in.
+</%doc>
+
+<%init>;
+return defined $data->{NEPTUN};
+</%init>

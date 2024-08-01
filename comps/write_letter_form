@@ -1,0 +1,72 @@
+<%doc> This is a -*- mason -*- template.
+</%doc>
+
+<%args>
+$SQL_command
+$subject_form => undef
+$letter_form => undef
+$help_letter => undef
+$search => undef
+$email_addr => undef
+</%args>
+
+% if (defined $help_letter) {
+    <TABLE width=100%>
+    <TR>
+    <TD>
+    <TABLE>
+    <TH><U>Változók</U>
+%   foreach (@{ $sth->{NAME} }) {
+      <TR><TD>[[<% $_ %>]]
+%   }
+    </TABLE>
+    <TD>
+% }
+
+<& form, action => "action_send_letter",
+         hidden => { SQL_command => $SQL_command, search => $search } &>
+<P>
+Tárgy:
+<INPUT TYPE=text NAME=subject_form SIZE=90 VALUE=<% $subject_form %>>
+<P>
+Ide írd a levél sablonját:
+<P ALIGN=center>
+<TEXTAREA NAME=letter_form ROWS=25 COLS=60><% $letter_form %></TEXTAREA>
+<P ALIGN=center>
+<SELECT NAME=email_addr>
+%  foreach( @{ $sth->{NAME} } ) {
+     <OPTION VALUE = <% $_ %>
+%    if (defined $email_addr) {
+%       if ($_ eq $email_addr) {
+           selected
+%       }
+%    } else {
+%       if ($_ =~ /e-?mail/) {
+           selected
+%       }
+%    }
+     > <% $_ %> </OPTION>
+%  }
+</SELECT>
+<INPUT TYPE=submit NAME=send VALUE="Levél küldése">
+<INPUT TYPE=submit NAME=not_send VALUE="Mégse">
+% if (!defined $help_letter) {
+    <INPUT TYPE=submit NAME=help_letter VALUE="Segítség">
+% }
+</FORM>
+
+% if (defined $help_letter) {
+    </TABLE>
+% } else {
+    <P>
+% }
+
+<%once>
+my ($sth, $i, $cmd);
+</%once>
+
+<%init>
+($cmd = $SQL_command) =~ s/&quot;/"/g; # unescape quotes (")
+$sth = $dbh->prepare("SELECT $cmd");
+$sth->execute;
+</%init>

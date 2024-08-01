@@ -1,0 +1,44 @@
+<%doc> This is a -*- mason -*- template.
+List supervised students of given user.
+</%doc>
+
+<%args>
+$neptun => $data->{NEPTUN}
+</%args>
+
+<!-- <h3 class="topic"><% $name %> (<% $neptun %>) beosztott hallgatói</h3> -->
+
+% foreach (@groups) {
+<!-- <h4><% $_ %> számú csoport</h4> -->
+<br><br>
+<blockquote>
+<& group_members, groupID => $_ &>
+</blockquote>
+% }
+
+<%once>;
+my ($get_name, $name, $get_groups, @groups, $row);
+</%once>
+
+<%init>;
+if (!defined $get_groups) {
+    $get_name = # get personal information
+	$dbh->prepare("SELECT name FROM people WHERE neptun=?");
+    $get_groups = # get group IDs
+	$dbh->prepare("SELECT groupID FROM groups WHERE head=?");
+}
+
+$get_groups->execute($neptun);
+@groups = map { $_->[0] } @{ $get_groups->fetchall_arrayref };
+$get_groups->finish;
+
+if ($data->{NEPTUN} eq uc $neptun) {
+    $name = $data->{NAME};
+} else {
+    $get_name->execute($neptun);
+    ($name) = $get_name->fetchrow_array;
+    $get_name->finish;
+}
+
+$row = 0;
+</%init>

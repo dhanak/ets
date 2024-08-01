@@ -1,0 +1,32 @@
+<%doc> This is a -*- mason -*- template.
+Display licence agreement form.
+</%doc>
+
+<h3 class="topic">SICStus licenc-megállapodás</h3>
+
+
+Mint a BME Villamosmérnöki és Informatikai Karának hallgatója tudomásul veszem,
+hogy a SICStus Prolog szoftver rendelkezésemre bocsátott változatát az alábbi
+feltételek mellett telepíthetem az általam használt számítógépre:
+
+<ol>
+<li> A szoftvert a jelen félév végéig használhatom kizárólag
+     tanulásra és kutatási feladatokra; utána a számítógépről törlöm.
+
+<li> A szoftvert, a jelszót, a kulcsot, valamint a licenc-kódokat harmadik
+     félnek nem adom tovább.
+
+<li> Egyéb kérdésekben a <a target="sla"
+     href="https://sicstus.sics.se/license4-academic.html#EXHD">Software
+     Licence Agreement</a>-ben leírtakat tekintem irányadónak.
+</ol>
+
+Ezen feltételek elfogadásával kérem, hogy a letöltéshez és telepítéshez
+szükséges kódokat a licenc egyéb adataival együtt a megadott e-mail
+címemre postázzák.<p>
+<center>
+<& form, action => "action_send_licence" &>
+<input type=submit name="accept" value="Elfogadom">
+</form>
+</center>
+

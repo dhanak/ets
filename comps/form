@@ -1,0 +1,17 @@
+<%doc> This is a -*- mason -*- template.
+Insert a form start tag and all necessary hidden fields.
+</%doc>
+
+<%args>
+$action
+%hidden  => ()
+$method  => 'POST'
+$enctype => 'application/x-www-form-urlencoded'
+$name    => undef
+</%args>
+
+<FORM ACTION="<% $action %>" METHOD=<% $method %> ENCTYPE="<% $enctype %>"
+      <% $name ? 'NAME="' . $name . '"' : ""  %>>
+% foreach (keys %hidden) {
+<INPUT TYPE=hidden NAME=<% $_ %> VALUE="<% $hidden{$_} %>">
+% }

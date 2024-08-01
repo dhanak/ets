@@ -1,0 +1,39 @@
+<%doc> This is a -*- mason -*- template.
+Add query according to the filled form.
+</%doc>
+
+<%args>
+$type
+$text
+$year
+$month
+$day
+</%args>
+
+<%once>
+my ($sth, $date);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("INSERT INTO queries (type, text, deadline)
+			      VALUES (?, ?, ?)");
+}
+
+$date = sprintf "%04d-%02d-%02d", $year, $month, $day;
+
+if (!$m->comp('/sub/check_perm', item => "query_mgmt")) {
+    $data->{MSG} = "Nem vagy jogosult a kérdőív módosítására!";
+    redirect("news");
+} else {
+    if ($sth->execute($type, $text, $date)) {
+	$data->{MSG} = "Kérdés felvéve.";
+	$m->comp('/sub/log', "add query", type      => $type,
+		                          text      => $text,
+		                          deadline  => $date);
+    } else { 
+	$data->{MSG} = "A kérdést nem sikerült felvenni.";
+    }
+    redirect("query_mgmt");
+}
+</%init>

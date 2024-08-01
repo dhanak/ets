@@ -1,0 +1,44 @@
+<%doc> This is a -*- mason -*- template.
+Produce a form to modify the exercise whose id is passed as parameter.
+</%doc>
+
+<%args>
+$exid
+</%args>
+
+<& html_page &>
+
+<%once>;
+my ($get_exercise, $cat, $scheme, $level, $exdata);
+</%once>
+
+<%init>;
+if (!defined $get_exercise) {
+    $get_exercise =
+	$dbh->prepare("SELECT category, scheme, level, data
+                       FROM exercises WHERE id=?");
+}
+
+if (!$m->comp('/sub/check_perm', item => "modify_exercise")) {
+    $data->{MSG} = "Nem vagy jogosult feladatok módosítására!";
+    $data->{SCREEN} = "news";
+} else {
+    $get_exercise->execute($exid);
+    ($cat, $scheme, $level, $exdata) = $get_exercise->fetchrow_array;
+    $get_exercise->finish;
+    {
+	no strict;
+	$exdata = eval $exdata;
+	use strict;
+    }
+
+    $data->{SCREEN} = "edit_exercise_form";
+    $data->{FORM} = "modify";
+    $data->{CATEGORY} = $cat;
+    $data->{SCHEME} = $scheme;
+    $data->{LEVEL} = $level;
+    $data->{EXDATA} = $exdata;
+    $data->{EXID} = $exid;
+    delete $data->{ERROR};
+}
+</%init>

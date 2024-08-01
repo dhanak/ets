@@ -1,0 +1,83 @@
+<%doc> This is a -*- mason -*- template.
+List members of a given group.
+</%doc>
+
+<%args>
+$groupID
+$modify => 0
+</%args>
+
+<table>
+  <tr>
+    <th>Neptun-kód
+    <th>Név
+    <th width="16">
+    <th width="16">
+    <th width="16">
+% if ($modify) {
+    <th width="16">
+% }
+% foreach (@times) {
+%   my ($month, $day) = $_->{startsAt} =~ /^[0-9]+-([0-9]+)-([0-9]+).*$/;
+    <th><% $month %>.<% $day %>.
+% }
+
+% foreach (@members) {
+<& TR, \$row &>
+  <td><% $_->{neptun} %>
+  <td><% $_->{name} %>
+  <td><& link, href=>"action_show_page", img => "results.png", text=> "Pontszámok",
+         params => { page => "user_results", neptun => $_->{neptun} } &>
+  <td><& link, href=>"action_show_page", img => "details.png", text=> "Részletek",
+         params => { page => "user_details", neptun => $_->{neptun} } &>
+  <td><& link, href=>"action_show_page", img => "up.png", text=> "HF beadás",
+         params => { page => "hw_submit", neptun => $_->{neptun} } &>
+% if ($modify) {
+  <td align="center">
+    <& js_confirm, img => "delete.png", text => "Töröl",
+      question => "Biztosan törölni akarod a <b>" . $_->{name} .
+      "</b> nevű hallgatót a <b>$groupID</b> csoportból?",
+      action   => "action_modify_group",
+      hidden   => { action => "remove", groupID => $groupID, neptun => $_->{neptun} } &>
+% } # end if
+
+<& presence_row, neptun => $_->{neptun}, times => \@times &>
+  
+% } # end foreach (@members)
+
+% if ($modify) {
+<& TR, \$row &>
+<& form, action => "action_modify_group",
+    hidden => { action=>"add", groupID=>$groupID, confirmed=>"1" } &>
+<td colspan="2"><input type="text" name="neptun" id="neptun" size="30" maxlength="6">
+<& autocomplete, inputID => "neptun", suffix => "2", throbberID => undef,
+  href => "autocomplete_people", params => {field=>"neptun"} &>
+<td colspan="3" align="center"><input type="submit" value="Felvesz">
+</form>
+% } # end if
+</table>
+
+<%once>;
+my ($get_members, @members, $row, $get_times, @times);
+</%once>
+
+<%init>;
+if (!defined $get_members) {
+    $get_members = # get students in given group
+	$dbh->prepare("SELECT gm.neptun, name FROM group_members gm, people p
+                       WHERE groupID=? AND gm.neptun=p.neptun ORDER BY name");
+    $get_times =
+	$dbh->prepare("SELECT groupTimeID as id, startsAt FROM group_times
+                       WHERE groupID=? ORDER BY startsAt");
+}
+
+$get_members->execute($groupID);
+@members = @{ $get_members->fetchall_arrayref({}) };
+$get_members->finish;
+
+$get_times->execute($groupID);
+@times = @{ $get_times->fetchall_arrayref({}) };
+$get_times->finish;
+
+$row = 0;
+</%init>

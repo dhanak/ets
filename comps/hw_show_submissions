@@ -1,0 +1,63 @@
+<%doc> This is a -*- mason -*- template.
+Show earlier submissions and latest test reports.
+</%doc>
+
+<%args>
+$neptun => $data->{NEPTUN}
+</%args>
+
+<TABLE WiDTH="100%">
+<TR>
+<TH width="40%">Feladat
+<TH width="50%">Beadott változatok
+<TH width="10%">Tesztnapló
+% foreach $class (@allclasses) {
+<& TR, \$row &>
+<TD><% $class->{name} %> <% exists $class->{file} ? "(<tt>$class->{file}</tt>)" : "" %>
+<TD>
+% my $canon   = $m->comp('/sub/canonical_name', neptun => $neptun );
+% my $basedir = "$ENV{ETS_ROOT}/guts/hwks/${$class}{semester}/${$class}{class}";
+% my $none    = 1;
+% for (sort { $a<=>$b } (map { /([0-9]*)$/ } <$basedir/mails/$canon.*>)) {
+%   $none = 0;
+<& link, text => $_, href => "action_download_submission", newwindow => 1,
+   params => { neptun   => $neptun,
+               semester => $class->{semester},
+	       class    => $class->{class},
+	       file     => $class->{file},
+	       version  => $_ }  &>
+% }
+% if ($none) {
+&ndash;
+% }
+<TD align="center">
+% $_ = "$basedir/reports/${$class}{suite}/$canon";
+% if (-r && -f) {
+<& link, img => "list.png", text => "Listáz", href => "action_download_submission",
+   newwindow => 1,
+   params => { neptun   => $neptun,
+               semester => $class->{semester},
+	       class    => $class->{class},
+	       suite    => $class->{suite} }  &>
+% } else {
+&ndash;
+% }
+% }
+</TABLE>
+
+<%once>;
+my ($sth, $conf, $class, @allclasses, $row);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("SELECT value FROM parameters WHERE id='submit.conf'");
+}
+	 
+$sth->execute;
+($conf) = $sth->fetchrow_array();
+$sth->finish;
+
+@allclasses = @{ $m->comp('/sub/parse_hw_classes', conf => $conf) };
+$row = 0;
+</%init>

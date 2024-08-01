@@ -1,0 +1,127 @@
+<%doc> This is a -*- mason -*- template.
+List users and offer form to add new user.
+</%doc>
+<%attr>
+window_js => 1
+</%attr>
+
+<%args>
+$first_char => undef
+</%args>
+
+<h3 class="topic">Felhasználók
+% if ($first_char ne "") {
+    - <small><% $first_char %></small>
+% }
+</h3>
+
+% if ($row_num>20) {
+   <TABLE align=center>
+   <TR>
+%  $db_first_char->execute;
+%  while (defined ($fc = $db_first_char->fetchrow_hashref)) {
+     <TH>
+     <& link, href=>"action_show_page", text=> $fc->{firstchar},
+	  params => { page => "user_mgmt", first_char => $fc->{firstchar} } &>
+%  }
+   <TH>
+   <& link, href=>"action_show_page", text=> "Összes",
+	params => { page => "user_mgmt", first_char => "" } &>
+   </TABLE>
+   <HR>
+% }
+
+<TABLE width="100%">
+% if (defined $first_char) {
+    <TR>
+    <TH width="10%">Neptun kód
+    <TH width="31%">Név
+    <TH width="35%">E-mail
+    <TH width="20%">Jogkör
+    <TH width="2%">
+    <TH width="2%">
+    <TH width="2%">
+%   $people->execute("$first_char%");
+%   while (defined ($p = $people->fetchrow_hashref)) {
+      <& TR, \$row &>
+      <TD><% $p->{neptun} %>
+      <TD><% $p->{name} %>
+      <TD><% $p->{email} %>
+      <TD>
+%     if ($p->{admin} eq "Y") {
+        Adminisztrátor
+%     } else {
+        Felhasználó
+%   }
+
+    <TD align=center>
+    <& link, href=>"action_show_page", img => "results.png", text=> "Pontszámok",
+	params => { page => "user_results", neptun => $p->{neptun} } &>
+    <TD align=center>
+    <& link, href=>"action_show_page", img => "details.png", text=> "Részletek",
+	params => { page => "user_details", neptun => $p->{neptun} } &>
+    <TD align=center>
+%   if ($m->comp('/sub/check_perm', item => "delete_user", neptun => $p->{neptun})) {
+       <& js_confirm, img => "delete.png", text => "Töröl",
+       question => "Biztosan törölni akarod <b>$p->{name}</b> adatait?",
+       action   => "action_delete_user",
+       hidden   => { neptun => $p->{neptun}, first_char => $first_char } &>
+%   }
+
+%   }
+% }
+
+<& TR, \$row &>
+<& form, action => "action_add_user", hidden => { first_char => $first_char } &>
+<TD><INPUT TYPE=text NAME=neptun SIZE=10 MAXLENGTH=6>
+<TD><INPUT TYPE=text NAME=name SIZE=25>
+<TD>
+<TD><SELECT NAME="admin">
+  <OPTION value="Y">Adminisztrátor</OPTION>
+  <OPTION value="N" selected>Felhasználó</OPTION>
+</SELECT>
+<TD colspan=3 align=center><INPUT TYPE=submit NAME=submit VALUE="Felvesz">
+</FORM>
+
+</TABLE>
+
+% if (defined $first_char) {
+%   if ($row_num>20) {
+      <HR>
+      <TABLE align=center>
+      <TR>
+%     $db_first_char->execute;
+%     while (defined ($fc = $db_first_char->fetchrow_hashref)) {
+        <TH>
+        <& link, href=>"action_show_page", text=> $fc->{firstchar},
+	     params => { page => "user_mgmt", first_char => $fc->{firstchar} } &>
+%     }
+      <TH>
+      <& link, href=>"action_show_page", text=> "Összes",
+	   params => { page => "user_mgmt" } &>
+      </TABLE>
+%   }
+% }
+
+<%once>
+my ($people, $p, $db_first_char, $fc, $row, $row_num);
+</%once>
+
+<%init>
+if (!defined $db_first_char) {
+    $db_first_char =
+	$dbh->prepare("SELECT DISTINCT SUBSTRING(UPPER(name),1,1) AS firstchar
+		       FROM people ORDER BY firstchar");
+    $people =
+	$dbh->prepare("SELECT neptun, name, email, admin FROM people
+		       WHERE UPPER(name) LIKE ? ORDER BY name");
+}
+
+if (($row_num = $dbh->selectrow_array("SELECT COUNT(*) FROM people"))<=20) { $first_char="" };
+$row = 0;
+</%init>
+
+<%cleanup>
+$people->finish;
+$db_first_char->finish;
+</%cleanup>

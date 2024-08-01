@@ -1,0 +1,41 @@
+<%doc> This is a -*- mason -*- template.
+Produce an autocomplete script element and corresponding div.
+</%doc>
+
+<%args>
+$inputID
+$href
+%params => ()
+$tokens => undef
+$suffix => ""
+$throbberID => "throbber" . $suffix
+$suggestionID => "suggestion" . $suffix
+</%args>
+
+% if ($throbberID) {
+<span id="<% $throbberID %>" style="display:none;">
+  <img src="pic/throbber.gif" alt="Letöltés..." />
+</span>
+% }
+<div id="<% $suggestionID %>" class="autocomplete"></div>
+<script type="text/javascript">
+  new Ajax.Autocompleter('<% $inputID %>', '<% $suggestionID %>',
+                         '<% $href %><% $args %>',
+                         { <% join ", ", ( $throbberID ? "indicator: '" . $throbberID . "'" : (),
+			                   $tokens ? "tokens : " . $tokens : () )
+                            %> });
+</script>
+
+<%once>;
+my ($i, $args);
+my $unescaped_chars = "A-Za-z0-9_-";
+</%once>
+
+<%init>;
+$args = "";
+for $i (keys %params) {
+    $args .= "&amp;" . uri_escape_utf8($i, "^$unescaped_chars") .
+	     "=" . uri_escape_utf8($params{$i}, "^$unescaped_chars");
+}
+$args =~ s/^&amp;/?/;
+</%init>

@@ -1,0 +1,38 @@
+<%doc> This is a -*- mason -*- template.
+</%doc>
+
+<%args>
+$field => undef
+</%args>
+
+<ul>
+% foreach (@people) {
+<li><% $_->{neptun} %><span class="informal"> &ndash; <% $_->{name} %></span></li>
+% }
+</ul>
+
+<%once>;
+use Encode qw(from_to);
+
+my @people;
+</%once>
+
+<%init>;
+return if !$m->comp('sub/is_admin');
+
+if (defined $field) {
+    my $neptun = $ARGS{$field};
+    from_to($neptun, 'utf8', 'latin1');
+    my $sth = $dbh->prepare("SELECT neptun, name FROM people
+                             WHERE neptun LIKE concat('%',?,'%') OR
+                                   name LIKE concat('%',?,'%')
+                             ORDER BY name LIMIT 10");
+    $sth->execute($neptun, $neptun);
+    @people = @{$sth->fetchall_arrayref({})};
+    $sth->finish;
+} else {
+    @people = ();
+}
+
+$r->content_type("text/html; charset=utf-8");
+</%init>

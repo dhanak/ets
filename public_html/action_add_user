@@ -1,0 +1,49 @@
+<%doc> This is a -*- mason -*- template.
+Add user according to the filled form.
+</%doc>
+
+<%args>
+$neptun
+$name
+$admin
+$first_char => undef		# passed through 'user_mgmt'
+</%args>
+
+<%once>
+my ($sth, $first_char);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth =
+	$dbh->prepare("INSERT INTO people (neptun, name, email, password, admin)
+			      VALUES (?, ?, \"\", \"\", ?)");
+}
+
+$neptun = uc ${neptun};
+$admin = ($admin eq "Y" ? "Y" : "N");
+if ($neptun !~ /^[A-Z0-9]{6}$/) {
+    $data->{MSG} = "Hibás Neptun kód.";
+} elsif (!defined $name || length $name < 1) {
+    $data->{MSG} = "Nem adtál meg nevet!";
+} elsif (!$m->comp('/sub/check_perm', item => "user_mgmt")) {
+    $data->{MSG} = "Nem vagy jogosult felhasználók felvételére!";
+    redirect("news");
+} else {
+    if ($sth->execute($neptun, $name, $admin)) {
+        if ($first_char ne "") {
+	  $name=~/(.?)(.*)/;
+	  $first_char=$1;
+	  $first_char=~tr/a-z/A-Z/;
+	}
+	$data->{MSG} = "Felhasználó felvéve.";
+	$m->comp('/sub/log', "add user", neptun=>$neptun,
+		 name=>$name,
+		 admin=>$admin);
+    } else { 
+	$data->{MSG} = "A felhasználót nem sikerült felvenni.";
+    }
+}
+
+redirect("user_mgmt", first_char => $first_char);
+</%init>

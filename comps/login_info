@@ -1,0 +1,13 @@
+<%doc> This is a -*- mason -*- template.
+Print information about the user.
+</%doc>
+
+% if (!defined $data->{NEPTUN}) {
+Vendég
+% } else {
+<% $data->{NAME} %>
+% if ($data->{GOD}) {
+(God)
+% }
+ - <& link, href => "action_logout", text => "Kilépés" &>
+% }

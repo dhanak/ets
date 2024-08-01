@@ -1,0 +1,82 @@
+<%doc> This is a -*- mason -*- template.
+Upload scores to the database after parsing from a file.
+</%doc>
+
+<%args>
+$type
+$lines => []
+</%args>
+
+<h3 class="topic">Pontszámok feltöltése</h3>
+
+<TABLE width="80%">
+<TR>
+<TH>Neptun kód
+<TH>Név
+<TH>Státusz
+</TR>
+% LINE: foreach $line (@$lines) {
+    <& TR, \$row &>
+    <TD><% $line->{neptun} %>
+<%perl>
+    $get_name->execute($line->{neptun});
+    my @people = @{ $get_name->fetchall_arrayref({}) };
+    if ($#people != 0) {
+</%perl>
+      <TD colspan=2 class="bad">Nem található az adatbázisban!
+%     next LINE;
+%   }
+    <TD><% $people[0]{name} %>
+    <TD>
+<%perl>
+    $i0 = ($line->{language} eq "PL") ? 1 : 4;
+    for (my $i = 0; $i < 3; $i++) {
+	my $id = $type . ($i+$i0);
+	# leading zero denotes octal number; with '0+' evaluated as decimal 
+	my $score = eval 0+$line->{scores}[$i] || 0;
+	my $notes = "corrector=" . $line->{corrector} .
+	    ", group=" . $line->{group};
+
+	if ($insert->execute($score, $notes, $id, $line->{neptun})) {
+	    $inserted++;
+	    $m->print(" +", $id);
+	} else {
+	    $update->execute($score, $notes, $id, $line->{neptun});
+	    $updated++;
+	    $m->print(" *", $id);
+	}
+    }
+}
+</%perl>
+</TABLE><BR>
+
+<TABLE>
+<TR><TH colspan=2>Összegzés
+<TR>
+<TD class="spec">Újonnan beillesztett pontszámok:
+<TD><% $inserted %> db.
+<TR>
+<TD class="spec">Módosított pontszámok:
+<TD><% $updated %> db.
+</TABLE>
+
+<%once>;
+my ($get_name, $insert, $update);
+my ($inserted, $updated, $row, $line, $i0, $i);
+</%once>
+
+<%init>;
+if (!defined $get_name) {
+    $get_name = # fetch name
+	$dbh->prepare("SELECT name FROM people WHERE neptun=?");
+    $insert = # insert new scores
+	$dbh->prepare("INSERT INTO scores (value, notes, id, neptun)
+                       VALUES (?,?,?,?)");
+    $update = # update existing scores
+	$dbh->prepare("UPDATE scores SET value=?, notes=?
+                       WHERE id=? AND neptun=?");
+}
+
+($inserted, $updated, $row) = (0, 0, 0);
+</%init>
+

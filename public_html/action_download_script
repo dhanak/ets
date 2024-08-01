@@ -1,0 +1,30 @@
+<%doc> This is a -*- mason -*- template.
+Download a script (list it on the screen).
+</%doc>
+<%args>
+$name
+$id
+</%args>
+<%once>
+my ($sth, $str);
+</%once>
+<%init>
+if (!defined $sth) {
+	$sth = $dbh->prepare("SELECT script FROM scripts WHERE id=?");
+}
+
+if (!$m->comp('/sub/check_perm', item => "script_mgmt")) {
+    $data->{MSG} = "Erre nem vagy jogosult!";
+    $data->{SCREEN} = 'news';
+    $m->comp('html_page');
+} else {
+    $sth->execute($id);
+    ($str) = $sth->fetchrow_array;
+    $sth->finish;
+    $r->content_type("text/plain");
+    $r->headers_out()->{"Content-Disposition"} = "inline; filename=\"$name\"";
+    $m->out($str);
+    $m->comp('/sub/log', "download script", id=>$id);
+}
+return;
+</%init>

@@ -1,0 +1,53 @@
+<%doc> This is a -*- mason -*- template.
+Check whether user is authorized to log in.
+</%doc>
+
+<%args>
+$neptun
+$pass
+</%args>
+
+<& html_page, neptun => uc $neptun, email => $user->{email} &>
+
+<%once>;
+my ($goodpass, $sth, $user, $okay, $rightsth);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("SELECT password, name, email, admin, god
+                                 FROM people WHERE neptun=?");
+}
+
+$sth->execute(uc $neptun);
+$user = $sth->fetchrow_hashref;
+$sth->finish;
+
+if (!defined $user) {
+    $okay = 0;
+    $data->{MSG} = "Ismeretlen Neptun kód.";
+    $m->comp('/sub/log', "login failed", neptun => $neptun,
+	     reason => "invalid username");
+    redirect($data->{SCREEN});
+} elsif ($user->{password} eq "") {
+# No email address specified yet => first login, ask for email
+    $data->{SCREEN} = "first_login_form";
+} else {
+    $goodpass = $user->{password};
+    if ($goodpass ne "" and $goodpass ne $pass ) {
+	$okay = 0;
+	$data->{MSG} = "Sikertelen belépés.";
+	$m->comp('/sub/log', "login failed", neptun => $neptun,
+		 reason => "invalid password");
+	$data->{SCREEN} = "ask_reminder";
+    } else {
+	$m->comp('/sub/log', "login", neptun => $neptun);
+	$okay = 1;
+	$data->{NEPTUN} = uc $neptun;
+	$data->{NAME} = $user->{name};
+	$data->{ADMIN} = (uc $user->{admin} eq "Y");
+	$data->{GOD} = (uc $user->{god} eq "Y");
+	redirect($data->{SCREEN} eq "ask_reminder" ? "news" : $data->{SCREEN});
+    }
+}
+</%init>

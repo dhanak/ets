@@ -1,0 +1,66 @@
+<%doc> This is a -*- mason -*- template.
+Provide three selectors to specify a date.  Default date to be selected can
+be specified.  If unspecified, current day is selected.
+</%doc>
+
+<%args>
+$year  => undef
+$month => undef
+$day   => undef
+</%args>
+
+<SELECT NAME=year>
+% foreach ($toyear-1..$toyear+5) {
+<OPTION <% $_ eq $year ? "selected" : "" %>><% $_ %></OPTION>
+% }
+</SELECT>
+<SELECT NAME=month>
+% foreach (1..12) {
+<OPTION value="<% $_ %>" <% $_ == $month ? "selected" : "" %>>
+<% $months[$_] %></OPTION>
+% }
+</SELECT>
+<SELECT NAME=day>
+% foreach (1..31) {
+<OPTION <% $_ == $day ? "selected" : "" %>><% $_ %></OPTION>
+% }
+</SELECT>
+
+<%method month><% $months[$_[0]] %></%method>
+
+<%method display>
+<% $yr %>. <% $months[$mo] %> <% $dy+0 %>.
+<%init>;
+my ($yr, $mo, $dy) = split /-/, $_[0];
+</%init>
+</%method>
+
+<%method query>
+<% $wm %><% $2 %> <% $dy+0 %>-ig
+<%init>;
+my ($yr, $mo, $dy) = split /-/, $_[0];
+my ($written_months,$wm);
+$written_months=$months[$mo];
+$written_months=~/(.?)(.*)/;
+$wm=$1;
+$wm=~tr/a-z,á/A-Z,Á/;
+</%init>
+</%method>
+
+<%once>;
+use utf8;
+my @months = ("", "január", "február", "március", "április", "május", "június",
+	      "július", "augusztus", "szeptember", "október", "november",
+	      "december");
+
+my ($today, $tomonth, $toyear);
+</%once>
+
+<%init>;
+($today, $tomonth, $toyear) = (localtime)[3..5];
+$toyear += 1900; $tomonth++;
+
+$year  = $toyear  if !defined $year;
+$month = $tomonth if !defined $month;
+$day   = $today   if !defined $day;
+</%init>

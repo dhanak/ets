@@ -1,0 +1,38 @@
+<%doc> This is a -*- mason -*- template.
+Delete the category group identified by the $catgroup parameter.
+</%doc>
+
+<%args>
+$rank
+$confirmed => undef
+</%args>
+
+<%once>;
+my ($sth_delete, $sth_modify);
+</%once>
+
+<%init>;
+if (!defined $sth_delete) {
+    $sth_delete = # delete category group
+	$dbh->prepare("DELETE FROM catgroups WHERE rank=?");
+    $sth_modify =
+	$dbh->prepare("UPDATE catgroups SET rank=rank-1 WHERE rank>?");
+}
+
+if (!$m->comp('/sub/check_perm', item => "catgroup_mgmt")) {
+    $data->{MSG} = "Nem vagy jogosult témacsoportok törlésére!";
+    redirect("news");
+} else {
+  if (defined $confirmed) {
+    if ($sth_delete->execute($rank) == 1) {
+        $sth_modify->execute($rank);
+	$data->{MSG} = "Témacsoport törölve.";
+    } else {
+	$data->{MSG} = "A témacsoportot nem sikerült törölni.";
+    }
+  } else {
+    $data->{MSG} = "A témacsoport törlése visszavonva.";
+  }
+  redirect("catgroup_mgmt");
+}
+</%init>

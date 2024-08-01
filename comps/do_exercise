@@ -1,0 +1,134 @@
+<%doc> This is a -*- mason -*- template.
+Produce an exercise form for $data->{EXID}, optional error messages are
+taken from $data->{SOLVERR}.
+</%doc>
+
+<%args>
+$next_level => undef		# from 'action_do_exercise_check'
+</%args>
+
+<h3 class="topic">Gyakorlás</h3>
+
+% if(!defined $scheme) {
+Programhiba: hibás argumentumok.
+% } else {
+
+% # Render the exercise form
+
+<P><% $ex_tag %>
+% if (defined $helpref) {
+- <A target="help" href="<% $helpref %>">
+tippek a megoldáshoz</A>
+% }
+% if (defined $data->{SOLVERR}) {
+<DIV class="error">
+<& ($scheme . ":errstr"), exdata => $data->{SOLVERR}{DATA},
+                          error => $data->{SOLVERR}{ERROR} &>
+% $formfill = $data->{SOLVERR}{ANSWER};
+% delete $data->{SOLVERR};
+</DIV>
+% }
+<P>
+<& $scheme, exdata => $exdata &>
+<& form, action => "action_do_exercise_check" &>
+<& ($scheme . ":answers"), exdata => $exdata, %$formfill &>
+
+% # Submit buttons (if required by the scheme)
+
+<P align=center>
+% if (! $schemecomp->attr_exists("submit")) {
+<INPUT type=submit name=check value="Ellenőrzés">
+% }
+% if (defined $levels) {
+<INPUT type=submit name=another value="<%(substr($data->{CATEGORY},0,2) eq "PG")?"Megoldottnak jelölöm":"Másik példa"%>">
+% }
+
+% # Insert level selector
+
+% if (defined $levels && scalar @$levels >= 2) {
+<P align=center>A következő példa legyen
+<SELECT name="level">
+<OPTION value="%">tetszőleges</OPTION>
+% foreach (@$levels) {
+<OPTION value="<% $_->[0] %>" <% $_->[0] eq $next_level ? "selected" : "" %>>
+<% $_->[1] %></OPTION>
+% }
+</SELECT>
+% }
+
+</FORM>
+
+% } # endif (!defined $scheme)
+
+<%once>;
+my ($get_exercise, $get_levels, $get_ids, $get_tag, $get_count,
+    $category, $scheme, $schemecomp, $level, $exdata, $ex_tag, $formfill,
+    $levels, @ids, %ids, $helpref, $count);
+</%once>
+
+<%init>;
+if (!defined $get_exercise) {
+    $get_exercise = # query exercise from database
+	$dbh->prepare("SELECT category, scheme, level, data
+                       FROM exercises WHERE id=?");
+    $get_levels = # get possible levels in current category (or catgroup)
+	$dbh->prepare("SELECT DISTINCT levels.id, levels.name
+                       FROM exercises, levels
+                       WHERE exercises.level=levels.id
+                         AND exercises.category REGEXP ?
+                       ORDER BY levels.id");
+    $get_ids = # get all exercise IDs in current category
+	$dbh->prepare("SELECT id FROM exercises WHERE category=? ORDER BY id");
+    $get_tag = # fetch information to create exercise tag
+	$dbh->prepare("SELECT categories.name, levels.name, exercises.id
+                       FROM exercises, categories, levels
+                       WHERE exercises.category=categories.id AND
+                             exercises.level=levels.id AND
+                             exercises.id=?");
+    $get_count = # fetch exercise solve counter
+	$dbh->prepare("SELECT count FROM complete
+                       WHERE neptunSID=? AND exercise=?");
+                        
+}
+
+$get_exercise->execute($data->{EXID});
+($category, $scheme, $level, $exdata) = $get_exercise->fetchrow_array;
+$get_exercise->finish;
+{
+    no strict;
+    $exdata = eval $exdata;
+    use strict;
+}
+$schemecomp = $m->fetch_comp($scheme);
+
+undef $levels;
+if (defined $data->{CATEGORY}) {
+    $get_levels->execute($data->{CATEGORY});
+    $levels = $get_levels->fetchall_arrayref;
+    $get_levels->finish;
+}
+
+$get_ids->execute($category);
+@ids = map { $_->[0] } @{$get_ids->fetchall_arrayref};
+@ids{@ids} = 1..@ids; # reverse mapping (id => index)
+$get_ids->finish;
+
+undef $helpref;
+if ($schemecomp->method_exists("helpref")) {
+    $helpref = $schemecomp->call_method("helpref", category => $category);
+}
+
+$get_tag->execute($data->{EXID});
+$ex_tag = sprintf "<B>%s</B> - $ids{$data->{EXID}}., %s feladat (#%d)",
+    $get_tag->fetchrow_array;
+$get_tag->finish;
+$formfill = undef;
+
+$get_count->execute($data->{NEPTUN} || $sid, $data->{EXID});
+($count) = $get_count->fetchrow_array;
+$get_count->finish;
+if ($count > 0) {
+    $ex_tag .= ' <span class="good">Ezt már '. $count .
+	' alkalommal megoldottad'.(substr($data->{CATEGORY},0,2) eq "PG"?" vagy megoldottnak jelölted":"") .'!</span>';
+}
+</%init>

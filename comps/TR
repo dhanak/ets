@@ -1,0 +1,14 @@
+<%doc> This is a -*- mason -*- template.
+Start a new table row with a color depending on the row number.
+The single unnamed argument is a reference to a row number.
+</%doc>
+
+<TR class="article<% $$row++ % 2 + 1 %>" <% join " ", @_ %>>
+
+<%once>;
+my $row;
+</%once>
+
+<%init>;
+$row = shift;
+</%init>

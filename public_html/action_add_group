@@ -1,0 +1,33 @@
+<%doc> This is a -*- mason -*- template.
+Add group according to filled from.
+</%doc>
+
+<%args>
+$groupID
+$head
+</%args>
+
+<%once>
+my ($sth, $first_char);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth =
+	$dbh->prepare("INSERT INTO groups (groupID, head) VALUES (?, ?)");
+}
+
+if (!$m->comp('/sub/check_perm', item => "group_mgmt")) {
+    $data->{MSG} = "Nem vagy jogosult csoportok felvételére!";
+    redirect("news");
+} else {
+    if ($sth->execute($groupID, $head)) {
+	$data->{MSG} = "Csoport felvéve.";
+	$m->comp('/sub/log', "add group", groupID=>$groupID, head=>$head);
+    } else { 
+	$data->{MSG} = "A csoportot nem sikerült felvenni.";
+    }
+}
+
+redirect("group_mgmt");
+</%init>

@@ -1,0 +1,56 @@
+<%doc> This is a -*- mason -*- template.
+Produce news listing.
+</%doc>
+<%attr>
+window_js => 1
+</%attr>
+
+<h3 class="topic">Hírek</h3>
+
+<TABLE width="100%">
+% while (defined ($news = $sth->fetchrow_hashref)) {
+   <& TR, \$row &>
+   <TD><% $news->{text} %>
+   <div class="signature">
+   -- <% $news->{poster} %>, <% $news->{ptime} %>
+   </div>
+%  if ($m->comp('/sub/check_perm', item => 'modify_news') || $m->comp('/sub/check_perm', item => 'delete_news')) {
+     <TD width=5%>
+     <TABLE align=center>
+%    if ($m->comp('/sub/check_perm', item => 'modify_news')) {
+       <TR>
+       <TD>
+       <& link, href => "action_show_page", img => "edit.png", text => "Módosít", params => { page => "edit_news_form", article => $news->{text}, id => $news->{id} } &>
+%    }
+%    if ($m->comp('/sub/check_perm', item => 'delete_news')) {
+       <TR height=3>
+       <TR><TD>
+	 <& js_confirm, text => "Töröl", img => "delete.png",
+	     question => "Biztosan törölni akarod a következő hírt?<P>$news->{text}",
+	     action => "action_delete_news", hidden => { id => $news->{id} } &>
+%    }
+     </TABLE>
+%  }
+% }
+</TABLE>
+
+<%once>
+my ($news, $sth, $row);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth =
+	$dbh->prepare('SELECT people.name AS poster, news.ptime AS ptime,
+		              news.text AS text, news.id AS id FROM people, news
+			      WHERE people.neptun=news.poster
+			      ORDER BY ptime DESC LIMIT 16');
+}
+
+$sth->execute;
+$row = 0;
+</%init>
+
+<%cleanup>;
+$sth->finish;
+</%cleanup>

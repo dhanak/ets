@@ -1,0 +1,119 @@
+<%doc> This is a -*- mason -*- template.
+Search users and offer form to send them e-mail
+</%doc>
+
+<%args>
+$SQL_command => undef
+$abandon => undef
+$search => undef
+$letter => undef
+$help => undef
+$subject_form => undef
+$letter_form => undef
+$email_addr => undef
+$help_letter => undef
+</%args>
+
+<h3 class="topic">Keresés</h3>
+
+% if ((defined $search) && (exists $sth->{NAME})) {
+    <TABLE width=100%; align=center>
+    <TR>
+%#-----------------COLUMNS--------------------
+%   foreach (@{ $sth->{NAME} }) {
+%     $_=~/(.?)(.*)/;
+%     $a=$1;
+%     $a=~tr/a-z/A-Z/;
+      <TH><% $a %><% $2 %>
+%   }
+%#-----------------ROWS-----------------------
+%   while (defined ($i = $sth->fetchrow_hashref)) {
+      <& TR, \$row &>
+%     for $j (0..($sth->{NUM_OF_FIELDS}-1)) {
+        <TD><% $i->{$sth->{NAME}[$j]} %>
+%     }
+%   }
+    </TABLE>
+    <HR>
+% }
+<TABLE width=100%>
+<TR>
+<TD>
+%#------------------SQL_PROMPT-----------------
+% if (defined $search && exists $sth->{NAME} || defined $letter) {
+    <& form, action => "action_show_page",
+             hidden => { page => "search_form",
+                         SQL_command => $SQL_command,
+                         search => $search } &>
+    Az SQL parancs:
+    <BLOCKQUOTE>
+    SELECT <% $SQL_command %>
+    </BLOCKQUOTE>
+    <P ALIGN=center>
+    <INPUT TYPE=submit NAME=abandon VALUE="Új keresés">
+%   if (!defined($letter) && !defined($letter_form)) {
+      <INPUT TYPE=submit NAME=letter VALUE="Levél írása a megtaláltaknak">
+%   }
+    </FORM>
+%#----------------LETTER_FORM------------------
+%   if (defined($letter) || defined($letter_form)) {
+      <HR>
+      <& write_letter_form, SQL_command => $SQL_command, letter_form => $letter_form,
+                            help_letter => $help_letter, search => $search,
+                            letter => $letter, subject_form => $subject_form,
+                            email_addr => $email_addr &>
+%   }
+
+% } elsif (!defined $search) {
+Ide írd be az SQL parancsot:
+    <& form, action => "action_show_page", hidden => { page => "search_form" } &>
+    <P ALIGN=center>
+    SELECT &nbsp;
+    <TEXTAREA style="vertical-align: top" NAME=SQL_command ROWS=4
+	      COLS=50><% $SQL_command %></TEXTAREA>
+    <P ALIGN=center>
+    <INPUT TYPE=submit NAME=search VALUE="Keresés">
+    <INPUT TYPE=submit NAME=letter VALUE="Levél írása az eredménylista nélkül">
+%     if (!defined($help)) {
+        <INPUT TYPE=submit NAME=help VALUE="Segítség">
+%   }
+% }
+</FORM>
+%#------------------HELP---------------------
+% if (defined($help)) {
+     <P>
+     <TR>
+     <TD>
+     <TABLE>
+     <TR valign=top>
+%    $tables=$dbh->prepare("show tables");
+%    $tables->execute;
+%    while (defined($i=$tables->fetchrow_hashref)) {
+       <TD>
+       <TABLE>
+       <TR><TH><% $i->{$tables->{NAME}[0]} %>
+%      $columns=$dbh->prepare("describe $i->{$tables->{NAME}[0]}");
+%      $columns->execute;
+%      while (defined($j=$columns->fetchrow_hashref)) {
+         <TR><TD><% $j->{Field} %>
+%      }
+       </TABLE>
+%    }
+
+     </TABLE>
+% }
+</TABLE>
+<%once>
+my ($sth, $row, $i, $j, $tables, $columns);
+</%once>
+
+<%init>
+if (defined($abandon)) {$search=undef;}
+if (defined $SQL_command) {
+   $sth = $dbh->prepare("SELECT $SQL_command");
+   $sth->execute;
+   $SQL_command =~ s/"/&quot;/g;
+#   if ($sth->{NUM_OF_FIELDS}==0) {$data->{MSG} = "Hibás az SQL parancs";}
+   $row=0;
+}
+</%init>

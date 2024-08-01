@@ -1,0 +1,55 @@
+<%doc> This is a -*- mason -*- template.
+Modify query details
+</%doc>
+
+<%args>
+$query
+$type
+$text
+$year
+$month
+$day
+$delete => undef		# defined if delete instead of modify
+</%args>
+
+<%once>
+my ($sth, $deadline, %args);
+</%once>
+
+<%init>
+if (!defined $sth) {
+    $sth = $dbh->prepare("UPDATE queries SET type=?, text=?, deadline=?
+                          WHERE id=?");
+}
+
+
+if (!$m->comp('/sub/check_perm', item => "query_mgmt")) {
+    $data->{MSG} = "Nem vagy jogosult a kérdőív módosítására!";
+    redirect("news");
+} else {
+
+    if (defined $delete) {	# delete query
+
+	redirect("action_confirm",
+		 question => "Biztosan törölni akarod a '$text' kérdést?",
+		 options  => "wipe,a válaszokkal együtt",
+		 checked  => "wipe,1",
+		 action   => "action_delete_query",
+		 hidden   => "query,$query,return,query_details");
+
+    } else {			# modify query
+		 
+	%args = (query => $query);
+	$deadline = sprintf "%04d-%02d-%02d", $year, $month, $day;
+	if (!$sth->execute($type, $text, $deadline, $query)) {
+	    $data->{MSG} = "A kérdést nem sikerült módosítani.";
+	} else {
+	    $data->{MSG} = "Kérdés módosítva.";
+	    $m->comp('/sub/log', "edit query", query => $query);
+	}
+
+	redirect("query_details", query => $query);
+    }
+
+}
+</%init>

@@ -1,0 +1,9 @@
+<%doc> This is a -*- mason -*- template.
+Log out a user.
+</%doc>
+
+<%init>
+$m->comp('/sub/log', "logout");
+$data = {};
+redirect("news");
+</%init>

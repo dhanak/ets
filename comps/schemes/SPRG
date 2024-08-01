@@ -1,0 +1,169 @@
+<%doc> This is a -*- mason -*- template.
+Handler of the SML Programming (SPRG) scheme.
+</%doc>
+<%method longname>SML programozás</%method>
+
+<%args> $exdata </%args>
+
+<%once>;
+my $example;
+</%once>
+
+Írj az alábbi fejkommentet kielégítő SML-függvényt!  Segítségül példát is
+mutatunk az alkalmazására.
+
+<PRE>
+% $Text::Wrap::columns = 60;
+<% wrap("(* ", "     ", $exdata->{COMMENT}) %>
+   <% $exdata->{SIGNATURE} %>
+*)</PRE>
+
+<TABLE><TR><TH valign=top>Példa:<TD>
+% foreach $example (split "\n", $exdata->{EXAMPLE}) {
+<CODE><% $example %></CODE><BR>
+% }
+</TABLE>
+
+<%method answers>
+<%args>
+$exdata
+$function => ""
+</%args>
+<CENTER>
+<TEXTAREA NAME=function ROWS=10 COLS=50><% $function %></TEXTAREA>
+</CENTER>
+</%method>
+
+<%method check>
+<%args>
+$exdata
+$function
+</%args>
+<%init>
+my ($input, $output) = ("/tmp/$sid.sml");
+my $mosml_timeout = $ENV{ETS_ROOT} . "/bin/timeout_sml.pl";
+
+# Write program
+open SML, ">$input";
+print SML <<EOF;
+structure prog : sig val $exdata->{SIGNATURE} end =
+struct
+$function
+end
+EOF
+close SML;
+
+# Syntactical test
+open Reader, "$mosml_timeout $input |";
+$output = join "", <Reader>;
+close Reader;
+if ($output eq "TIMEOUT") {
+    unlink $input;
+    return ["TIMEOUT"];
+} elsif ($output =~ /! Missing declaration/) {
+    unlink $input;
+    return ["MISSING"];
+} elsif ($output =~ /! Signature mismatch/) {
+    unlink $input;
+    return ["MISMATCH"];
+} elsif ($output !~ /> structure prog/) {
+    unlink $input;
+    return ["SYNTAX", $output];
+}
+
+# Add testvector to the program
+open SML, ">>$input";
+print SML <<EOF;
+open prog;
+val _ = print ("\\n%%% " ^
+	       ((if $exdata->{TEST} then "OK" else "BAD")
+                handle ex => ("EXCEPTION " ^ exnName ex)) ^
+	       " %%%\\n");
+EOF
+close SML;
+
+# Test with the testvector
+open Reader, "$mosml_timeout $input |";
+$output = join "", <Reader>;
+close Reader;
+unlink $input;
+if ($output eq "TIMEOUT") {
+    return ["TIMEOUT"];
+} elsif ($output =~ /^%%% EXCEPTION (.*) %%%$/m) {
+    return ["EXCEPTION", $1, $output];
+} elsif ($output =~ /^%%% BAD %%%$/m) {
+    return ["BAD"];
+}
+return undef;
+</%init>
+</%method>
+
+<%method errstr>
+<%args>
+$exdata
+$error
+</%args>
+% if ($error->[0] eq "TIMEOUT") {
+Időtúllépés (végtelen ciklus?)
+% } elsif ($error->[0] eq "SYNTAX") {
+Szintaktikai hiba:<BR>
+<PRE><% $error->[1] %></PRE>
+% } elsif ($error->[0] eq "MISSING") {
+Nem definiáltad a függvényt, vagy nem a megfelelő néven!
+% } elsif ($error->[0] eq "MISMATCH") {
+A definiált függvény típusa nem megfelelő!
+% } elsif ($error->[0] eq "EXCEPTION") {
+%   if ($error->[1] eq "Match") {
+Kezeletlen eset!
+% $error->[2] =~ s/^[^!].*\n//gm;
+<PRE><% $error->[2] %></PRE>
+%   } else {
+Kezeletlen kivétel: <CODE><% $error->[1] %></CODE>
+%   }
+% } elsif ($error->[0] eq "BAD") {
+A függvény hibás eredményt ad.
+% }
+</%method>
+
+<%method describe>
+<%args>
+$exdata
+</%args>
+<% $exdata->{DESC} %>
+</%method>
+
+<%method params>
+<%args>
+$exdata
+</%args>
+
+<TABLE>
+<TR><TD>Rövid leírás:
+    <TD><INPUT TYPE=text NAME=desc SIZE=60 VALUE="<% $exdata->{DESC} %>">
+<TR><TD>Szignatúra:
+    <TD><INPUT TYPE=text NAME=signature SIZE=60 VALUE="<% $exdata->{SIGNATURE} %>">
+<TR><TD>Példák (soronként egy):
+    <TD><TEXTAREA NAME=example ROWS=3 COLS=60><% $exdata->{EXAMPLE} %></TEXTAREA>
+<TR><TD>Fejkomment:
+    <TD><TEXTAREA NAME=comment ROWS=3 COLS=60><% $exdata->{COMMENT} %></TEXTAREA>
+<TR><TD>Tesztkifejezés:
+    <TD><TEXTAREA NAME=test ROWS=5 COLS=60><% $exdata->{TEST} %></TEXTAREA>
+</TABLE>
+</%method>
+
+<%method calcdata>
+<%args>
+$desc
+$comment
+$signature
+$example
+$test
+</%args>
+<%init>
+return { DESC      => $desc,
+	 COMMENT   => $comment,
+	 SIGNATURE => $signature,
+	 EXAMPLE   => $example,
+	 TEST      => $test };
+</%init>
+</%method>

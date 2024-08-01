@@ -1,0 +1,34 @@
+<%doc> This is a -*- mason -*- template.
+Produce a link (href) with SID as a parameter.  Mandatory arguments are
+'text' and 'href', optional is 'params', a hash of parameters.
+</%doc>
+
+<%args>
+$href
+$text
+$img => undef
+$newwindow => undef
+%params => ()
+</%args>
+
+<A <% $newwindow && "TARGET=_blank" || "" %> HREF="<% $href %><% $args %>"><!--
+% if (defined $img) {
+--><IMG SRC="pic/<% $img %>" BORDER=0 ALT="<% $text %>" TITLE="<% $text %>"><!--
+% } else {
+--><% $text %><!--
+% }
+--></A>
+
+<%once>;
+my ($i, $args);
+my $unescaped_chars = "A-Za-z0-9_-";
+</%once>
+
+<%init>;
+$args = "";
+for $i (keys %params) {
+    $args .= "&amp;" . uri_escape_utf8($i, "^$unescaped_chars") .
+	     "=" . uri_escape_utf8($params{$i}, "^$unescaped_chars");
+}
+$args =~ s/^&amp;/?/;
+</%init>

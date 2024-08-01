@@ -1,0 +1,44 @@
+<%doc> This is a -*- mason -*- template.
+Add the specified exercise to the database and return to the form.
+</%doc>
+
+<%args>
+$exid
+$scheme
+$origcat
+$category
+$level
+</%args>
+
+<%once>
+my ($modify_ex, $retval);
+</%once>
+
+<%init>;
+if (!defined $modify_ex) {
+    $modify_ex = $dbh->prepare("UPDATE exercises
+                                SET category=?, scheme=?, level=?, data=? WHERE id=?");
+}
+
+if (!$m->comp('/sub/check_perm', item => "modify_exercise")) {
+   $data->{MSG} = "Nem vagy jogosult feladatok módosítására!";
+} else {
+    $data->{SCHEME} = $scheme;
+    $retval = $m->comp($scheme . ":calcdata", %ARGS);
+    if (defined $retval->{ERROR}) {
+        $data->{MSG} = '<SPAN class="bad">A feladatot nem sikerült módosítani.</SPAN>';
+        $data->{ERROR} = $retval->{ERROR};
+        delete $retval->{ERROR};
+        $data->{EXDATA} = $retval;
+        redirect("edit_exercise_form", exid => $exid);
+    } else {
+        if ($modify_ex->execute($category, $scheme, $level, Dumper($retval), $exid) != 1) {
+	    $data->{MSG} = '<SPAN class="bad">A feladatot nem sikerült módosítani.</SPAN>';
+        } else {
+	    $data->{MSG} = '<SPAN class="good">Feladat módosítva.</SPAN>';
+        }
+    }
+}
+
+redirect("list_category", category => $origcat);
+</%init>

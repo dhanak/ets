@@ -1,0 +1,121 @@
+<%doc> This is a -*- mason -*- template.
+Generate context sensitive main menu located on the left side of the screen.
+</%doc>
+<& link, href => "action_show_page", text => "Hírek",
+   params => { page => "news" } &><BR>
+
+% if ($m->comp('/sub/check_perm', item => "edit_news_form")) {
+<& link, href => "action_show_page", text => "Hír felvétele",
+   params => { page => "edit_news_form" } &><BR>
+% }
+
+%# <& link, href => "action_show_page", text => "Programok",
+%#    params => { page => "links", section => "DOWN" } &><BR>
+%# <& link, href => "action_show_page", text => "Leírások",
+%#    params => { page => "links", section => "DOCS" } &><BR>
+
+<& link, href => "action_show_page", text => "Gyakorlás",
+                 params => { page => "do_exercise_select" } &><BR>
+
+% if ($m->comp('/sub/check_perm', item => "category_mgmt")) {
+<& link, href => "action_show_page", text => "Témakörök",
+   params => { page => "category_mgmt" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "catgroup_mgmt")) {
+<& link, href => "action_show_page", text => "Témacsoportok",
+   params => { page => "catgroup_mgmt" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "add_exercise")) {
+<& link, href => "action_add_exercise_form", text => "Feladat felvétele" &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "script_mgmt")) {
+<& link, href => "action_show_page", text => "Szkriptek",
+   params => { page => "script_mgmt" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "user_mgmt")) {
+<& link, href => "action_show_page", text => "Felhasználók",
+   params => { page => "user_mgmt" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "group_mgmt")) {
+<& link, href => "action_show_page", text => "Csoportok",
+   params => { page => "group_mgmt" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "search_form")) {
+<& link, href => "action_show_page", text => "SQL lekérdezés",
+   params => { page => "search_form" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "hw_submit")) {
+<& link, href => "action_show_page", text => "HF beadás",
+   params => { page => "hw_submit" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "hw_mgmt")) {
+<& link, href => "action_show_page", text => "HF osztályok",
+   params => { page => "hw_mgmt" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "query_mgmt")) {
+<& link, href => "action_show_page", text => "Körkérdések",
+   params => { page => "query_mgmt" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "meta_scores_mgmt")) {
+<& link, href => "action_show_page", text => "Pontszámtípusok",
+   params => {page => "meta_scores_mgmt" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "scores_list_form")) {
+<& link, href => "action_show_page", text => "Pontszámlista",
+   params => {page => "scores_list_form" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "upload_scores_form")) {
+<& link, href => "action_show_page", text => "Pontszámok felvitele",
+   params => {page => "upload_scores_form" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "user_results",
+%				  neptun => $data->{NEPTUN})) {
+<& link, href => "action_show_page", text => "Eredményeim",
+   params => { neptun => $data->{NEPTUN}, page => "user_results" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "user_details",
+%                                 neptun => $data->{NEPTUN})) {
+<& link, href => "action_show_page", text => "Adataim",
+   params => { neptun => $data->{NEPTUN}, page => "user_details" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "list_supervised_students",
+%                                 neptun => $data->{NEPTUN})) {
+<& link, href => "action_show_page", text => "Kiv. beadás",
+   params => { page => "list_supervised_students", neptun => $data->{NEPTUN} } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "licence")) {
+<& link, href => "action_show_page", text => "SICStus licenc",
+   params => { page => "licence" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "db_archive_form")) {
+<& link, href => "action_show_page", text => "Archiválás",
+   params => { page => "db_archive_form" } &><BR>
+% }
+
+% if ($m->comp('/sub/check_perm', item => "login")) {
+<P><& form, action => "action_login" &>
+Neptun kód:<BR>
+<INPUT TYPE=text name=neptun size=12 maxlength=6><BR>
+Jelszó:<BR>
+<INPUT TYPE=password name=pass size=12>
+<P><INPUT TYPE=submit name="Login" value="Belépés">
+</FORM>
+% }
+<BR>

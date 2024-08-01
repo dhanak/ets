@@ -1,0 +1,31 @@
+<%doc> This is a -*- mason -*- template.
+Add/modify ETS parameter in the database.
+</%doc>
+
+<%args>
+$id
+$value
+</%args>
+
+<%once>
+my ($sth);
+</%once>
+
+<%init>
+if (!defined $sth) {
+    $sth = $dbh->prepare("REPLACE INTO parameters (id, value) VALUES (?, ?)");
+}
+
+if (!$m->comp('/sub/check_perm', item => "set_parameter")) {
+    $data->{MSG} = "Nem vagy jogosult a rendszer paramétereinek beállítására!";
+    redirect("news");
+} else {
+    if ($sth->execute($id, $value)) {
+	$m->comp('/sub/log', "set parameter", id => $id, value => $value);
+	$data->{MSG} = "Paraméter beállítva.";
+    } else {
+	$data->{MSG} = "A paramétert nem sikerült beállítani.";
+    }
+    redirect($data->{SCREEN});
+}
+</%init>

@@ -1,0 +1,26 @@
+<%doc> This is a -*- mason -*- template.
+Send a reminder to the user
+</%doc>
+
+<%args>
+$email
+$password
+</%args>
+
+<%once>;
+my $mailer;
+</%once>
+
+<%init>;
+$mailer = new Mail::Mailer;
+$mailer->open({ To      => $email,
+		From    => 'dp@iit.bme.hu',
+		Subject => '=?utf-8?Q?ETS jelsz=F3?=',
+		'Content-Type' => 'text/plain; charset=utf-8',
+		'Content-Transfer-Encoding' => '8bit' });
+print $mailer <<EOF;
+A Deklaratív Programozás tárgy webes felületéhez használandó
+jelszavad: '$password'.  (Belépés után megváltoztathatod.)
+EOF
+$mailer->close;
+</%init>

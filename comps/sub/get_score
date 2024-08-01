@@ -1,0 +1,41 @@
+<%doc> This is a -*- mason -*- template.
+Calculate scores of a student, given by ids AND/OR fully resolved formulae
+(as returned by get_full_formula).  The return value is an array of scores,
+first come those corresponding to the specified formulae, then those
+corresponding to the specified ids.
+</%doc>
+
+<%args>
+@formulae => ()
+@ids => ()
+$neptun => $data->{NEPTUN}
+</%args>
+
+<%once>
+my ($get_scores, $id, $formula, $scores, @result);
+</%once>
+
+<%init>
+if (!defined $get_scores) {
+    $get_scores = $dbh->prepare("SELECT id, value FROM scores WHERE neptun=?");
+}
+
+foreach $id (@ids) {
+    push @formulae, $m->comp('/sub/get_full_formula', formula => "[[$id]]");
+}
+
+$get_scores->execute(uc $neptun);
+$scores = $get_scores->fetchall_hashref("id");
+$get_scores->finish;
+
+@result = ();
+foreach $formula (@formulae) {
+    $formula =~ s(\[\[(.*?)(\??)\]\])
+                 (exists $scores->{$1}{value} ? $scores->{$1}{value} : $2 eq '?' ? 0
+	          : "die 'hiányzó pontszám: $1'")ge;
+    $formula = eval $formula;
+    push @result, $formula;
+}
+
+return @result;
+</%init>

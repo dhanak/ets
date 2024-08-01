@@ -1,0 +1,59 @@
+<%doc> This is a -*- mason -*- template.
+Modify group times according to filled from.
+</%doc>
+
+<%args>
+$action
+$groupID
+$timeID => undef
+$year => undef
+$month => undef
+$day => undef
+$hour => undef
+$minute => undef
+$room => undef
+$type => undef
+$confirmed => undef
+</%args>
+
+<%once>
+my ($add, $remove, $sth);
+</%once>
+
+<%init>;
+if (!defined $add) {
+    $add =
+	$dbh->prepare("INSERT INTO group_times (groupID, startsAt, room, type) VALUES (?,?,?,?)");
+    $remove =
+	$dbh->prepare("DELETE FROM group_times WHERE groupTimeID=?");
+}
+
+if (defined $confirmed) {
+    if (!$m->comp('/sub/check_perm', item => "group_mgmt")) {
+	$data->{MSG} = "Nem vagy jogosult csoportok módosítására!";
+	redirect("news");
+    } else {
+	if ($action eq "add") {
+	    my $date = sprintf "%4d-%d-%d %d:%d", $year, $month, $day, $hour, $minute;
+	    if ($add->execute($groupID, $date, $room, $type)) {
+		$data->{MSG} = "Csoportidőpont felvéve.";
+		$m->comp('/sub/log', "add group time", groupID=>$groupID, date=>$date,
+		    room=>$room, type=>$type);
+	    } else {
+		$data->{MSG} = "Az időpontot nem sikerült felvenni.";
+	    }
+	} else {
+	    if ($remove->execute($timeID)) {
+		$data->{MSG} = "Csoportidőpont törölve.";
+		$m->comp('/sub/log', "delete group time", groupID=>$groupID);
+	    } else {
+		$data->{MSG} = "Az időpontot nem sikerült törölni.";
+	    }
+	}
+    }
+} else {
+    $data->{MSG} = "Csoportmódosítás visszavonva.";
+}
+
+redirect("list_group", groupID => $groupID);
+</%init>

@@ -1,0 +1,34 @@
+services:
+  httpd:
+    build:
+      context: .
+      target: ets
+    environment:
+      - DB_HOST=mariadb
+      - DB_USER=ets
+      - DB_PASSWORD=ets
+      - DB_DATABASE=ets
+      - CONTACT=${CONTACT:-dp@iit.bme.hu}
+      - SITENAME=${SITENAME:-DP Elektronikus Tanársegéd}
+    ports:
+      - ${HTTP_EXTERNAL_PORT:-8080}:80
+    restart: unless-stopped
+    #volumes:
+
+  mariadb:
+    build:
+      context: .
+      target: db
+    environment:
+      - MARIADB_USER=ets
+      - MARIADB_PASSWORD=ets
+      - MARIADB_DATABASE=ets
+      - MARIADB_ROOT_PASSWORD=neduddgi
+      - CONTACT=${CONTACT:-dp@iit.bme.hu}
+      - ETS_ADMIN_PASSWORD
+    restart: unless-stopped
+    volumes:
+      - db:/var/lib/mysql
+
+volumes:
+  db:

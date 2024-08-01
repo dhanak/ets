@@ -1,0 +1,66 @@
+<%doc> This is a -*- mason -*- template.
+Produce a confirm JavaScript dialog link.
+</%doc>
+
+<%args>
+$text
+$img => undef
+$question
+$action
+$cancelmsg => "Művelet visszavonva."
+$yes       => "Igen"
+$no        => "Nem"
+%hidden    => ()
+%options   => ()
+%checked   => ()
+</%args>
+
+<div id="<% $divID %>" style="display:none;">
+<% $question %><P>
+<CENTER>
+<& form, action => $action, hidden => \%hidden &>
+% foreach (keys %options) {
+<INPUT TYPE=checkbox NAME=<% $_ %> VALUE="Y"<% exists $checked{$_} ? " checked" : "" %>>
+<% $options{$_} %><BR/>
+% }
+</FORM>
+</CENTER>
+</div>
+<a href="<% $nojshref %>"
+   onclick="Dialog.confirm($('<% $divID %>').innerHTML, { className:'alphacube',
+	    width:400, okLabel:'<% $yes %>', cancelLabel:'<% $no %>',
+	    onOk: function(win) { win.getContent().getElementsByTagName('form').item(0).submit(); },
+            onCancel: function(win) { $('message').innerHTML = '<% $cancelmsg %>'; }
+            }); return false"><!--
+% if (defined $img) {
+--><img src="pic/<% $img %>" border="0" alt="<% $text %>" title="<% $text %>"><!--
+% } else {
+--><% $text %><!--
+% }
+--></a>
+
+<%once>;
+my ($nojshref, $divID);
+my $unescaped_chars = "A-Za-z0-9_-";
+
+sub esc($) {
+    return uri_escape_utf8($_[0], "^$unescaped_chars");
+}
+</%once>
+
+<%init>;
+$nojshref = "action_confirm?question=" . esc($question) . 
+    "&amp;action=" . esc($action) .
+    ($yes ne "Igen" and "&amp;yes=" . esc($yes) or "") .
+    ($no ne "Nem" and "&amp;no=" . esc($no) or "") .
+    (%hidden and "&amp;hidden=" . esc(join ",", %hidden) or "") .
+    (%options and "&amp;options=" . esc(join ",", %options) or "") .
+    (%checked and "&amp;checked=" . esc(join ",", %checked) or "");
+
+%hidden = (%hidden, 'confirmed' => 1);
+
+$divID = "";
+for (1 .. 16) {
+    $divID .= ('0' .. '9', 'A' .. 'F')[int rand 16];
+}
+</%init>

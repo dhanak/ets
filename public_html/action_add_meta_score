@@ -1,0 +1,43 @@
+<%doc> This is a -*- mason -*- template.
+Add a score type according to the filled form.
+</%doc>
+
+<%args>
+$idx
+$id
+$name
+$formula => undef
+</%args>
+
+<%once>;
+my $sth;
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth =
+	$dbh->prepare("INSERT INTO scores_meta (idx, id, name, formula)
+			      VALUES (?, ?, ?, ?)");
+}
+
+if ($formula eq "") {
+    $formula = undef;
+}
+
+if (!defined $id || length $id < 1) {
+    $data->{MSG} = "Nem adtál meg azonosítót!";
+} elsif (!defined $name || length $name < 1) {
+    $data->{MSG} = "Nem adtál meg nevet!";
+} elsif (!$m->comp('/sub/check_perm', item => "meta_scores_mgmt")) {
+    $data->{MSG} = "Nem vagy jogosult pontszámtípusok felvételére!";
+    redirect("news");
+} else {
+    if ($sth->execute($idx, $id, $name, $formula)) {
+	$data->{MSG} = "Pontszámtípus felvéve.";
+    } else { 
+	$data->{MSG} = "A pontszámtípust nem sikerült felvenni.";
+    }
+}
+
+redirect("meta_scores_mgmt");
+</%init>

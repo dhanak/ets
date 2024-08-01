@@ -1,0 +1,6 @@
+<& link, href => "action_set_lang",
+   text => "<img src=\"pic/gb.png\" alt=en width=36 height=24>",
+   params => { lang => "en" } &>
+<& link, href => "action_set_lang",
+   text => "<img src=\"pic/hu.png\" alt=hu width=36 height=24>",
+   params => { lang => "hu" } &>

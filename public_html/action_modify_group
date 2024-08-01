@@ -1,0 +1,43 @@
+<%doc> This is a -*- mason -*- template.
+Modify group according to filled from.
+</%doc>
+
+<%args>
+$action
+$groupID
+$neptun
+$confirmed => undef
+</%args>
+
+<%once>
+my ($add, $remove, $sth);
+</%once>
+
+<%init>;
+if (!defined $add) {
+    $add =
+	$dbh->prepare("INSERT INTO group_members (groupID, neptun) VALUES (?,?)");
+    $remove =
+	$dbh->prepare("DELETE FROM group_members WHERE groupID=? AND neptun=?");
+}
+
+if (defined $confirmed) {
+    if (!$m->comp('/sub/check_perm', item => "group_mgmt")) {
+	$data->{MSG} = "Nem vagy jogosult csoportok módosítására!";
+	redirect("news");
+    } else {
+	my %sths = (add=>$add, remove=>$remove);
+	$sth = $sths{$action};
+	if ($sth->execute($groupID, $neptun)) {
+	    $data->{MSG} = "Csoport módosítva.";
+	    $m->comp('/sub/log', "modify group", action=>$action, groupID=>$groupID, neptun=>$neptun);
+	} else { 
+	    $data->{MSG} = "A csoportot nem sikerült módosítani.";
+	}
+    }
+} else {
+    $data->{MSG} = "Csoportmódosítás visszavonva.";
+}
+
+redirect("list_group", groupID => $groupID);
+</%init>

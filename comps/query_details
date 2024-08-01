@@ -1,0 +1,89 @@
+<%doc> This is a -*- mason -*- template.
+A page showing query details.
+</%doc>
+
+<%args>
+$query				# passed through 'action_show_page'
+</%args>
+
+<h3 class="topic">'<% $text %>' körkérdés</h3>
+
+<H4>A kérdés adatai</H4>
+<BLOCKQUOTE>
+<TABLE>
+<& form, action => "action_modify_query", hidden => { query => $query } &>
+<TR><TD class=spec>Típus:
+<TD><SELECT NAME=type>
+% foreach (sort keys %types) {
+<OPTION value="<% $_ %>" <% $type eq $_ ? "selected" : "" %>>
+<% $types{$_} %></OPTION>
+% }
+</SELECT>
+<TR><TD class=spec>Kérdés:
+    <TD><INPUT TYPE=text NAME=text SIZE=40 VALUE="<% $text %>">
+<TR><TD class=spec>Határidő:
+    <TD><& date, year => $year, month => $month, day => $day &>
+<TR><TD><INPUT TYPE=submit NAME=modify VALUE="Módosít">
+    <TD><INPUT TYPE=submit NAME=delete VALUE=" Töröl ">
+</FORM></TABLE>
+</BLOCKQUOTE>
+
+<H4>Válaszok</H4>
+<BLOCKQUOTE>
+<TABLE width="100%">
+<TH width="15%">Neptun kód
+<TH width="30%">Név
+<TH width="20%">Ido
+<TH width="*">  Válasz
+% while (defined ($response = $get_responses->fetchrow_hashref)) {
+<& TR, \$row &>
+<TD><% $response->{user} %>
+<TD><% $response->{name} %>
+<TD><% $response->{time} %>
+<TD>
+% if ($type eq "yesno") {
+<% uc $response->{answer} eq "Y" ? "Igen" : "Nem" %>
+% } else {
+<% $response->{answer} %>
+% }
+% }
+</TABLE>
+<P>
+<& link, href => "action_download_responses", text => "szöveges formában",
+    newwindow => 1,
+    params => { query => $query, type => $type } &>
+</BLOCKQUOTE>
+
+<%once>;
+use utf8;
+my %types = ( yesno       => "eldöntendő",
+	      text        => "megválaszolandó",
+	      multichoice => "kiválasztandó"
+	    );
+
+my ($get_query, $get_responses, $row, $response);
+my ($type, $text, $deadline, $year, $month, $day);
+</%once>
+
+<%init>;
+if (!defined $get_query) {
+    $get_query = # get query details
+	$dbh->prepare("SELECT type, text, deadline FROM queries WHERE id=?");
+    $get_responses = # get responses to query
+	$dbh->prepare("SELECT user, name, answer, time FROM responses, people
+                       WHERE responses.user=people.neptun AND query=?
+                       ORDER BY name");
+}
+
+$get_query->execute($query);
+($type, $text, $deadline) = $get_query->fetchrow_array;
+($year, $month, $day) = split /-/, $deadline;
+$get_query->finish;
+
+$get_responses->execute($query);
+$row = 0;
+</%init>
+
+<%cleanup>;
+$get_responses->finish;
+</%cleanup>

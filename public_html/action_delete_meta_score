@@ -1,0 +1,38 @@
+<%doc> This is a -*- mason -*- template.
+Delete a score type identified by the idx parameter.
+</%doc>
+
+<%args>
+$idx
+$confirmed => undef
+</%args>
+
+<%once>;
+my ($sth_delete, $sth_modify);
+</%once>
+
+<%init>;
+if (!defined $sth_delete) {
+    $sth_delete = # delete category group
+	$dbh->prepare("DELETE FROM scores_meta WHERE idx=?");
+    $sth_modify =
+	$dbh->prepare("UPDATE scores_meta SET idx=idx-1 WHERE idx>?");
+}
+
+if (!$m->comp('/sub/check_perm', item => "meta_scores_mgmt")) {
+    $data->{MSG} = "Nem vagy jogosult pontszámtípusok törlésére!";
+    redirect("news");
+} else {
+  if (defined $confirmed) {
+    if ($sth_delete->execute($idx) == 1) {
+        $sth_modify->execute($idx);
+	$data->{MSG} = "Pontszámtipus törölve.";
+    } else {
+	$data->{MSG} = "A pontszámtípust nem sikerült törölni.";
+    }
+  } else {
+    $data->{MSG} = "A pontszámtípus törlése visszavonva.";
+  }
+  redirect("meta_scores_mgmt");
+}
+</%init>

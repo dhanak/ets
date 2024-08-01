@@ -1,0 +1,32 @@
+<%doc> This is a -*- mason -*- template.
+Add news entry to the database.
+</%doc>
+
+<%args>
+$article
+$submit => undef
+</%args>
+
+<%once>;
+my $sth;
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("INSERT INTO news (poster, text, ptime)
+                                 VALUES (?, ?, NOW())");
+}
+
+if (defined $submit) {
+  if (!$m->comp('/sub/check_perm', item=>"edit_news_form")) {
+    $data->{MSG} = "Nem vagy jogosult hír felvételére!";
+  } else {
+    $sth->execute($data->{NEPTUN}, $article);
+    $data->{MSG} = "Hír felvéve.";
+    $m->comp('/sub/log', "news article added");
+  }
+  redirect("news");
+} else {
+  redirect("edit_news_form");
+}
+</%init>

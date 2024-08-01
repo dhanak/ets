@@ -1,0 +1,31 @@
+<%doc> This is a -*- mason -*- template.
+Determine a students canonical name.
+</%doc>
+
+<%args>
+$neptun => $data->{NEPTUN}
+</%args>
+
+<%once>;
+my ($sth, $name);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("SELECT name FROM people WHERE neptun=?");
+}
+
+$neptun = uc $neptun;
+
+$sth->execute($neptun);
+($name) = $sth->fetchrow_array();
+$sth->finish;
+
+# Known accented characters
+$name =~ tr/áéíóöőúüűýčšÁÉÍÓÖŐÚÜŰÝČŠ /aeiooouuuycsAEIOOOUUUYCS/d;
+# Accidental carriage retunrs
+$name =~ s/\r//g;
+# Other nonprintable characters
+$name =~ s/[^[:print:]]/?/g;
+return "$name.$neptun";
+</%init>

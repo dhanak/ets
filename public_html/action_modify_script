@@ -1,0 +1,45 @@
+<%doc> This is a -*- mason -*- template.
+Modify or delete a script by the form data.
+</%doc>
+
+<%args>
+$id
+$file
+$delete => undef		# defined if script is to be deleted
+</%args>
+
+<%once>
+my ($modify_script, $delete_script);
+</%once>
+
+<%init>;
+if (!defined $modify_script) {
+    $modify_script = $dbh->prepare("UPDATE scripts SET script=? WHERE id=?");
+    $delete_script = $dbh->prepare("DELETE FROM scripts WHERE id=?");
+}
+
+if (!$m->comp("/sub/check_perm", item=>"script_mgmt")) {
+
+    $data->{MSG} = "Erre nem vagy jogosult!";
+    redirect("news");
+
+} else {
+
+    if (defined $delete) {		# delete
+	if ($delete_script->execute($id) != 1) {
+	    $data->{MSG} = "A szkriptet nem sikerült törölni.";
+	    $m->comp("/sub/log", "delete script", id => $id);
+	} else {
+	    $data->{MSG} = "Szkript törölve.";
+	}
+    } else {			# modify
+	if ($modify_script->execute($file, $id) != 1) {
+	    $data->{MSG} = "A szkriptet nem sikerült módosítani.";
+	} else {
+	    $data->{MSG} = "Szkript módosítva.";
+	}
+    }
+
+    redirect("script_mgmt");
+}
+</%init>

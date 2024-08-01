@@ -1,0 +1,195 @@
+/**********************
+ * General properties *
+ **********************/
+
+/* main font throughout the page */
+html, body, td, th, input, select {
+    font: 11pt sans-serif;
+}
+
+/* page body */
+body {
+    background:               white;
+    color:                    black;
+}
+
+/* links */
+a:link, a:active, a:visited {
+    color:                    black;
+    text-decoration:          underline;
+}
+a:hover {
+    color:                    blue;
+    text-decoration:          underline;
+}
+
+/* general table, row heading and cell */
+table, tr {
+    border:                   none;
+    padding:                  0px;
+}
+th, td {
+    border:                   none;
+    padding:                  0px 3px;
+}
+th {
+    font-weight:              bold;
+    text-align:               center;
+}
+
+form {
+    margin:               0;
+}
+
+* html blockquote { /* IE blockquote fix */
+    width:                    100%;
+}
+
+/**********
+ * topics *
+ **********/
+
+h3.topic {
+    font-variant:             small-caps;
+    padding-top:              3px;
+    text-align:               center;
+}
+
+/********************************
+ * special table rows and cells *
+ ********************************/
+
+/* colored table rows */
+tr.article1 {
+    background:               #ffc;
+}
+tr.article2 {
+    background:               #fcf;
+}
+
+/* spec field of a definition table */
+td.spec {
+    font-weight:              bold;
+}
+
+/******************
+ * text divisions *
+ ******************/
+
+/* news signature */
+div.signature {
+    font-style:               italic;
+    text-align:               right;
+}
+
+/* error report */
+div.error {
+    margin:                   1em;
+    padding:                  1em;
+    border:                   solid 3px red;
+    color:                    red;
+    font-weight:              bold;
+}
+
+/*********************
+ * common properties *
+ *********************/
+
+/* good news */
+.good {
+    color:                    green;
+    font-weight:              bold;
+}
+
+/* good news */
+.bad {
+    color:                    red;
+    font-weight:              bold;
+}
+
+/**************
+ * main frame *
+ **************/
+
+/* the table itself */
+table.frame {
+    border-spacing:           1ex;
+}
+
+/* a window cell */
+td.window {
+    border:                   solid 1px black;
+    background:               #ccf;
+    padding:                  2px;
+    vertical-align:           top;
+}
+
+/* header */
+#header {
+    padding:                  0px;
+}
+
+/* login info */
+#loginfo {
+    border-right:             solid 1px black;
+    text-align:               center;
+}
+
+/* message */
+#message {
+    text-align:               center;
+}
+
+/* actionbar */
+#actionbar {
+    width:                    20ex;
+    white-space:              nowrap;
+}
+
+/* actionbar with for IE */
+* html #actionbar {
+    width:                    16%;
+}
+
+/* footer */
+#footer {
+    text-align:               right;
+}
+
+/***********************
+ * autocomplete frames *
+ ***********************/
+
+div.autocomplete {
+    position: absolute;
+    left: 0;
+    top: 24;
+    border: 1px solid black;
+    background: white;
+}
+
+div.autocomplete ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+div.autocomplete ul li.selected {
+    background-color: #ffb
+}
+
+div.autocomplete ul li {
+    list-style-type: none;
+    display: block;
+    margin: 0;
+    cursor: pointer;
+}
+
+/*******************
+ * no css warnings *
+ *******************/
+
+/* no CSS support */
+#nocss {
+    display:                  none;
+}

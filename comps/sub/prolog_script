@@ -1,0 +1,29 @@
+<%doc> This is a -*- mason -*- template.
+Run a prolog script with specified arguments and input.
+</%doc>
+
+<%args>
+$script
+$input => ""
+@args
+</%args>
+
+<%once>;
+my $timeout = 2;		# timeout limit in seconds
+my $scriptdir = "$ENV{ETS_ROOT}/pl_lib";
+my ($cmd, $value, $msg);
+</%once>
+
+<%init>;
+$cmd = "$ENV{SICSTUS} -l ${scriptdir}/${script}.pl -a ";
+for (@args) {
+    s/"/\\"/g;
+    $cmd .= "\"$_\" ";
+}
+
+($msg) = runcmd($cmd, $input);
+$msg =~ s/^([^\n]*)\n//;	# strip first line...
+$value = $1;			# ...which is the result indicator
+
+return ($value, $msg);
+</%init>

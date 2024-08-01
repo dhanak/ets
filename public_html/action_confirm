@@ -1,0 +1,45 @@
+<%doc> This is a -*- mason -*- template.
+Produce a confirm "dialog".
+
+$hidden is a list of comma separated values representing a hash.  Each key
+will be the name of a hidden field, the corresponding value will be the
+value of the entry.
+
+$options is a list of comma separated values representing a hash.  Each key
+will be the name of a checkbox, the corresponding value will be the label.
+
+$checked is a list of comma separated values of those keys which should be
+checked by default.
+</%doc>
+
+<& html_page,
+    question => $question,
+    action   => $action,
+    yes      => $yes,
+    no       => $no,
+    hidden   => \%hidden,
+    options  => \%options,
+    checked  => \%checked &>
+
+<%args>
+$question
+$action
+$yes     => "Igen"
+$no      => "Nem"
+$hidden  => ""
+$options => ""
+$checked => ""
+</%args>
+
+<%once>;
+my (%hidden, %options, %checked, @keys);
+</%once>
+
+<%init>;
+%hidden = split /,/, $hidden;
+%options = split /,/, $options;
+@keys = split /,/, $checked;
+@checked{@keys} = (1) x @keys;
+
+$data->{SCREEN} = "confirm";
+</%init>

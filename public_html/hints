@@ -1,0 +1,235 @@
+<%doc> This is a -*- mason -*- template.
+Produce a hint page.
+</%doc>
+
+<%args>
+$topic
+</%args>
+
+<HTML>
+
+<!-- #################### Page Header #################### -->
+
+<HEAD>
+<TITLE>DP Elektronikus Tanársegéd - Súgó</TITLE>
+<LINK REL="stylesheet" HREF="ets.css" TYPE="text/css">
+<META HTTP-EQUIV="content-type" CONTENT="text/html; charset=utf-8">
+<META NAME="author" CONTENT="David Hanak <mailto:dhanak@cs.bme.hu>"
+<META NAME="description" CONTENT="DP Elektronikus Tanársegéd - Súgó">
+</HEAD>
+
+<!-- #################### Page Body #################### -->
+
+<BODY>
+<TABLE class="frame" width="100%">
+<TR><TD align=center>
+<H3>Tippek a Deklaratív Programozás gyakorló feladatokhoz</H3>
+
+<TR><TD class="window">
+
+% if ($topic eq 'PSPN') {
+
+<!-- #################### Prolog - alapstruktúra alak #################### -->
+
+<h4>Prolog - alapstruktúra alak</h4>
+
+A feladat a szintaktikus édesítőszerek eltávolítása:
+<ul>
+<li> Operátorok: 
+<ol>
+<li> Zárójelezzük be a kifejezést, az operátorok prioritása és fajtája
+alapján, például <code>a+b*2 ==> (a+(b*2))</code>.
+<li>  Hozzuk az operátoros kifejezéseket alapstruktúra alakra:<br>
+<code>(Kif1 InfixOp Kif2) ==> InfixOp(Kif1,Kif2)</code><br>
+<code>(PrefixOp Kif)      ==> PrefixOp(Kif)</code><br>
+<code>(Kif PostfixOp)     ==> PostfixOp(Kif)</code><br>
+Példa: <code>(a+(b*2)) ==> (a+ *(b,2)) ==> +(a,*(b,2))</code>.
+<li> Trükkös esetek: 
+<ul>
+<li> A vessző operátort aposztrofok közé kell tenni amikor struktúrává
+alakítjuk, pl. <code>(pp,(qq;rr)) ==> ','(pp,;(qq,rr))</code>.
+<li> Egy számot, az előtte álló minusz jellel együtt  negatív
+számkonstansnak kell tekinteni, pl. <code>-1+2 ==> +(-1,2)</code>, de
+<code>-a+b ==> +(-(a),b)</code>.
+
+<li> Ha egy név után közvetlenül egy nyitó zárójel jön, akkor ez egy
+struktúrakifejezés kezdete, akkor is, ha a név egy prefix operátor. Ha a
+név és a nyitó zárójel között formázó karakter (pl. szóköz) van, akkor ezt
+prefix operátorként elemezzük (ha a név nem prefix operátor, akkor ez
+szintaktikus hiba). Példák: <br>
+<code>-(1,2) ==> -(1,2)</code> (változatlan), de <br>
+<code>- (1,2) ==> -(','(1,2))</code> .
+</ul>
+</ol>
+<li> Listák:
+<ol>
+<li> Ha egy listakifejezésben (közvetlenül) nincs
+explicit farok-megadás, akkor toldjuk be. Például:<br>
+<code>[1,2] ==> [1,2|[]]. [[X|Y]] ==> [[X|Y]|[]]</code>
+<li> Ha egy listakifejezés <code>[Elem1,Elem2...]</code> alakú, akkor
+küszöböljük ki az első vesszőt: <code>[Elem1|[Elem2...]]</code>. Ezt a
+lépést addig ismételjük, amig minden vesszőt ki nem küszöböltünk.
+Például:<br>
+<code>[1,2|[]] ==> [1|[2|[]]]</code><br>
+<code>[1,2,3|[]] ==> [1|[2,3|[]]] ==> [1|[2|[3|[]]]]</code>
+<li> Minden <code>[Fej|Farok]</code> szerkezetet alakítsunk át
+struktúrakifejezéssé: <code>.(Fej,Farok)</code>. Példák:<br>
+<code>[1|[2|[]]] ==> .(1,.(2,[])), [[X|Y]|[]] ==> .(.(X,Y),[])</code>
+</ol>
+<li> Egyéb szintaktikus édesítőszerek:
+<ol>
+<li>Karakterkód-jelölés: <code>0'Kar</code>. Példák:<br>
+<code>0'a ==> 97, 0'b ==> 98, 0'c ==> 99, 0'd ==> 100, 0'e ==> 101
+</code>
+<li>Füzér (string): <code>"xyz..." ==></code> az <code>xyz...</code>
+ karakterek kódját tartalmazó lista. Példák:<br>
+<code>"abc" ==> [97,98,99], "" ==> [], "e" ==> [101]</code>
+
+<li>Kapcsos zárójelezés: <code>{Kif} ==> {}(Kif)</code>, tehát egy
+<code>{}</code> nevű egyargumentumú struktúra (a <code>{}</code> jelpár egy
+önálló lexikai elem, egy névkonstans).
+</ol>
+</a>
+</ul>
+Ha végképp elakadsz, <code>Kif</code> alapstruktúra alakját kiirathatod
+magával a SICStus rendszerrel, a <code>write_canonical(Kif)</code> eljárás
+meghívásával.
+
+<p>
+Azért többsoros a beviteli mező, hogy a kifejezés
+faszerkezetét bekezdésekkel követni tudjad, pl:
+<listing>
+            +(*(1,
+                2
+               ),
+              /(3,
+                4
+               )
+             )
+</listing>
+
+% } elsif ($topic eq 'PSEQ/PMEG') {
+
+<!-- #################### Prolog - mit ad eredményül? #################### -->
+
+<h4>Prolog - mit ad eredményül?</h4>
+
+Itt egy adott Prolog program futását kell megérteni és egy adott hívás
+futási eredményét közölni. A futás mindig sikerül, és egyetlen választ ad.
+A megadott változó értékét kell a válaszmezőbe beírni.
+<p>
+Tippek:
+<ul>
+<li> Vigyázz arra, hogy a <code>--</code> és <code>@</code> nevek közé
+rakj egy szóközt, ha ezek közvetlenül egymás mellett állnak (ha nem teszel
+szóközt, akkor ezek "összetapadnak" egyetlen <code>--@ </code> 
+névkonstanssá, és ez szintaktikus hibát okoz).
+</ul>
+
+% } elsif ($topic eq 'PSEQ/PVSZ') {
+
+<!-- #################### Prolog - visszalépés #################### -->
+
+<h4>Prolog - visszalépés</h4>
+
+Itt egy adott Prolog program futását kell megérteni és egy adott hívás
+futási eredményét közölni. A futás meghiúsulhat, adhat egyetlen megoldást,
+vagy több megoldást is. 
+<p>
+A megadott változó válaszul kapott értékeit kell a válaszmezőbe beírni,
+több megoldás esetén egymástól pontosvesszővel elválasztva. A megoldások
+sorrendje is fontos! Ha nincs megoldás (a futás meghiúsul), akkor a
+válaszmezőbe írd a <code>{no}</code> szöveget! (Írd ki mind a négy
+karaktert, a kapcsos zárójeleket is beleértve!)
+<p>
+Példa (feltételezve a <code>lists</code> könyvtárat): a <code>| ?-
+member(X, [1,2,3]), Y is X*X. </code> kérdésre az <code>Y</code> változóban
+kapott behelyettesítéseket a következőképpen kell megadni:
+<code>1;4;9</code> <p>
+Tippek:
+<ul>
+<li> Végszükség esetén töltsd be az adott programot a Prolog rendszerbe, és
+futtasd le az adott hívást.
+</ul>
+
+% } elsif ($topic eq 'PSFE/PEG0' || $topic eq 'PUNI') {
+
+<!-- #################### Prolog - egyesítés #################### -->
+
+<h4>Prolog - egyesítés </h4>
+
+Mindegyik célt a Prolog interpreternek önmagában adjuk oda, azaz futásának
+kezdetén a célban előforduló változóknak nincs értéke.  Ezen kívül
+feltételezzük, hogy a <code>lists</code> könyvtár be van töltve.
+
+<ul>
+<li> Kezdő fokozat
+<br>
+A kérdések között előfordulnak szintaktikusan hibásak és sikertelen
+egyesítések. Siker esetén csak az <code>X</code> változó behelyettesítési
+értékét kell megadni. 
+
+
+<p>
+<li> Haladó fokozat
+<br>
+Itt az összes változó-behelyettesítést kell megadni. Az egyesítés mindig
+sikeres.
+<p>
+Példa kérdés:  <code> | ?- X-b*Z = Z-Y*c. </code>
+<br> Helyes válasz: <code> X=c, Y=b, Z=c. </code>
+<p>
+Vigyázz arra, hogy az előálló rész-behelyettesítések kompozícióját képezd!
+Nem megengedett az olyan válasz, ahol egy, a bal oldalon szereplő változó
+előfordul egy behelyettesítés jobb oldalán is. Tehát a fenti kérdésre nem
+megengedett az <code> X=Z, Y=b, Z=c</code> válasz!
+</ul>
+
+% } elsif ($topic eq 'PSFE/PARI') {
+
+<!-- #################### Prolog - egyesítés #################### -->
+
+<h4>Prolog - aritmetika és egyesítés</h4>
+
+Mindegyik célt a Prolog interpreternek önmagában adjuk oda, azaz futásának
+kezdetén a célban előforduló változóknak nincs értéke.  
+<p>
+
+Siker esetén  az <code>X</code> változó behelyettesítési értékét kell
+megadni. 
+A kérdések között előfordulnak szintaktikusan hibásak, futási hibát okozók
+és meghiúsulók is.. 
+<p>
+Tippek:
+
+<ul>
+<li> A <code>//</code> operátor egész osztást jelöl.
+<li> Az <code>X is Kif</code> hívás hibát jelez, ha <code>Kif</code> nem
+tömör (behelyettesítetlen változót tartalmaz), vagy nem aritmetikai
+kifejezés. Egyébként <code>Kif</code> értékét egyesíti
+<code>X</code>-szel (tehát a baloldal miatt sosem jelez hibát).
+<li> Az <code>X = Y</code> hívás egyesíti az <code>X</code> 
+és  <code>Y</code>  Prolog kifejezéseket. Soha sem jelez  hibát.
+<li> A <code>Kif1 =:= Kif2</code> hívás hibát jelez, ha <code>Kif1</code>
+vagy <code>Kif2</code> nem
+tömör (behelyettesítetlen változót tartalmaz), vagy nem aritmetikai
+kifejezés. Akkor sikerül, ha a két oldal értéke azonos. A <code>Kif1 =\= Kif2</code>
+hívás hasonló esetben jelez hibát, és akkor sikerül, ha a két oldal értéke
+különbözik. 
+<li> A <code>\+ Felt</code> hívás (negáció) csakkor sikerül, ha a
+<code>Felt</code> hívás meghiúsul.
+
+</ul>
+
+% }
+
+<TR><TD id="footer">
+<ADDRESS>DP Elektronikus Tanársegéd - <span>d</span><span>p@iit.bme</span><span>.hu</span></ADDRESS> 
+
+</TABLE>
+</BODY>
+</HTML>
+
+<%init>
+$r->content_type("text/html; charset=utf-8");
+</%init>

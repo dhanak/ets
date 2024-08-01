@@ -1,0 +1,44 @@
+<%doc> This is a -*- mason -*- template.
+Delete user details
+</%doc>
+
+<%args>
+$neptun
+$confirmed => undef
+$first_char => undef
+</%args>
+
+<%once>
+my ($delete_person, $delete_progress, $delete_complete);
+</%once>
+
+<%init>
+if (!defined $delete_person) {
+    $delete_person = # delete person's data
+	$dbh->prepare("DELETE FROM people WHERE neptun=?");
+    $delete_progress = # delete progress information on person
+	$dbh->prepare("DELETE FROM progress WHERE neptun=?");
+    $delete_complete = # delete exercise completion information on person
+	$dbh->prepare("DELETE FROM complete WHERE neptunSID=?");
+}
+
+if (defined $confirmed) {
+    if (!$m->comp('/sub/check_perm', item => "delete_user",
+		  neptun => $neptun)) {
+	$data->{MSG} = "Nem vagy jogosult felhasználók törlésére!";
+	redirect("news");
+    } else {
+	if ($delete_person->execute($neptun) != 1) {
+	    $data->{MSG} = "A felhasználót nem sikerült törölni.";
+	} else {
+	    $delete_progress->execute($neptun);
+	    $delete_complete->execute($neptun);
+	    $m->comp('/sub/log', "delete user", neptun => $neptun);
+	    $data->{MSG} = "Felhasználó törölve.";
+	}
+    }
+} else {
+    $data->{MSG} = "Felhasználó törlése visszavonva.";
+}
+redirect("user_mgmt", first_char => $first_char);
+</%init>
