@@ -23,7 +23,8 @@ FROM motemen/mod_perl:${PERL_VERSION}-${APACHE_VERSION} AS ets
 # install extra debian dependencies
 RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     apt-get update && \
-    apt-get install -y curl gcc gettext-base libmariadb-dev make
+    apt-get install -y busybox curl gcc gettext-base libmariadb-dev make wget && \
+    busybox --install
 
 # install perl dependencies
 RUN --mount=type=cache,id=perl-cache,sharing=locked,target=/var/cache/perl \
@@ -46,6 +47,11 @@ ENV ETS_ROOT=/opt/ets
 
 # set working directory
 WORKDIR ${ETS_ROOT}
+
+# download TinyMCE community language pack
+RUN mkdir -p public_html/include && \
+    wget -O- https://download.tiny.cloud/tinymce/community/languagepacks/6/hu_HU.zip | \
+    unzip - -d public_html/include/
 
 # copy contents
 COPY --chown=www-data apache      ./apache

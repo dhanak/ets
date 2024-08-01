@@ -9,40 +9,40 @@ html, body, td, th, input, select {
 
 /* page body */
 body {
-    background:               white;
-    color:                    black;
+    background: white;
+    color: black;
 }
 
 /* links */
 a:link, a:active, a:visited {
-    color:                    black;
-    text-decoration:          underline;
+    color: black;
+    text-decoration: underline;
 }
 a:hover {
-    color:                    blue;
-    text-decoration:          underline;
+    color: blue;
+    text-decoration: underline;
 }
 
 /* general table, row heading and cell */
 table, tr {
-    border:                   none;
-    padding:                  0px;
+    border: none;
+    padding: 0px;
 }
 th, td {
-    border:                   none;
-    padding:                  0px 3px;
+    border: none;
+    padding: 0px 3px;
 }
 th {
-    font-weight:              bold;
-    text-align:               center;
+    font-weight: bold;
+    text-align: center;
 }
 
 form {
-    margin:               0;
+    margin: 0;
 }
 
 * html blockquote { /* IE blockquote fix */
-    width:                    100%;
+    width: 100%;
 }
 
 /**********
@@ -50,9 +50,9 @@ form {
  **********/
 
 h3.topic {
-    font-variant:             small-caps;
-    padding-top:              3px;
-    text-align:               center;
+    font-variant: small-caps;
+    padding-top: 3px;
+    text-align: center;
 }
 
 /********************************
@@ -61,15 +61,15 @@ h3.topic {
 
 /* colored table rows */
 tr.article1 {
-    background:               #ffc;
+    background: #ffc;
 }
 tr.article2 {
-    background:               #fcf;
+    background: #fcf;
 }
 
 /* spec field of a definition table */
 td.spec {
-    font-weight:              bold;
+    font-weight: bold;
 }
 
 /******************
@@ -78,17 +78,17 @@ td.spec {
 
 /* news signature */
 div.signature {
-    font-style:               italic;
-    text-align:               right;
+    font-style: italic;
+    text-align: right;
 }
 
 /* error report */
 div.error {
-    margin:                   1em;
-    padding:                  1em;
-    border:                   solid 3px red;
-    color:                    red;
-    font-weight:              bold;
+    margin: 1em;
+    padding: 1em;
+    border: solid 3px red;
+    color: red;
+    font-weight: bold;
 }
 
 /*********************
@@ -97,14 +97,14 @@ div.error {
 
 /* good news */
 .good {
-    color:                    green;
-    font-weight:              bold;
+    color: green;
+    font-weight: bold;
 }
 
 /* good news */
 .bad {
-    color:                    red;
-    font-weight:              bold;
+    color: red;
+    font-weight: bold;
 }
 
 /**************
@@ -113,47 +113,48 @@ div.error {
 
 /* the table itself */
 table.frame {
-    border-spacing:           1ex;
+    border-spacing: 1ex;
+    border-collapse: separate;
 }
 
 /* a window cell */
 td.window {
-    border:                   solid 1px black;
-    background:               #ccf;
-    padding:                  2px;
-    vertical-align:           top;
+    border: solid 1px black;
+    background: #ccf;
+    padding: 3px 0;
+    vertical-align: top;
 }
 
 /* header */
 #header {
-    padding:                  0px;
+    padding: 0px;
 }
 
 /* login info */
 #loginfo {
-    border-right:             solid 1px black;
-    text-align:               center;
+    border-right: solid 1px black;
+    text-align: center;
 }
 
 /* message */
 #message {
-    text-align:               center;
+    text-align: center;
 }
 
 /* actionbar */
 #actionbar {
-    width:                    20ex;
-    white-space:              nowrap;
+    width: 20ex;
+    white-space: nowrap;
 }
 
 /* actionbar with for IE */
 * html #actionbar {
-    width:                    16%;
+    width: 16%;
 }
 
 /* footer */
 #footer {
-    text-align:               right;
+    text-align: right;
 }
 
 /***********************
@@ -191,5 +192,5 @@ div.autocomplete ul li {
 
 /* no CSS support */
 #nocss {
-    display:                  none;
+    display: none;
 }
