@@ -3,7 +3,7 @@
 # This is run as a shell script and not as an SQL file because we interpolate
 # environment variables in the script below.
 #
-mariadb -u${MARIADB_USER} -p${MARIADB_PASSWORD} -D${MARIADB_DATABASE} <<EOF
+mariadb -u${MARIADB_USER} -p${MARIADB_PASSWORD} ${MARIADB_DATABASE} <<EOF
 CREATE TABLE news (
   id              INT(8) PRIMARY KEY AUTO_INCREMENT,
   poster          CHAR(6),

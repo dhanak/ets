@@ -25,10 +25,27 @@ A telepítéshez és futtatáshoz `docker` szükséges. Lépések:
 
 ```sh
 $ docker compose build
-...
-
 $ docker compose up -d
 ```
 
 Ezek hatására a site fut, és elérhető a docker hoston a beállított porton
 (`HTTP_EXTERNAL_PORT`, alapértelmezetten 8080).
+
+## Backup és visszaállítás
+
+Előfeltétel: fut a container. Az alábbi parancsokat a repository gyökerében kell
+futtatni.
+
+Teljes DB backup:
+
+```sh
+$ docker compose exec mariadb mariadb-dump -uets -pets ets | \
+    gzip > ets-db-backup-$(date +%Y%m%d).sql.gz
+```
+
+Visszaállítás:
+
+```sh
+$ gunzip -c ets-db-backup-....sql.gz | \
+    docker compose exec -T mariadb mariadb -uets -pets ets
+```
