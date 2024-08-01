@@ -6,16 +6,17 @@ Produce a hint page.
 $topic
 </%args>
 
+<!doctype html>
 <HTML>
 
 <!-- #################### Page Header #################### -->
 
 <HEAD>
-<TITLE>DP Elektronikus Tanársegéd - Súgó</TITLE>
+<TITLE><% $ENV{SITENAME} %>- Súgó</TITLE>
 <LINK REL="stylesheet" HREF="ets.css" TYPE="text/css">
 <META HTTP-EQUIV="content-type" CONTENT="text/html; charset=utf-8">
-<META NAME="author" CONTENT="David Hanak <mailto:dhanak@cs.bme.hu>"
-<META NAME="description" CONTENT="DP Elektronikus Tanársegéd - Súgó">
+<META NAME="author" CONTENT="David Hanak <mailto:dhanak@gmail.com>"
+<META NAME="description" CONTENT="<% $ENV{SITENAME} %> - Súgó">
 </HEAD>
 
 <!-- #################### Page Body #################### -->
@@ -224,7 +225,7 @@ különbözik.
 % }
 
 <TR><TD id="footer">
-<ADDRESS>DP Elektronikus Tanársegéd - <span>d</span><span>p@iit.bme</span><span>.hu</span></ADDRESS> 
+<ADDRESS><% $ENV{SITENAME} %> - <% $ENV{CONTACT} %></ADDRESS>
 
 </TABLE>
 </BODY>

@@ -121,7 +121,7 @@ table.frame {
 td.window {
     border: solid 1px black;
     background: #ccf;
-    padding: 3px 0;
+    padding: 0 3px;
     vertical-align: top;
 }
 

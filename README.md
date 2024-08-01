@@ -21,7 +21,7 @@ A telepítéshez és futtatáshoz `docker` szükséges. Lépések:
 
 3. `ln -s env.live .env`
 
-### Docker build
+### Docker build és futtatás
 
 ```sh
 $ docker compose build
@@ -30,5 +30,5 @@ $ docker compose build
 $ docker compose up -d
 ```
 
-The site should be up and running, and accesible on the docker host at the
-specified port (`HTTP_EXTERNAL_PORT`, defaults to 8080).
+Ezek hatására a site fut, és elérhető a docker hoston a beállított porton
+(`HTTP_EXTERNAL_PORT`, alapértelmezetten 8080).
