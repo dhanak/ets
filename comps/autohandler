@@ -135,7 +135,7 @@ if (!valid_sid($sid)) {
     if (!defined session_read()) {
         session_new();
         $data = { SCREEN => "news",
-                  MSG    => "Túl sokáig voltál tétlen, a kapcsolatod adatai elavultak."
+                  MSG    => "Lejárt a munkamenet, jelentkezz be újra!"
                 };
     };
 }

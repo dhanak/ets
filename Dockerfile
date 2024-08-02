@@ -35,9 +35,9 @@ RUN --mount=type=cache,id=perl-cache,sharing=locked,target=/var/cache/perl \
         CGI \
         Data::Dumper \
         DBD::MariaDB \
+        Email::Stuffer \
         File::MMagic \
         HTML::Mason \
-        Mail::Mailer \
         URI \
         UUID && \
     rm /root/.cpan*

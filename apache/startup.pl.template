@@ -8,7 +8,6 @@ use RunCmd;
 use DBD::MariaDB;
 use Data::Dumper;
 use Text::Wrap;
-use Mail::Mailer qw(sendmail);
 use URI::Escape;
 
 use vars qw($sid $dbh $data);

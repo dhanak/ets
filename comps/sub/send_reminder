@@ -8,19 +8,21 @@ $password
 </%args>
 
 <%once>;
-my $mailer;
+use Email::Stuffer;
+
+my $body;
 </%once>
 
 <%init>;
-$mailer = new Mail::Mailer;
-$mailer->open({ To      => $email,
-		From    => 'dp@iit.bme.hu',
-		Subject => '=?utf-8?Q?ETS jelsz=F3?=',
-		'Content-Type' => 'text/plain; charset=utf-8',
-		'Content-Transfer-Encoding' => '8bit' });
-print $mailer <<EOF;
-A Deklaratív Programozás tárgy webes felületéhez használandó
-jelszavad: '$password'.  (Belépés után megváltoztathatod.)
-EOF
-$mailer->close;
+$body = <<END;
+Jelszavad a(z) $ENV{SITENAME} oldalhoz: $password
+Belépés után megváltoztathatod.
+END
+
+Email::Stuffer
+    ->from($ENV{CONTACT})
+    ->to($email)
+    ->subject('ETS jelszó')
+    ->text_body($body)
+    ->send_or_die;
 </%init>

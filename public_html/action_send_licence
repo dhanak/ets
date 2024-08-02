@@ -7,13 +7,15 @@ $accept
 </%args>
 
 <%once>;
-my ($get_email, $set_flag, $email, $mailer);
+use Email::Stuffer;
+
+my ($get_email, $set_flag, $email, $body);
 </%once>
 
 <%init>;
 if (!defined $get_email) {
- $get_email = $dbh->prepare("SELECT email FROM people WHERE neptun=?");
- $set_flag  = $dbh->prepare("UPDATE people SET licence='Y' WHERE neptun=?");
+    $get_email = $dbh->prepare("SELECT email FROM people WHERE neptun=?");
+    $set_flag  = $dbh->prepare("UPDATE people SET licence='Y' WHERE neptun=?");
 }
 
 $get_email->execute($data->{NEPTUN});
@@ -22,13 +24,7 @@ $get_email->finish;
 
 $set_flag->execute($data->{NEPTUN});
 
-$mailer = new Mail::Mailer;
-$mailer->open({ To      => $email,
-		From    => 'dp@iit.bme.hu',
-		Subject => 'SICStus licenc',
-		'Content-Type' => 'text/plain; charset=utf-8',
-		'Content-Transfer-Encoding' => '8bit' });
-print $mailer <<EOF;
+$body = <<END;
                            Licenc-megállapodás
 
 Alulírott, a BME Villamosmérnöki és Informatikai Karának hallgatója
@@ -44,12 +40,12 @@ számítógépre:
                Web-lap:                http://dp.iit.bme.hu/sicstus/
                Felhasználói név:       sicstus
                Letöltési jelszó:       Mee8ohc1
- 
+
    Az InstallSICStus*.exe állományok a Windows változatokat, a
    *.tar.gz állományok a különféle unix változatokat tartalmazzák.
- 
+
    Az installáláskor, illetve jelszóváltáskor az alábbi
-   licenc-adatokat kell megadni: 
+   licenc-adatokat kell megadni:
 
     Windows 8/10 64 bit:
                Sitename:               BUTE DP23a Course
@@ -69,7 +65,7 @@ számítógépre:
                Expiration date:        20240131
 
 3. A szoftvert, a jelszót, a kulcsot, valamint a licenc-kódokat harmadik
-   félnek nem adom tovább. 
+   félnek nem adom tovább.
 
 4. Egyéb kérdésekben a  Software Licence Agreement-ben leírtakat
    tekintem irányadónak, lásd http://www.sics.se/sicstus/license4-academic.html
@@ -115,9 +111,14 @@ Follow these steps:
   3. Launch the development system by executing sicstus, located in the
      bin sub-directory of the installation path specified to
      InstallSICStus.
-     
-EOF
-$mailer->close;
+END
+
+Email::Stuffer
+    ->from($ENV{CONTACT})
+    ->to($email)
+    ->subject('SICStus licenc')
+    ->text_body($body)
+    ->send_or_die;
 
 $data->{MSG} = "Licenc-adatok elküldve.";
 redirect("news");

@@ -5,9 +5,11 @@ hallgatói információs rendszere, az ETS.
 
 ## Előzetes követelmények
 
-* docker, docker-compose
+* `docker`, `docker compose`
+  * Debian/Ubuntu: `docker-ce`, `docker-ce-cli`, `docker-compose-plugin`
+    csomagok
+  * a régebbi, v1-es `docker-compose` python csomag nem jó!
 * SICStus Prolog
-* ...?
 
 ## Telepítés
 
@@ -15,7 +17,10 @@ A telepítéshez és futtatáshoz `docker` szükséges. Lépések:
 
 ### Futtatási környezet beállítása
 
-1. Másold le az `env.test` file-t `env.live` (vagy hasonló) néven!
+Fejlesztői környezet futtatásához használhatod a meglévő beállításokat. Éles
+futtatáshoz végezd el a következő lépéseket:
+
+1. Másold le az `env.develop` file-t `env.live` néven!
 
 2. A benne szereplő változóknak adj a célnak megfelelő értéket!
 
@@ -49,3 +54,13 @@ Visszaállítás:
 $ gunzip -c ets-db-backup-....sql.gz | \
     docker compose exec -T mariadb mariadb -uets -pets ets
 ```
+
+## Emailek fejlesztői környezetben
+
+Fejlesztői környezetben a rendszer nem küld éles emaileket, hanem egy
+[MailCatcher](https://mailcatcher.me/) nevű beágyazott SMTP szerveren gyűjti
+össze azokat. A kiküldött emaileket egy webes felületen keresztül lehet
+megtekinteni a docker host gépen, a 1080-as porton:
+
+```
+$ xdg-open http://<docker-host>:1080

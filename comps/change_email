@@ -18,7 +18,7 @@ A megadott új e-mail cím helyességének ellenőrzéséhez elküldtem a
 frissen generált jelszót. Ezt írd be az alábbi mezőbe az e-mail cím és a
 jelszó véglegesítéséhez.
 % } else {
-rövid karaktersorozatot. A változtatás véglegesítéséhez ezt a sorozatot
+egyszerhasználatos jelszót. A változtatás véglegesítéséhez ezt a jelszót
 másold be az alábbi mezőbe.
 % }
 
@@ -31,8 +31,9 @@ email => $email, hash => $hash } &>
 </blockquote>
 
 <%once>;
+use Email::Stuffer;
+
 my ($hash, $password);
-my $mailer = new Mail::Mailer;
 </%once>
 
 <%init>;
@@ -45,14 +46,11 @@ $hash = crypt($email . $password, $password);
 if ($setnewpwd) {
     $m->comp('/sub/send_reminder', email => $email, password => $password);
 } else {
-    $mailer->open({ To      => $email,
-		    From    => 'dp@iit.bme.hu',
-		    Subject => '=?utf-8?Q?ETS e-c=EDm meger=F5s=EDt=E9se?=',
-		    'Content-Type' => 'text/plain; charset=utf-8',
-		    'Content-Transfer-Encoding' => '8bit' });
-		    print $mailer <<EOF;
-Az űrlapban a megerősítéshez használandó kulcs: '$password'.
-EOF
+    Email::Stuffer
+        ->from($ENV{CONTACT})
+        ->to($email)
+        ->subject('ETS email cím megerősítése')
+        ->text_body("Egyszerhasználatos jelszó az email címed megerősítéshez: $password")
+        ->send_or_die;
 }
-$mailer->close;
 </%init>
