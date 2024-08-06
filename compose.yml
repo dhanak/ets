@@ -3,6 +3,11 @@ services:
     build:
       context: .
       target: ets
+      args:
+        - OIDC_PROVIDER=${OIDC_PROVIDER}
+        - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
+        - OIDC_SECRET=${OIDC_SECRET}
+        - WEB_HOST=${WEB_HOST:-http://localhost:${HTTP_EXTERNAL_PORT:-8080}}
     environment:
       - DB_HOST=mariadb
       - DB_USER=ets
@@ -43,6 +48,22 @@ services:
     image: dockage/mailcatcher
     ports:
       - 1080:1080
+    profiles:
+      - develop
+    restart: unless-stopped
+
+  keycloak:
+    build:
+      context: .
+      target: keycloak
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HOSTNAME=http://localhost:${OIDC_EXTERNAL_PORT:-8081}
+      - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
+    command: ["start-dev", "--import-realm"]
+    ports:
+      - ${OIDC_EXTERNAL_PORT:-8081}:8080
     profiles:
       - develop
     restart: unless-stopped

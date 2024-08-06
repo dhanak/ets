@@ -1,4 +1,5 @@
 ARG APACHE_VERSION=2.4.61
+ARG KEYCLOAK_VERSION=25.0.2
 ARG PERL_VERSION=5.40.0
 ARG MARIADB_VERSION=lts
 
@@ -16,6 +17,14 @@ COPY --chown=mysql \
      /docker-entrypoint-initdb.d/
 
 ##
+## Keycloak server
+##
+FROM quay.io/keycloak/keycloak:${KEYCLOAK_VERSION} AS keycloak
+
+# copy initial realm data
+COPY ets-realm.json /opt/keycloak/data/import/
+
+##
 ## ETS image
 ##
 FROM motemen/mod_perl:${PERL_VERSION}-${APACHE_VERSION} AS ets
@@ -23,12 +32,20 @@ FROM motemen/mod_perl:${PERL_VERSION}-${APACHE_VERSION} AS ets
 # install extra debian dependencies
 RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     apt-get update && \
-    apt-get install -y busybox curl gcc gettext-base libmariadb-dev make wget && \
+    apt-get install -y busybox gcc gettext-base libmariadb-dev make wget \
+        # libapache2-mod-auth-openidc dependencies
+        libcjose0 libhiredis0.14 && \
     busybox --install
 
+# install libapache2-mod-auth-openidc
+ARG MOD_AUTH_OPENIDC_VERSION=2.4.12.3-2+deb12u1
+RUN wget -P /tmp \
+    http://ftp.hu.debian.org/debian/pool/main/liba/libapache2-mod-auth-openidc/libapache2-mod-auth-openidc_${MOD_AUTH_OPENIDC_VERSION}_amd64.deb && \
+    dpkg-deb -x /tmp/libapache2-mod-auth-openidc_${MOD_AUTH_OPENIDC_VERSION}_amd64.deb /tmp && \
+    cp /tmp/usr/lib/apache2/modules/mod_auth_openidc.so ${HTTPD_PREFIX}/modules
+
 # install perl dependencies
-RUN --mount=type=cache,id=perl-cache,sharing=locked,target=/var/cache/perl \
-    mkdir -p /var/cache/perl/.cpan /var/cache/perl/.cpanm && \
+RUN mkdir -p /var/cache/perl/.cpan /var/cache/perl/.cpanm && \
     ln -s /var/cache/perl/.cpan* /root && \
     cpan App::cpanminus && cpanm \
         Apache::DBI \
@@ -63,8 +80,12 @@ COPY --chown=www-data public_html ./public_html
 RUN mkdir mason && chown www-data:www-data mason
 
 # substitute envvars in template files
+ARG ETS_BASE_URL
+ARG OIDC_PROVIDER
+ARG OIDC_CLIENT_ID
+ARG OIDC_SECRET
 RUN for f in */*.template; do \
-        envsubst '$ETS_ROOT' <${f} >${f%.template}; \
+        envsubst '$ETS_BASE_URL $ETS_ROOT $OIDC_PROVIDER $OIDC_CLIENT_ID $OIDC_SECRET' <${f} >${f%.template}; \
         chown www-data:www-data ${f%.template}; \
     done
 
@@ -74,4 +95,4 @@ RUN sed -i \
         -e 's/LoadModule mpm_event/#LoadModule mpm_event/' \
         -e 's/#LoadModule mpm_prefork/LoadModule mpm_prefork/' \
         ${HTTPD_PREFIX}/conf/httpd.conf && \
-    cat apache/ets.conf >>${HTTPD_PREFIX}/conf/httpd.conf
+    cat apache/openidc.conf apache/ets.conf >>${HTTPD_PREFIX}/conf/httpd.conf

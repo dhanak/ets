@@ -1,0 +1,18 @@
+LoadModule auth_openidc_module modules/mod_auth_openidc.so
+#LogLevel auth_openidc:debug
+
+#OIDCUnauthAction pass
+OIDCClientID ${OIDC_CLIENT_ID}
+OIDCClientSecret ${OIDC_SECRET}
+OIDCCryptoPassphrase super-secret-oidc-passphrase
+OIDCPassClaimsAs environment
+OIDCProviderMetadataURL ${OIDC_PROVIDER}/.well-known/openid-configuration
+
+# OIDCRedirectURI is a vanity URL that must point to a path protected by this
+# module but must NOT point to any content
+OIDCRedirectURI ${ETS_BASE_URL}/redirect_uri
+
+<Location />
+   AuthType openid-connect
+   Require valid-user
+</Location>

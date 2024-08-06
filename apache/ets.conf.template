@@ -1,6 +1,8 @@
 LoadModule perl_module modules/mod_perl.so
 LoadModule rewrite_module modules/mod_rewrite.so
 
+ServerName ${WEB_HOST}
+
 SetEnv PERLLIB "${ETS_ROOT}/modules"
 SetEnv PERL5LIB "${ETS_ROOT}/modules"
 
@@ -30,13 +32,18 @@ DocumentRoot "${ETS_ROOT}/public_html"
   Require all granted
 </Directory>
 
-# don't pass files in /pic through perl
-<Directory ${ETS_ROOT}/public_html/pic>
+# don't pass files in /include through perl
+<Directory ${ETS_ROOT}/public_html/include>
   SetHandler none
 </Directory>
 
-# don't pass files in /include through perl
-<Directory ${ETS_ROOT}/public_html/include>
+# don't pass files in /oidc through perl
+<Directory ${ETS_ROOT}/public_html/oidc>
+  SetHandler none
+</Directory>
+
+# don't pass files in /pic through perl
+<Directory ${ETS_ROOT}/public_html/pic>
   SetHandler none
 </Directory>
 

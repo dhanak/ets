@@ -47,7 +47,9 @@ sub session_new {
     if ($sth->execute($sid, $text) != 1) {
         return undef;
     }
-    $cookie = CGI::Cookie->new(-name => 'ETS_SESSION_ID', -value => $sid);
+    $cookie = CGI::Cookie->new(-name => 'ETS_SESSION_ID',
+                               -value => $sid,
+                               -secure => 1);
     $cookie->bake($r);
     $r->warn("Created new session with ID $sid");
 
