@@ -15,18 +15,18 @@ $first_char => undef
 % }
 </h3>
 
-% if ($row_num>20) {
+% if ($row_num > 20) {
    <TABLE align=center>
    <TR>
 %  $db_first_char->execute;
 %  while (defined ($fc = $db_first_char->fetchrow_hashref)) {
      <TH>
      <& link, href=>"action_show_page", text=> $fc->{firstchar},
-	  params => { page => "user_mgmt", first_char => $fc->{firstchar} } &>
+         params => { page => "user_mgmt", first_char => $fc->{firstchar} } &>
 %  }
    <TH>
    <& link, href=>"action_show_page", text=> "Összes",
-	params => { page => "user_mgmt", first_char => "" } &>
+        params => { page => "user_mgmt", first_char => "" } &>
    </TABLE>
    <HR>
 % }
@@ -56,10 +56,10 @@ $first_char => undef
 
     <TD align=center>
     <& link, href=>"action_show_page", img => "results.png", text=> "Pontszámok",
-	params => { page => "user_results", neptun => $p->{neptun} } &>
+        params => { page => "user_results", neptun => $p->{neptun} } &>
     <TD align=center>
     <& link, href=>"action_show_page", img => "details.png", text=> "Részletek",
-	params => { page => "user_details", neptun => $p->{neptun} } &>
+        params => { page => "user_details", neptun => $p->{neptun} } &>
     <TD align=center>
 %   if ($m->comp('/sub/check_perm', item => "delete_user", neptun => $p->{neptun})) {
        <& js_confirm, img => "delete.png", text => "Töröl",
@@ -74,7 +74,7 @@ $first_char => undef
 <& TR, \$row &>
 <& form, action => "action_add_user", hidden => { first_char => $first_char } &>
 <TD><INPUT TYPE=text NAME=neptun SIZE=10 MAXLENGTH=6>
-<TD><INPUT TYPE=text NAME=name SIZE=25>
+<TD>
 <TD>
 <TD><SELECT NAME="admin">
   <OPTION value="Y">Adminisztrátor</OPTION>
@@ -86,7 +86,7 @@ $first_char => undef
 </TABLE>
 
 % if (defined $first_char) {
-%   if ($row_num>20) {
+%   if ($row_num > 20) {
       <HR>
       <TABLE align=center>
       <TR>
@@ -94,11 +94,11 @@ $first_char => undef
 %     while (defined ($fc = $db_first_char->fetchrow_hashref)) {
         <TH>
         <& link, href=>"action_show_page", text=> $fc->{firstchar},
-	     params => { page => "user_mgmt", first_char => $fc->{firstchar} } &>
+             params => { page => "user_mgmt", first_char => $fc->{firstchar} } &>
 %     }
       <TH>
       <& link, href=>"action_show_page", text=> "Összes",
-	   params => { page => "user_mgmt" } &>
+           params => { page => "user_mgmt" } &>
       </TABLE>
 %   }
 % }
@@ -110,14 +110,16 @@ my ($people, $p, $db_first_char, $fc, $row, $row_num);
 <%init>
 if (!defined $db_first_char) {
     $db_first_char =
-	$dbh->prepare("SELECT DISTINCT SUBSTRING(UPPER(name),1,1) AS firstchar
-		       FROM people ORDER BY firstchar");
+        $dbh->prepare("SELECT DISTINCT SUBSTRING(UPPER(name),1,1) AS firstchar
+                       FROM people ORDER BY firstchar");
     $people =
-	$dbh->prepare("SELECT neptun, name, email, admin FROM people
-		       WHERE UPPER(name) LIKE ? ORDER BY name");
+        $dbh->prepare("SELECT neptun, name, email, admin FROM people
+                       WHERE UPPER(name) LIKE ? ORDER BY name, neptun");
 }
 
-if (($row_num = $dbh->selectrow_array("SELECT COUNT(*) FROM people"))<=20) { $first_char="" };
+if (($row_num = $dbh->selectrow_array("SELECT COUNT(*) FROM people")) <= 20) {
+    $first_char = "";
+};
 $row = 0;
 </%init>
 

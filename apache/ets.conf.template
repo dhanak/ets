@@ -1,7 +1,8 @@
 LoadModule perl_module modules/mod_perl.so
 LoadModule rewrite_module modules/mod_rewrite.so
+LogLevel perl:notice
 
-ServerName ${WEB_HOST}
+ServerName ${ETS_BASE_URL}
 
 SetEnv PERLLIB "${ETS_ROOT}/modules"
 SetEnv PERL5LIB "${ETS_ROOT}/modules"
@@ -28,7 +29,7 @@ DocumentRoot "${ETS_ROOT}/public_html"
   PerlHandler HTML::Mason::ApacheHandler
   PassEnv EMAIL_SENDER_TRANSPORT EMAIL_SENDER_TRANSPORT_host EMAIL_SENDER_TRANSPORT_port
   PassEnv DB_HOST DB_USER DB_PASSWORD DB_DATABASE
-  PassEnv CONTACT SITENAME SICSTUS
+  PassEnv CONTACT ETS_BASE_URL OIDC_PROVIDER SITENAME
   Require all granted
 </Directory>
 

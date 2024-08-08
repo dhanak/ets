@@ -9,11 +9,6 @@ Generate context sensitive main menu located on the left side of the screen.
    params => { page => "edit_news_form" } &><BR>
 % }
 
-%# <& link, href => "action_show_page", text => "Programok",
-%#    params => { page => "links", section => "DOWN" } &><BR>
-%# <& link, href => "action_show_page", text => "Leírások",
-%#    params => { page => "links", section => "DOCS" } &><BR>
-
 <& link, href => "action_show_page", text => "Gyakorlás",
                  params => { page => "do_exercise_select" } &><BR>
 
@@ -107,15 +102,5 @@ Generate context sensitive main menu located on the left side of the screen.
 % if ($m->comp('/sub/check_perm', item => "db_archive_form")) {
 <& link, href => "action_show_page", text => "Archiválás",
    params => { page => "db_archive_form" } &><BR>
-% }
-
-% if ($m->comp('/sub/check_perm', item => "login")) {
-<P><& form, action => "action_login" &>
-Neptun kód:<BR>
-<INPUT TYPE=text name=neptun size=12 maxlength=6><BR>
-Jelszó:<BR>
-<INPUT TYPE=password name=pass size=12>
-<P><INPUT TYPE=submit name="Login" value="Belépés">
-</FORM>
 % }
 <BR>

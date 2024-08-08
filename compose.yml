@@ -4,10 +4,10 @@ services:
       context: .
       target: ets
       args:
+        - ETS_BASE_URL=${ETS_BASE_URL:-http://localhost:${HTTP_EXTERNAL_PORT:-8080}}
         - OIDC_PROVIDER=${OIDC_PROVIDER}
         - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
         - OIDC_SECRET=${OIDC_SECRET}
-        - WEB_HOST=${WEB_HOST:-http://localhost:${HTTP_EXTERNAL_PORT:-8080}}
     environment:
       - DB_HOST=mariadb
       - DB_USER=ets
@@ -18,6 +18,10 @@ services:
       - EMAIL_SENDER_TRANSPORT=SMTP
       - EMAIL_SENDER_TRANSPORT_host=${SMTP_HOST:-mailcatcher}
       - EMAIL_SENDER_TRANSPORT_port=${SMTP_PORT:-1025}
+      - EMAIL_SENDER_TRANSPORT_sasl_username=${SMTP_USERNAME-}
+      - EMAIL_SENDER_TRANSPORT_sasl_password=${SMTP_PASSWORD-}
+      - ETS_BASE_URL
+      - OIDC_PROVIDER
     ports:
       - ${HTTP_EXTERNAL_PORT:-8080}:80
     profiles:
@@ -36,7 +40,7 @@ services:
       - MARIADB_DATABASE=ets
       - MARIADB_ROOT_PASSWORD=neduddgi
       - CONTACT=${CONTACT:-dp@iit.bme.hu}
-      - ETS_ADMIN_PASSWORD
+      - ETS_ADMIN_NEPTUN_CODE
     profiles:
       - develop
       - live

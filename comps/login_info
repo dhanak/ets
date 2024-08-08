@@ -2,12 +2,14 @@
 Print information about the user.
 </%doc>
 
-% if (!defined $data->{NEPTUN}) {
-Vendég
-% } else {
+% if (defined $data->{NEPTUN}) {
 <% $data->{NAME} %>
-% if ($data->{GOD}) {
+% if (!$data->{KNOWN}) {
+(vendég)
+% } elsif ($data->{GOD}) {
 (God)
 % }
  - <& link, href => "action_logout", text => "Kilépés" &>
+% } else {
+Vendég - <& link, href => "action_login", text => "Belépés" &>
 % }

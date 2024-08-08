@@ -12,7 +12,7 @@ CREATE TABLE news (
 );
 
 INSERT INTO news VALUES
-  (0, "ADMIN", "Üdvözlünk az ETS-ben!", NOW());
+  (0, "${ETS_ADMIN_NEPTUN_CODE}", "Üdvözlünk az ETS-ben!", NOW());
 
 CREATE TABLE links (
   id              INT(8) PRIMARY KEY AUTO_INCREMENT,
@@ -23,23 +23,16 @@ CREATE TABLE links (
 
 CREATE TABLE people (
   neptun          CHAR(6) PRIMARY KEY,
-  name            VARCHAR(64),
-  email           VARCHAR(64),
-  password        VARCHAR(32),
+  name            VARCHAR(64) DEFAULT "",
+  email           VARCHAR(64) DEFAULT "",
   admin           CHAR(1) DEFAULT "N",
   god             CHAR(1) DEFAULT "N",
   licence         CHAR(1) DEFAULT "N" -- FIXME
 );
 
 INSERT INTO people VALUES
-  ("ADMIN",
-   "DP Admin",
-   "${CONTACT:-dp@iit.bme.hu}",
-   "${ETS_ADMIN_PASSWORD}",
-   "Y",
-   "N",
-   "N")
-;
+  ("${ETS_ADMIN_NEPTUN_CODE}", "DP Admin", "", "Y", "Y", "N");
+
 CREATE TABLE session (
   sid             CHAR(36) PRIMARY KEY, -- uuid4
   data            BLOB,

@@ -55,6 +55,14 @@ defined in $data->{SCREEN}.
 <ADDRESS><% $ENV{SITENAME} %> - <% $ENV{CONTACT} %></ADDRESS>
 
 </TABLE>
+
+
+%# <ul>
+%# % foreach (sort keys %ENV) {
+%# <li><% $_ %> = <% $ENV{$_} %>
+%# % }
+%# </ul>
+
 </BODY>
 
 <!-- #################### Page End #################### -->

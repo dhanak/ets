@@ -1,7 +1,7 @@
 LoadModule auth_openidc_module modules/mod_auth_openidc.so
 #LogLevel auth_openidc:debug
 
-#OIDCUnauthAction pass
+OIDCUnauthAction pass
 OIDCClientID ${OIDC_CLIENT_ID}
 OIDCClientSecret ${OIDC_SECRET}
 OIDCCryptoPassphrase super-secret-oidc-passphrase

@@ -19,12 +19,9 @@ $neptun => $data->{NEPTUN}	# passed through 'action_show_page'
 % # modification form
 
 <& form, action => "action_modify_user", hidden => { neptun => $neptun } &>
-<TR><TD CLASS="spec" ALIGN=right>Neptun kód:
-<TD><% $neptun %>
-<TR><TD CLASS="spec" ALIGN=right>Név:
-<TD><INPUT TYPE=text SIZE=60 NAME=name VALUE="<% $name %>">
-<TR><TD CLASS="spec" ALIGN=right>E-mail:
-<TD><INPUT TYPE=text SIZE=60 NAME=email VALUE="<% $email %>">
+<TR><TD CLASS="spec" ALIGN=right>Neptun kód: <TD><% $neptun %>
+<TR><TD CLASS="spec" ALIGN=right>Név:        <TD><% $name %>
+<TR><TD CLASS="spec" ALIGN=right>E-mail:     <TD><% $email %>
 <TR><TD CLASS="spec" ALIGN=right>Jogkör:
 <TD><SELECT NAME="admin">
 <OPTION value="Y" <% $priv eq "Y" && "selected" %>>Adminisztrátor</OPTION>
@@ -36,19 +33,9 @@ $neptun => $data->{NEPTUN}	# passed through 'action_show_page'
 % } else {
 % # static information
 
-% if ($m->comp('/sub/check_perm', item => "change_email", neptun => $neptun)) {
-<& form, action => "action_show_page", hidden => { page => "change_email", neptun => $neptun } &>
-% }
 <TR><TD CLASS="spec" ALIGN=right>Neptun kód: <TD><% $neptun %>
 <TR><TD CLASS="spec" ALIGN=right>Név:        <TD><% $name %>
-<TR><TD CLASS="spec" ALIGN=right>E-mail:
-%   if ($m->comp('/sub/check_perm', item => "change_email", neptun => $neptun)) {
-    <TD><INPUT TYPE=text NAME=email VALUE="<% $email %>" SIZE=30>
-    <TD><INPUT type=submit NAME=modify VALUE="Módosít">
-    </form>
-%   } else {
-    <TD><% $email %>
-%   }
+<TR><TD CLASS="spec" ALIGN=right>E-mail:     <TD><% $email %>
 <TR><TD CLASS="spec" ALIGN=right>Jogkör:
     <TD><% $priv eq "Y" ? "Adminisztrátor" : "Felhasználó" %>
 
@@ -92,15 +79,6 @@ $neptun => $data->{NEPTUN}	# passed through 'action_show_page'
 % } # foreach (@groups)
 </table>
 </blockquote>
-% }
-
-% if ($m->comp('/sub/check_perm', item => "change_password", neptun=>$neptun)) {
-   <H4>Jelszócsere</H4>
-   <BLOCKQUOTE>
-   <TABLE>
-   <& change_password_form &>
-   </TABLE>
-   </BLOCKQUOTE>
 % }
 
 <!-- #################### Körkérdések #################### -->
