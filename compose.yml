@@ -48,7 +48,7 @@ services:
   mailcatcher:
     image: dockage/mailcatcher
     ports:
-      - 1080:1080
+      - 127.0.0.1:1080:1080
     profiles:
       - develop
     restart: unless-stopped
@@ -64,7 +64,7 @@ services:
       - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
     command: ["start-dev", "--import-realm"]
     ports:
-      - ${OIDC_EXTERNAL_PORT:-8081}:8080
+      - 127.0.0.1:${OIDC_EXTERNAL_PORT:-8081}:8080
     profiles:
       - develop
     restart: unless-stopped

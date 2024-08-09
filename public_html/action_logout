@@ -3,6 +3,8 @@ A simple logout page with a permanent redirect.
 </%doc>
 <%init>;
 $m->comp('/sub/log', "logout", neptun => $data->{NEPTUN}, name => $data->{NAME});
-$m->redirect("/redirect_uri?iss=" . uri_escape_utf8($ENV{OIDC_CLAIM_iss}) .
-             "&logout=" . uri_escape_utf8("$ENV{ETS_BASE_URL}/"));
+$m->redirect("$ENV{ETS_BASE_URL}/redirect_uri?iss=" .
+             uri_escape_utf8($ENV{OIDC_CLAIM_iss}) .
+             "&logout=" .
+             uri_escape_utf8("$ENV{ETS_BASE_URL}/"));
 </%init>
