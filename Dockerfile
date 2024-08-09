@@ -32,7 +32,7 @@ FROM motemen/mod_perl:${PERL_VERSION}-${APACHE_VERSION} AS ets
 # install extra debian dependencies
 RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     apt-get update && \
-    apt-get install -y busybox gcc gettext-base libmariadb-dev make wget \
+    apt-get install -y busybox gcc libmariadb-dev make wget \
         # libapache2-mod-auth-openidc dependencies
         libcjose0 libhiredis0.14 && \
     busybox --install
@@ -78,16 +78,6 @@ COPY --chown=www-data public_html ./public_html
 
 # create mason working directory
 RUN mkdir mason && chown www-data:www-data mason
-
-# substitute envvars in template files
-ARG ETS_BASE_URL
-ARG OIDC_PROVIDER
-ARG OIDC_CLIENT_ID
-ARG OIDC_SECRET
-RUN for f in */*.template; do \
-        envsubst '$ETS_BASE_URL $ETS_ROOT $OIDC_PROVIDER $OIDC_CLIENT_ID $OIDC_SECRET' <${f} >${f%.template}; \
-        chown www-data:www-data ${f%.template}; \
-    done
 
 # switch back to Apache 1.3 compatible mpm_prefork (for perl)
 # append the config to the end of the global apache config

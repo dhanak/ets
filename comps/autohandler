@@ -11,12 +11,15 @@ my ($dsn, %statements, %cookies);
 sub session_initialize {
     if (!defined $dbh) {
         $dsn = "DBI:MariaDB:database=$ENV{DB_DATABASE};host=$ENV{DB_HOST}";
-        $dbh = DBI->connect($dsn, $ENV{DB_USER}, $ENV{DB_PASSWORD});
+        $dbh = DBI->connect($dsn, $ENV{DB_USER}, $ENV{DB_PASSWORD}, {
+            mariadb_auto_reconnect => 1,
+        });
         if (!defined $dbh) {
             $r->log_error("Error in DB connect: $DBI::errstr");
             return undef;
         }
     }
+    die("DB connection failed") unless $dbh->ping();
 
     $statements{NEW} =
         $dbh->prepare('INSERT INTO session (sid, data, last)

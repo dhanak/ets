@@ -2,7 +2,7 @@
 
 package HTML::Mason::Commands;
 
-use lib qw(${ETS_ROOT}/modules);
+use lib qw(modules);
 
 use RunCmd;
 use DBD::MariaDB;

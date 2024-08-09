@@ -3,25 +3,22 @@ services:
     build:
       context: .
       target: ets
-      args:
-        - ETS_BASE_URL=${ETS_BASE_URL:-http://localhost:${HTTP_EXTERNAL_PORT:-8080}}
-        - OIDC_PROVIDER=${OIDC_PROVIDER}
-        - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
-        - OIDC_SECRET=${OIDC_SECRET}
     environment:
-      - DB_HOST=mariadb
-      - DB_USER=ets
-      - DB_PASSWORD=ets
-      - DB_DATABASE=ets
       - CONTACT=${CONTACT:-dp@iit.bme.hu}
-      - SITENAME=${SITENAME:-DP Elektronikus Tanársegéd}
+      - DB_DATABASE=ets
+      - DB_HOST=mariadb
+      - DB_PASSWORD=ets
+      - DB_USER=ets
       - EMAIL_SENDER_TRANSPORT=SMTP
       - EMAIL_SENDER_TRANSPORT_host=${SMTP_HOST:-mailcatcher}
       - EMAIL_SENDER_TRANSPORT_port=${SMTP_PORT:-1025}
-      - EMAIL_SENDER_TRANSPORT_sasl_username=${SMTP_USERNAME-}
       - EMAIL_SENDER_TRANSPORT_sasl_password=${SMTP_PASSWORD-}
-      - ETS_BASE_URL
+      - EMAIL_SENDER_TRANSPORT_sasl_username=${SMTP_USERNAME-}
+      - ETS_BASE_URL=${ETS_BASE_URL:-http://localhost:${HTTP_EXTERNAL_PORT:-8080}}
+      - OIDC_CLIENT_ID
       - OIDC_PROVIDER
+      - OIDC_SECRET
+      - SITENAME=${SITENAME:-DP Elektronikus Tanársegéd}
     ports:
       - ${HTTP_EXTERNAL_PORT:-8080}:80
     profiles:
