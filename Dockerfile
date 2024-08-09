@@ -38,16 +38,14 @@ RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     busybox --install
 
 # install libapache2-mod-auth-openidc
-ARG MOD_AUTH_OPENIDC_VERSION=2.4.12.3-2+deb12u1
+ARG MOD_AUTH_OPENIDC_VERSION=2.4.15.7-1.bookworm
 RUN wget -P /tmp \
-    http://ftp.hu.debian.org/debian/pool/main/liba/libapache2-mod-auth-openidc/libapache2-mod-auth-openidc_${MOD_AUTH_OPENIDC_VERSION}_amd64.deb && \
+    https://github.com/OpenIDC/mod_auth_openidc/releases/download/v${MOD_AUTH_OPENIDC_VERSION%-*}/libapache2-mod-auth-openidc_${MOD_AUTH_OPENIDC_VERSION}_amd64.deb && \
     dpkg-deb -x /tmp/libapache2-mod-auth-openidc_${MOD_AUTH_OPENIDC_VERSION}_amd64.deb /tmp && \
     cp /tmp/usr/lib/apache2/modules/mod_auth_openidc.so ${HTTPD_PREFIX}/modules
 
 # install perl dependencies
-RUN mkdir -p /var/cache/perl/.cpan /var/cache/perl/.cpanm && \
-    ln -s /var/cache/perl/.cpan* /root && \
-    cpan App::cpanminus && cpanm \
+RUN cpan App::cpanminus && cpanm \
         Apache::DBI \
         CGI \
         Data::Dumper \
@@ -56,8 +54,7 @@ RUN mkdir -p /var/cache/perl/.cpan /var/cache/perl/.cpanm && \
         File::MMagic \
         HTML::Mason \
         URI \
-        UUID && \
-    rm /root/.cpan*
+        UUID
 
 # set environment variables
 ENV ETS_ROOT=/opt/ets

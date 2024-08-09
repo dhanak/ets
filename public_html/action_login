@@ -8,6 +8,8 @@ my $provider = $ENV{OIDC_PROVIDER};
 $provider =~ s@http://keycloak:8080@http://localhost:8081@;
 </%once>
 <%init>;
-$m->redirect("/redirect_uri?iss=" . uri_escape_utf8($provider) .
-             "&target_link_uri=" . uri_escape_utf8("$ENV{ETS_BASE_URL}/"));
+$m->redirect("$ENV{ETS_BASE_URL}/redirect_uri?iss=" .
+             uri_escape_utf8($provider) .
+             "&target_link_uri=" .
+             uri_escape_utf8("$ENV{ETS_BASE_URL}/"));
 </%init>

@@ -15,12 +15,13 @@ services:
       - EMAIL_SENDER_TRANSPORT_sasl_password=${SMTP_PASSWORD-}
       - EMAIL_SENDER_TRANSPORT_sasl_username=${SMTP_USERNAME-}
       - ETS_BASE_URL=${ETS_BASE_URL:-http://localhost:${HTTP_EXTERNAL_PORT:-8080}}
+      - HTTP_EXTERNAL_PORT=${HTTP_EXTERNAL_PORT:-8080}
       - OIDC_CLIENT_ID
       - OIDC_PROVIDER
       - OIDC_SECRET
       - SITENAME=${SITENAME:-DP Elektronikus Tanársegéd}
     ports:
-      - ${HTTP_EXTERNAL_PORT:-8080}:80
+      - 127.0.0.1:${HTTP_EXTERNAL_PORT:-8080}:80
     profiles:
       - develop
       - live
@@ -48,7 +49,7 @@ services:
   mailcatcher:
     image: dockage/mailcatcher
     ports:
-      - 1080:1080
+      - 127.0.0.1:1080:1080
     profiles:
       - develop
     restart: unless-stopped
@@ -64,7 +65,7 @@ services:
       - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
     command: ["start-dev", "--import-realm"]
     ports:
-      - ${OIDC_EXTERNAL_PORT:-8081}:8080
+      - 127.0.0.1:${OIDC_EXTERNAL_PORT:-8081}:8080
     profiles:
       - develop
     restart: unless-stopped
