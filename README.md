@@ -3,13 +3,28 @@
 Ez a BME műszaki informatika szakon oktatott, Deklaratív Programozás című tárgy
 hallgatói információs rendszere, az ETS.
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Tartalom**
+
+- [Elektronikus Tanársegéd (ETS)](#elektronikus-tanársegéd-ets)
+    - [Előzetes követelmények](#előzetes-követelmények)
+    - [Telepítés](#telepítés)
+        - [Futtatási környezet beállítása](#futtatási-környezet-beállítása)
+        - [Docker build és futtatás](#docker-build-és-futtatás)
+        - [Apache2 reverse proxy beállítása](#apache2-reverse-proxy-beállítása)
+    - [Backup és visszaállítás](#backup-és-visszaállítás)
+    - [Emailek fejlesztői környezetben](#emailek-fejlesztői-környezetben)
+
+<!-- markdown-toc end -->
+
 ## Előzetes követelmények
 
 * `docker`, `docker compose`
   * Debian/Ubuntu: `docker-ce`, `docker-ce-cli`, `docker-compose-plugin`
     csomagok
   * a régebbi, v1-es `docker-compose` python csomag nem jó!
-* SICStus Prolog
+* Apache2 web szerver konfigurált HTTPS eléréssel
+* engedélyezett OpenID Connect Provider szolgáltatás (pl. <https://idp.bme.hu>)
 
 ## Telepítés
 
@@ -35,6 +50,69 @@ $ docker compose up -d
 
 Ezek hatására a site fut, és elérhető a docker hoston a beállított porton
 (`HTTP_EXTERNAL_PORT`, alapértelmezetten 8080).
+
+### Apache2 reverse proxy beállítása
+
+Az ETS webszerver SSL titkosítás nélkül, csak a localhoston hozzáférhető porton
+(alapértelmezetten a 8080-ason, ld. `HTTP_EXTERNAL_PORT` beállítást az env
+file-ban) fut. Ahhoz, hogy kívülről is elérhető legyen https protokollal, be
+kell rakni egy futó Apache webszerver mögé, amiben beállítottuk az SSL elérést
+és reverse proxy-s továbbítást. Ehhez először is szükség lesz a `mod_proxy` és a
+`mod_headers` Apache modulokra:
+
+```sh
+$ sudo a2enmod headers
+$ sudo a2enmod proxy
+```
+
+Továbbá az alábbi file-ra `/etc/apache2/sites-avaiable/ets-ssl.conf` néven. Az
+ETS szempontjából lényeges részek az `## ETS` és `## ETS END` sorok között
+vannak, a többi csak példa, és feltételezi a `SERVER_HOST` környezeti változó
+beállítását arra az FQDN névre, amin a host kívülről elérhető (ez persze fixen
+ki bele is írható a file-ba a `${SERVER_HOST}` előfordulásainak helyére).
+
+```conf
+<VirtualHost *:443>
+    ServerAdmin webmaster@localhost
+    ServerName ${SERVER_HOST}
+
+    DocumentRoot /var/www/html
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    SSLEngine on
+
+    <FilesMatch "\.(?:cgi|shtml|phtml|php)$">
+        SSLOptions +StdEnvVars
+    </FilesMatch>
+    <Directory /usr/lib/cgi-bin>
+        SSLOptions +StdEnvVars
+    </Directory>
+
+    ## ETS
+    SSLProxyEngine on
+    SSLProxyVerify none
+    SSLProxyCheckPeerCN off
+    ProxyPass /ets/redirect_uri http://localhost:8080/ets/redirect_uri
+    ProxyPass /ets http://localhost:8080
+    ProxyPassReverse /ets http://localhost:8080
+    ProxyPreserveHost on
+    RequestHeader set X-Forwarded-Proto "https"
+    RequestHeader set X-Forwarded-Port 443
+    ## ETS END
+
+    SSLCertificateFile /etc/letsencrypt/live/${SERVER_HOST}/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/${SERVER_HOST}/privkey.pem
+    Include /etc/letsencrypt/options-ssl-apache.conf
+</VirtualHost>
+```
+
+Végezetül engedélyezzük a frissen létrehozott site-ot:
+
+```sh
+$ sudo a2ensite ets-ssl
+```
 
 ## Backup és visszaállítás
 
@@ -63,4 +141,9 @@ Fejlesztői környezetben a rendszer nem küld éles emaileket, hanem egy
 megtekinteni a docker host gépen, a 1080-as porton:
 
 ```
-$ xdg-open http://<docker-host>:1080
+$ xdg-open http://localhost:1080
+```
+
+<!-- Local Variables: -->
+<!-- markdown-toc-header-toc-title: **Tartalom** -->
+<!-- End: -->

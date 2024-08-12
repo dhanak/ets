@@ -23,11 +23,11 @@ CREATE TABLE links (
 
 CREATE TABLE people (
   neptun          CHAR(10) PRIMARY KEY,
-  name            VARCHAR(64) DEFAULT "",
-  email           VARCHAR(64) DEFAULT "",
-  admin           CHAR(1) DEFAULT "N",
-  god             CHAR(1) DEFAULT "N",
-  licence         CHAR(1) DEFAULT "N" -- FIXME
+  name            VARCHAR(64) NOT NULL DEFAULT "",
+  email           VARCHAR(64) NOT NULL DEFAULT "",
+  admin           CHAR(1) NOT NULL DEFAULT "N",
+  god             CHAR(1) NOT NULL DEFAULT "N",
+  licence         CHAR(1) NOT NULL DEFAULT "N" -- FIXME
 );
 
 INSERT INTO people VALUES
