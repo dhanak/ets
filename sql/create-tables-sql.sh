@@ -6,7 +6,7 @@
 mariadb -u${MARIADB_USER} -p${MARIADB_PASSWORD} ${MARIADB_DATABASE} <<EOF
 CREATE TABLE news (
   id              INT(8) PRIMARY KEY AUTO_INCREMENT,
-  poster          CHAR(6),
+  poster          CHAR(10),
   text            TEXT,
   ptime           DATETIME
 );
@@ -22,7 +22,7 @@ CREATE TABLE links (
 );
 
 CREATE TABLE people (
-  neptun          CHAR(6) PRIMARY KEY,
+  neptun          CHAR(10) PRIMARY KEY,
   name            VARCHAR(64) DEFAULT "",
   email           VARCHAR(64) DEFAULT "",
   admin           CHAR(1) DEFAULT "N",
@@ -35,7 +35,7 @@ INSERT INTO people VALUES
 
 CREATE TABLE session (
   sid             CHAR(36) PRIMARY KEY, -- uuid4
-  data            BLOB,
+  data            TEXT,
   last            DATETIME
 );
 
@@ -48,7 +48,7 @@ CREATE TABLE categories (
 CREATE TABLE catgroups (
   rank            INT(4) PRIMARY KEY,
   name            VARCHAR(64) NOT NULL,
-  members         BLOB
+  members         TEXT
 );
 
 CREATE TABLE levels (
@@ -66,7 +66,7 @@ CREATE TABLE exercises (
   category        CHAR(4) NOT NULL,
   scheme          CHAR(4) NOT NULL,
   level           INT(4) NOT NULL,
-  data            BLOB
+  data            TEXT
 );
 
 CREATE TABLE scripts (
@@ -77,7 +77,7 @@ CREATE TABLE scripts (
 );
 
 CREATE TABLE progress (
-  neptun          CHAR(6) NOT NULL,
+  neptun          CHAR(10) NOT NULL,
   category        CHAR(4) NOT NULL,
   done            INT(4),
   PRIMARY KEY     (neptun, category)
@@ -91,7 +91,7 @@ CREATE TABLE complete (
 );
 
 CREATE TABLE log (
-  user            CHAR(6),
+  user            CHAR(10),
   stamp           DATETIME,
   event           VARCHAR(64),
   params          TEXT
@@ -106,7 +106,7 @@ CREATE TABLE queries (
 
 CREATE TABLE responses (
   query           INT(8) NOT NULL,
-  user            CHAR(6) NOT NULL,
+  user            CHAR(10) NOT NULL,
   answer          VARCHAR(64),
   time            DATETIME,
   PRIMARY KEY     (query, user),
@@ -128,7 +128,7 @@ CREATE TABLE scores_meta (
 
 CREATE TABLE scores (
   id              CHAR(10) NOT NULL,
-  neptun          CHAR(6) NOT NULL,
+  neptun          CHAR(10) NOT NULL,
   value           INT(4),
   notes           VARCHAR(255),
   PRIMARY KEY     (id, neptun),
