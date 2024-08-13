@@ -10,7 +10,8 @@ require Exporter;
 sub runcmd($$)
 {
     my ($cmd, $input) = @_;
-    my ($ofile, $efile, $output, $error) = (new File::Temp( UNLINK => 1 ), new File::Temp( UNLINK => 1 ));
+    my ($output, $error);
+    my ($ofile, $efile) = (File::Temp->new(), File::Temp->new());
 
     print STDERR "--- COMMAND ---\n$cmd\n--- STDIN ---\n$input\n";
     open IN, "| $cmd >$ofile 2>$efile" or croak "runcmd failed: $cmd: $!";
@@ -26,8 +27,6 @@ sub runcmd($$)
     $error = join "", <ERR>;
     close ERR;
     print STDERR "--- STDERR ---\n$error\n";
-    
-    unlink $ofile, $efile or carp "runcmd warning: $!";
 
     return ($output, $error);
 }

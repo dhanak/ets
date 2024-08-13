@@ -26,21 +26,20 @@ if (!$m->comp('/sub/check_perm', item => "hw_submit") ||
     close $fh;
 
     if (length $input == 0) {
-	$error = "Hiányzó vagy 0 byte hosszúságú file!";
+        $error = "Hiányzó vagy 0 byte hosszúságú file!";
     } else {
-	$fname =~ s@^.*[\\/]@@;
-
-	$name = $m->comp('/sub/canonical_name', $neptun ? (neptun => $neptun) : ());
-	($output, $error) = runcmd("uuencode $fname | $ENV{ETS_ROOT}/guts/guts " .
-				   "submit '$ENV{ETS_ROOT}/$conf' '$class' '$name'",
-				   $input);
+        $fname =~ s@^.*[\\/]@@;
+        $name = $m->comp('/sub/canonical_name', $neptun ? (neptun => $neptun) : ());
+        ($output, $error) = runcmd("uuencode $fname | $ENV{ETS_ROOT}/guts/guts " .
+                                   "submit '$ENV{GUTS_WORK_DIR}/$conf' '$class' '$name'",
+                                   $input);
     }
     if ($error) {
-	$data->{MSG} = "<span class=bad>Sikertelen HF beadás</span>";
-	$data->{ERROR} = $error;
+        $data->{MSG} = "<span class=bad>Sikertelen HF beadás</span>";
+        $data->{ERROR} = $error;
     } else {
-	$data->{MSG} = "<span class=good>Sikeres HF beadás $fname néven</span>";
-	$data->{OUTPUT} = $output;
+        $data->{MSG} = "<span class=good>Sikeres HF beadás $fname néven</span>";
+        $data->{OUTPUT} = $output;
     }
 
     redirect("hw_submit", neptun => $neptun);

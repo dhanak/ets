@@ -1,3 +1,4 @@
+ARG ALPINE_VERSION=3.20
 ARG APACHE_VERSION=2.4.61
 ARG KEYCLOAK_VERSION=25.0.2
 ARG PERL_VERSION=5.40.0
@@ -23,6 +24,31 @@ FROM quay.io/keycloak/keycloak:${KEYCLOAK_VERSION} AS keycloak
 
 # copy initial realm data
 COPY ets-realm.json /opt/keycloak/data/import/
+
+##
+## SICStus install image
+##
+FROM alpine:${ALPINE_VERSION} AS sicstus
+
+ARG SICSTUS_VERSION=4.9.0
+ARG SICSTUS_PLATFORM=x86_64-linux-glibc2.28
+
+RUN wget -O- https://sicstus.sics.se/sicstus/products4/sicstus/${SICSTUS_VERSION}/binaries/linux/sp-${SICSTUS_VERSION}-${SICSTUS_PLATFORM}.tar.gz | tar xz
+
+WORKDIR sp-${SICSTUS_VERSION}-${SICSTUS_PLATFORM}
+
+ARG SICSTUS_SITENAME
+ARG SICSTUS_LICENSE_CODE
+ARG SICSTUS_EXPIRATION_DATE
+
+COPY <<EOF install.cache
+    installdir='/opt/sicstus'
+    sitename='${SICSTUS_SITENAME}'
+    licensecode='${SICSTUS_LICENSE_CODE}'
+    expires='${SICSTUS_EXPIRATION_DATE}'
+EOF
+
+RUN ./InstallSICStus --batch
 
 ##
 ## ETS image
@@ -58,6 +84,7 @@ RUN cpan App::cpanminus && cpanm \
 
 # set environment variables
 ENV ETS_ROOT=/opt/ets
+ENV GUTS_WORK_DIR=/mnt/guts
 
 # set working directory
 WORKDIR ${ETS_ROOT}
@@ -73,8 +100,8 @@ COPY --chown=www-data comps       ./comps
 COPY --chown=www-data modules     ./modules
 COPY --chown=www-data public_html ./public_html
 
-# create mason working directory
-RUN mkdir mason && chown www-data:www-data mason
+# create mason working directory, fix temp dir permissions
+RUN mkdir mason && chown www-data:www-data mason && chmod a+rwx,+t /tmp
 
 # switch back to Apache 1.3 compatible mpm_prefork (for perl)
 # append the config to the end of the global apache config
@@ -83,3 +110,9 @@ RUN sed -i \
         -e 's/#LoadModule mpm_prefork/LoadModule mpm_prefork/' \
         ${HTTPD_PREFIX}/conf/httpd.conf && \
     cat apache/openidc.conf apache/ets.conf >>${HTTPD_PREFIX}/conf/httpd.conf
+
+# set up volume
+RUN mkdir ${GUTS_WORK_DIR} && for dir in env hwks logs mails spools; do \
+        mkdir ${GUTS_WORK_DIR}/${dir}; \
+    done
+VOLUME ${GUTS_WORK_DIR}

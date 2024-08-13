@@ -1,0 +1,37 @@
+# Common directories and paths
+TOP_DIR := $(dir $(firstword $(MAKEFILE_LIST)))
+ABS_DIR := $(abspath $(TOP_DIR))
+
+# Specify default target
+.PHONY: default
+default:
+
+# Check for and set up required tools
+define set-up-tools-template
+$(1) := $$(shell which $(2))
+
+ifeq "$$(strip $$($(1)))" ""
+$(1) := $(2)
+endif
+
+$$($(1)):
+	@echo Please install \`$$@\' manually!
+	@exit 1
+endef
+
+# Common tools
+$(eval $(call set-up-tools-template,SED,sed))
+$(eval $(call set-up-tools-template,SORT,sort))
+$(eval $(call set-up-tools-template,TPUT,tput))
+
+# Automatic help generator
+.PHONY: help
+help: | $(SED) $(SORT) $(TPUT)
+	@export hl=`$(TPUT) bold` rs=`$(TPUT) sgr0` && \
+		$(SED) \
+			-e '/^#: .*$$/!d # skip non-help contents' \
+			-e '$$ d # stop at end of file' \
+			-e 'N # append the next line' \
+			-e 's/^#: \(.*\)\n\([^:]*\):.*/'"$${hl}"'\2'"$${rs}"': \1/ # help & target' \
+			-e 't;D # delete first line of pattern space if substitution failed' \
+			$(filter-out Makefile.common,$(MAKEFILE_LIST)) | $(SORT)

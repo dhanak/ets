@@ -56,7 +56,6 @@ defined in $data->{SCREEN}.
 
 </TABLE>
 
-
 %# <ul>
 %# % foreach (sort keys %ENV) {
 %# <li><% $_ %> = <% $ENV{$_} %>
