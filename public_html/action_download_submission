@@ -27,7 +27,7 @@ sub cmdout {
     $ct = "application/octet-stream;" if $ct eq "application/octet-stream";
     $r->content_type($ct);
     if (exists $_[1]) {
-	$r->headers_out()->{"Content-Disposition"} = "inline; filename=\"$_[1]\"";
+        $r->headers_out()->{"Content-Disposition"} = "inline; filename=\"$_[1]\"";
     }
     $m->out($output);
 }
@@ -40,33 +40,32 @@ if (!$m->comp('/sub/check_perm', item => "download_submission", neptun => $neptu
     $m->comp('html_page');
 } else {
     my $name = $m->comp('/sub/canonical_name', neptun => $neptun);
-    my $basedir = "$ENV{ETS_ROOT}/guts/hwks/$semester/$class";
+    my $basedir = "$ENV{GUTS_WORK_DIR}/hwks/$semester/$class";
 
     if ($version) {
-	$_ = "$basedir/mails/$name.$version";
-	if (-r && -f) {
-	    if (!$file) {
-		open IN, "<$_";
-		my @parts = split(/ +/, <IN>);
-		chomp($file = $parts[2]);
-		close IN;
-	    }
-	    cmdout("uudecode -o- '$_'", $file);
-	} else {
-	    $data->{MSG} = "<span class=bad>Nem találtam ilyen beadott verziót!</span>";
-	    $data->{SCREEN} = "hw_submit";
-	    $m->comp('html_page');
-	}
+        $_ = "$basedir/mails/$name.$version";
+        if (-r && -f) {
+            if (!$file) {
+                open IN, "<$_";
+                my @parts = split(/ +/, <IN>);
+                chomp($file = $parts[2]);
+                close IN;
+            }
+            cmdout("uudecode -o- '$_'", $file);
+        } else {
+            $data->{MSG} = "<span class=bad>Nem találtam ilyen beadott verziót!</span>";
+            $data->{SCREEN} = "hw_submit";
+            $m->comp('html_page');
+        }
     } else {
-	$_ = "$basedir/reports/$suite/$name";
-	if (-r && -f) {
-	    cmdout("cat '$_'", "${class}_log.txt");
-	} else {
-	    $data->{MSG} = "<span class=bad>Nem találtam ilyen tesztnaplót!</span>";
-	    $data->{SCREEN} = "hw_submit";
-	    $m->comp('html_page');
-	}
+        $_ = "$basedir/reports/$suite/$name";
+        if (-r && -f) {
+            cmdout("cat '$_'", "${class}_log.txt");
+        } else {
+            $data->{MSG} = "<span class=bad>Nem találtam ilyen tesztnaplót!</span>";
+            $data->{SCREEN} = "hw_submit";
+            $m->comp('html_page');
+        }
     }
 }
 </%init>
-

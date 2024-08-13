@@ -3,6 +3,7 @@ Offer a form to submit homeworks and acknowledge prior submission.
 </%doc>
 
 <%args>
+$conf => "env/submit.conf"
 $neptun => undef
 </%args>
 
@@ -33,11 +34,11 @@ Beadható <b><& date:display, $class->{start} &> 12:00</b> és
 % if (exists $class->{file}) {
 Az állomány neve <tt><% $class->{file} %></tt>.
 % }
-<% $class->{opts} =~ /doc\((.+?)\)/ %>
+<% $class->{opts} =~ /doc\(('?)(.+?)\g1\)/ ? "<br><b>$2</b>" : "" %>
 
 <p><& form, action => "action_hw_submit", enctype => "multipart/form-data",
     hidden => { conf => $conf, class => $class->{class},
-		exists $class->{file} ? (fname => $class->{file}) : (),
+                exists $class->{file} ? (fname => $class->{file}) : (),
                 $neptun ? (neptun => $neptun) : () } &>
 <INPUT TYPE=file NAME=file SIZE=60>
 <INPUT TYPE=submit NAME=submit VALUE="Mehet">
@@ -50,21 +51,14 @@ Az állomány neve <tt><% $class->{file} %></tt>.
 <& hw_show_submissions, $neptun ? (neptun => $neptun) : () &>
 
 <%once>;
-my ($get_conf, $conf, $class, @classes, $year, $month, $day, $today, $row);
+my ($class, @classes, $year, $month, $day, $today, $row);
 my ($get_name, $studname);
 </%once>
 
 <%init>;
-if (!defined $get_conf) {
-    $get_conf =
-	$dbh->prepare("SELECT value FROM parameters WHERE id='submit.conf'");
-    $get_name =
-	$dbh->prepare("SELECT name FROM people WHERE neptun=?");
+if (!defined $get_name) {
+    $get_name = $dbh->prepare("SELECT name FROM people WHERE neptun=?");
 }
-
-$get_conf->execute;
-($conf) = $get_conf->fetchrow_array;
-$get_conf->finish;
 
 if ($neptun && ($m->comp('/sub/is_supervisor', neptun => uc $neptun) ||
                 $m->comp('/sub/is_admin'))) {
@@ -80,8 +74,10 @@ if ($neptun && ($m->comp('/sub/is_supervisor', neptun => uc $neptun) ||
 ($day, $month, $year) = (localtime)[3..5];
 $today = sprintf "%4d-%02d-%02d", $year + 1900, $month+1, $day;
 foreach $class (@{ $m->comp('/sub/parse_hw_classes', conf => $conf) }) {
-    push @classes, $class if $neptun || ($class->{start} le $today &&
-			                 $today le $class->{end});
+    push @classes, $class if
+        $m->comp('/sub/is_admin') ||
+        $neptun ||
+        ($class->{start} le $today && $today le $class->{end});
 }
 
 $row = 0;

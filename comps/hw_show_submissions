@@ -3,6 +3,7 @@ Show earlier submissions and latest test reports.
 </%doc>
 
 <%args>
+$conf => "env/submit.conf"
 $neptun => $data->{NEPTUN}
 </%args>
 
@@ -16,16 +17,16 @@ $neptun => $data->{NEPTUN}
 <TD><% $class->{name} %> <% exists $class->{file} ? "(<tt>$class->{file}</tt>)" : "" %>
 <TD>
 % my $canon   = $m->comp('/sub/canonical_name', neptun => $neptun );
-% my $basedir = "$ENV{ETS_ROOT}/guts/hwks/${$class}{semester}/${$class}{class}";
+% my $basedir = "$ENV{GUTS_WORK_DIR}/hwks/${$class}{semester}/${$class}{class}";
 % my $none    = 1;
 % for (sort { $a<=>$b } (map { /([0-9]*)$/ } <$basedir/mails/$canon.*>)) {
 %   $none = 0;
 <& link, text => $_, href => "action_download_submission", newwindow => 1,
    params => { neptun   => $neptun,
                semester => $class->{semester},
-	       class    => $class->{class},
-	       file     => $class->{file},
-	       version  => $_ }  &>
+               class    => $class->{class},
+               file     => $class->{file},
+               version  => $_ }  &>
 % }
 % if ($none) {
 &ndash;
@@ -37,8 +38,8 @@ $neptun => $data->{NEPTUN}
    newwindow => 1,
    params => { neptun   => $neptun,
                semester => $class->{semester},
-	       class    => $class->{class},
-	       suite    => $class->{suite} }  &>
+               class    => $class->{class},
+               suite    => $class->{suite} }  &>
 % } else {
 &ndash;
 % }
@@ -46,18 +47,10 @@ $neptun => $data->{NEPTUN}
 </TABLE>
 
 <%once>;
-my ($sth, $conf, $class, @allclasses, $row);
+my ($class, @allclasses, $row);
 </%once>
 
 <%init>;
-if (!defined $sth) {
-    $sth = $dbh->prepare("SELECT value FROM parameters WHERE id='submit.conf'");
-}
-	 
-$sth->execute;
-($conf) = $sth->fetchrow_array();
-$sth->finish;
-
 @allclasses = @{ $m->comp('/sub/parse_hw_classes', conf => $conf) };
 $row = 0;
 </%init>

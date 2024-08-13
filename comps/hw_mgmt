@@ -2,16 +2,11 @@
 Manage HW testclasses and hand-in periods.
 </%doc>
 
-<H3 class="topic">HF tesztosztályok</H3>
-<& form, action => "action_set_parameter", hidden => { id => "submit.conf" } &>
-GUTS konfigurációs állomány:</P>
-<CENTER>
-<tt><% $ENV{GUTS_WORK_DIR} %>/</tt>
-<INPUT TYPE=text NAME=value SIZE=60 VALUE="<% $conf %>"></P>
-<INPUT TYPE=submit NAME=submit VALUE="  Beállít  ">
-</CENTER>
-</FORM>
+<%args>
+$conf => "env/submit.conf"
+</%args>
 
+<H3 class="topic">HF tesztosztályok</H3>
 % $_ = "$ENV{GUTS_WORK_DIR}/$conf";
 % if (-r && -f) {
 <TABLE width="100%">
@@ -38,17 +33,9 @@ A konfigurációs állomány nem olvasható!
 % }
 
 <%once>;
-my ($sth, $conf, $row, $class);
+my ($row, $class);
 </%once>
 
 <%init>;
-if (!defined $sth) {
-    $sth = $dbh->prepare("SELECT value FROM parameters WHERE id='submit.conf'");
-}
-
-$sth->execute;
-($conf) = $sth->fetchrow_array();
-$sth->finish;
-
 $row = 0;
 </%init>

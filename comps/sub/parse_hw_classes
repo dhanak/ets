@@ -1,47 +1,50 @@
 <%doc> This is a -*- mason -*- template.
 Parse GUTS submission configuration file.  Requires the relative path (to
-$ENV{ETS_ROOT}) of the configuration file in the 'conf' parameter, and
+$ENV{GUTS_WORK_DIR}) of the configuration file in the 'conf' parameter, and
 returns a pointer to an array of hashes.
 </%doc>
 
 <%args>
-$conf
+$conf => "env/submit.conf"
 </%args>
 
 <& html_page &>
 
 <%once>;
-my ($plscript, $output, $classes, @params);
+use open ':encoding(UTF-8)';
+
+my ($output, $semester, $classes);
 </%once>
 
 <%init>;
 $classes = [];
-
-$plscript = <<EOF;
-semester(Semester), !,
-testclass(Class, Name, Suite, Begin, End, Opts),
-format('~w%%~w%%~w%%~w%%~w%%~w%%~w~n', [Semester,Class,Name,Suite,Begin,End,Opts]),
-fail.
-EOF
-
-($output) = runcmd($ENV{SICSTUS} . " -l " . "$ENV{ETS_ROOT}/$conf",
-		   $plscript);
-
-foreach (split /^/m, $output) {
-    chomp;
-    @params = split /%%/;
-    push @$classes,
-    {
-	semester => $params[0],
-	class => $params[1],
-	name  => $params[2],
-	suite => $params[3],
-	start => sprintf("%4d-%02d-%02d", $params[4] =~ /date\((.+),(.+),(.+)\)/),
-	end   => sprintf("%4d-%02d-%02d", $params[5] =~ /date\((.+),(.+),(.+)\)/),
-	opts  => $params[6],
-	$params[6] =~ /file\((.+?)\)/ ? (file => $1) : ()
-    };
+if (open FILE, "$ENV{GUTS_WORK_DIR}/$conf") {
+    while (<FILE>) {
+        chomp;
+        if (/^semester\(('?)(.*)\g1\)\.$/) {
+            $semester = $2;
+        } elsif (/^testclass\(
+                        ('?)(.*?)\g1,\s*           # class
+                        ('?)(.*?)\g3,\s*           # name
+                        ('?)(.*?)\g5,\s*           # suite
+                        date\((.+),(.+),(.+)\),\s* # begin
+                        date\((.+),(.+),(.+)\),\s* # end
+                        (\[[^]]*\])                # opts
+                  \).$/x) {
+            my $class = {
+                semester => $semester,
+                class => $2,
+                name  => $4,
+                suite => $6,
+                start => sprintf("%4d-%02d-%02d", $7, $8, $9),
+                end   => sprintf("%4d-%02d-%02d", $10, $11, $12),
+                opts  => $13,
+                ()#$13 =~ /file\((.+?)\)/ ? (file => $1) : ()
+            };
+            $class->{file} = $2 if ($class->{opts} =~ /file\(('?)(.+?)\g1\)/);
+            push @$classes, $class;
+        }
+    }
 }
-
 return $classes;
 </%init>
