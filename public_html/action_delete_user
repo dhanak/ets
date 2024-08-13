@@ -13,7 +13,7 @@ my ($sth);
 </%once>
 
 <%init>
-if (!defined $delete_person) {
+if (!defined $sth) {
     $sth = $dbh->prepare("DELETE FROM people WHERE neptun=?");
 }
 

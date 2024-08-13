@@ -1,0 +1,28 @@
+<%doc> This is a -*- mason -*- template.
+Add user according to the filled form.
+</%doc>
+
+<%args>
+$neptun
+$first_char => undef		# passed through 'user_mgmt'
+</%args>
+
+<%once>
+my ($sth);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("INSERT IGNORE INTO people (neptun) VALUES (?)");
+}
+if (!$m->comp('/sub/check_perm', item => "user_mgmt")) {
+    $data->{MSG} = "Nem vagy jogosult felhasználók felvételére!";
+    redirect("news");
+} else {
+    foreach (split /\s+/m, uc $neptun) {
+        $sth->execute($_);
+        $m->comp('/sub/log', "add user", neptun => $_);
+    }
+}
+redirect("user_mgmt", first_char => $first_char);
+</%init>

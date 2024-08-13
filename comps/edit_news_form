@@ -20,9 +20,10 @@ $article => undef		# if defined, modify news entry, otherwise create new
 <h3 class="topic">Hír <% $id ? "módosítása" : "felvétele" %></h3>
 
 <& form, action => "action_" . ($id ? "modify" : "add") . "_news", hidden => { id => $id } &>
-<P ALIGN=center>
+<P ALIGN="center">
 <TEXTAREA ID='editor' NAME=article ROWS=15 COLS=80><% $article %></TEXTAREA>
-<P ALIGN=center>
+</P>
+<P ALIGN="center">
 % if ($id) {
 <INPUT TYPE=submit NAME=submit VALUE=" Módosít ">
 <INPUT TYPE=submit NAME=abandon VALUE="Meghagy">
@@ -30,6 +31,7 @@ $article => undef		# if defined, modify news entry, otherwise create new
 <INPUT TYPE=submit NAME=submit VALUE="Felvesz">
 <INPUT TYPE=submit NAME=abandon VALUE=" Eldob ">
 % }
+</P>
 </FORM>
 
 <%init>;

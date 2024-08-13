@@ -71,18 +71,6 @@ $first_char => undef
 %   }
 % }
 
-<& TR, \$row &>
-<& form, action => "action_add_user", hidden => { first_char => $first_char } &>
-<TD><INPUT TYPE=text NAME=neptun SIZE=10 MAXLENGTH=10>
-<TD>
-<TD>
-<TD><SELECT NAME="admin">
-  <OPTION value="1">Adminisztrátor</OPTION>
-  <OPTION value="0" selected>Felhasználó</OPTION>
-</SELECT>
-<TD colspan=3 align=center><INPUT TYPE=submit NAME=submit VALUE="Felvesz">
-</FORM>
-
 </TABLE>
 
 % if (defined $first_char) {
@@ -103,6 +91,14 @@ $first_char => undef
 %   }
 % }
 
+<h4>Felhasználók felvétele</h4>
+
+<& form, action => "action_add_users", hidden => { first_char => $first_char } &>
+<P>Neptun-kódok, whitespace karakerekkel elválasztva:</P>
+<P ALIGN="center"><TEXTAREA NAME="neptun" ROWS="3" COLS="80"></TEXTAREA></P>
+<P ALIGN="center"><INPUT TYPE="submit" NAME="submit" VALUE="Felvesz"></P>
+</FORM>
+
 <%once>
 my ($people, $p, $db_first_char, $fc, $row, $row_num);
 </%once>
@@ -114,7 +110,8 @@ if (!defined $db_first_char) {
                        FROM people ORDER BY firstchar");
     $people =
         $dbh->prepare("SELECT neptun, name, email, admin FROM people
-                       WHERE UPPER(name) LIKE ? ORDER BY name, neptun");
+                       WHERE UPPER(name) LIKE ?
+                       ORDER BY IF(name='',2,1), name, neptun");
 }
 
 if (($row_num = $dbh->selectrow_array("SELECT COUNT(*) FROM people")) <= 20) {
