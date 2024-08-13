@@ -48,7 +48,7 @@ $first_char => undef
       <TD><% $p->{name} %>
       <TD><% $p->{email} %>
       <TD>
-%     if ($p->{admin} eq "Y") {
+%     if ($p->{admin}) {
         Adminisztrátor
 %     } else {
         Felhasználó
@@ -73,12 +73,12 @@ $first_char => undef
 
 <& TR, \$row &>
 <& form, action => "action_add_user", hidden => { first_char => $first_char } &>
-<TD><INPUT TYPE=text NAME=neptun SIZE=10 MAXLENGTH=6>
+<TD><INPUT TYPE=text NAME=neptun SIZE=10 MAXLENGTH=10>
 <TD>
 <TD>
 <TD><SELECT NAME="admin">
-  <OPTION value="Y">Adminisztrátor</OPTION>
-  <OPTION value="N" selected>Felhasználó</OPTION>
+  <OPTION value="1">Adminisztrátor</OPTION>
+  <OPTION value="0" selected>Felhasználó</OPTION>
 </SELECT>
 <TD colspan=3 align=center><INPUT TYPE=submit NAME=submit VALUE="Felvesz">
 </FORM>

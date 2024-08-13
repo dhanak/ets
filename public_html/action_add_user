@@ -4,7 +4,7 @@ Add user according to the filled form.
 
 <%args>
 $neptun
-$admin
+$admin => 0
 $first_char => undef		# passed through 'user_mgmt'
 </%args>
 
@@ -18,7 +18,6 @@ if (!defined $sth) {
 }
 
 $neptun = uc ${neptun};
-$admin = ($admin eq "Y" ? "Y" : "N");
 if ($neptun !~ /^[A-Z0-9]{6}$/) {
     $data->{MSG} = "Hibás Neptun kód.";
 } elsif (!$m->comp('/sub/check_perm', item => "user_mgmt")) {

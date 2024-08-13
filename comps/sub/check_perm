@@ -9,25 +9,16 @@ $neptun => undef # the optional target user
 
 <%init>;
 # These are always available to anyone.
-if      ($item eq "news"           ||             # component
-         $item eq "links"          ||		  # component
-         $item eq "do_exercise_select") {         # component
+if      ($item eq "news") {                       # component
     return 1;
 
 # These are available to all registered users logged in.
-} elsif (
-         $item eq "hw_submit"      ||		  # component
+} elsif ($item eq "hw_submit"      ||		  # component
          $item eq "licence") {                    # component
     return $m->comp('/sub/logged_in');
 
 # These are only available for administrators
 } elsif ($item eq "edit_news_form"        ||	  # component
-         $item eq "category_mgmt"         ||	  # component
-         $item eq "list_category"         ||	  # component
-         $item eq "catgroup_mgmt"         ||	  # component
-         $item eq "modify_catgroup_form"  ||	  # component
-         $item eq "script_mgmt"           ||	  # component
-         $item eq "modify_script_form"    ||	  # component
          $item eq "hw_mgmt"               ||	  # component
          $item eq "meta_scores_mgmt"	  ||	  # component
          $item eq "scores_list_form"	  ||	  # component
@@ -40,9 +31,6 @@ if      ($item eq "news"           ||             # component
          $item eq "set_parameter"         ||
          $item eq "delete_news"           ||
          $item eq "modify_news"           ||
-         $item eq "add_exercise"          ||
-         $item eq "delete_exercise"       ||
-         $item eq "modify_exercise"       ||
          $item eq "group_mgmt"            ||
          $item eq "list_group") {
     return $m->comp('/sub/is_admin');

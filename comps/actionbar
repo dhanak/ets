@@ -9,28 +9,6 @@ Generate context sensitive main menu located on the left side of the screen.
    params => { page => "edit_news_form" } &><BR>
 % }
 
-<& link, href => "action_show_page", text => "Gyakorlás",
-                 params => { page => "do_exercise_select" } &><BR>
-
-% if ($m->comp('/sub/check_perm', item => "category_mgmt")) {
-<& link, href => "action_show_page", text => "Témakörök",
-   params => { page => "category_mgmt" } &><BR>
-% }
-
-% if ($m->comp('/sub/check_perm', item => "catgroup_mgmt")) {
-<& link, href => "action_show_page", text => "Témacsoportok",
-   params => { page => "catgroup_mgmt" } &><BR>
-% }
-
-% if ($m->comp('/sub/check_perm', item => "add_exercise")) {
-<& link, href => "action_add_exercise_form", text => "Feladat felvétele" &><BR>
-% }
-
-% if ($m->comp('/sub/check_perm', item => "script_mgmt")) {
-<& link, href => "action_show_page", text => "Szkriptek",
-   params => { page => "script_mgmt" } &><BR>
-% }
-
 % if ($m->comp('/sub/check_perm', item => "user_mgmt")) {
 <& link, href => "action_show_page", text => "Felhasználók",
    params => { page => "user_mgmt" } &><BR>

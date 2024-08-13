@@ -20,6 +20,6 @@ if (!defined $neptun) {
     $sth->execute(uc $neptun);
     ($adm) = $sth->fetchrow_array;
     $sth->finish;
-    return ($adm eq "Y");
+    return $adm;
 }
 </%init>

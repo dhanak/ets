@@ -46,8 +46,8 @@ if (!defined $ENV{OIDC_CLAIM_neptun_code}) {
             NEPTUN => $ENV{OIDC_CLAIM_neptun_code},
             NAME   => $name,
             KNOWN  => 1,
-            ADMIN  => (uc $user->{admin} eq "Y"),
-            GOD    => (uc $user->{god} eq "Y"),
+            ADMIN  => $user->{admin},
+            GOD    => $user->{god},
             MSG    => "Sikeres belépés!",
             SCREEN => "news"
         };

@@ -12,14 +12,14 @@ my ($sth, $god);
 
 <%init>;
 if (!defined $sth) {
-	$sth = $dbh->prepare("SELECT god FROM people WHERE neptun=?");
-    }
+    $sth = $dbh->prepare("SELECT god FROM people WHERE neptun=?");
+}
 if (!defined $neptun) {
     return (defined $data->{NEPTUN} && $data->{GOD});
 } else {
     $sth->execute(uc $neptun);
     ($god) = $sth->fetchrow_array;
     $sth->finish;
-    return ($god eq "Y");
+    return $god;
 }
 </%init>

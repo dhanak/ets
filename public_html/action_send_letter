@@ -1,5 +1,5 @@
 <%doc> This is a -*- mason -*- template.
-Add category according to the filled form.
+Send an email to some of the students.
 </%doc>
 
 <%args>

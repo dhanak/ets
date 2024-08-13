@@ -4,9 +4,7 @@ Modify user details
 
 <%args>
 $neptun
-$name
-$email
-$admin => "N"
+$admin => 0
 </%args>
 
 <%once>
@@ -14,23 +12,22 @@ my ($modify_person);
 </%once>
 
 <%init>
-if (!defined $modify_person) {
-    $modify_person = # modify person's data
-	$dbh->prepare("UPDATE people SET name=?, email=?, admin=? WHERE neptun=?");
+    if (!defined $modify_person) {
+        $modify_person = # modify person's data
+            $dbh->prepare("UPDATE people SET admin=? WHERE neptun=?");
 }
 
 if (!$m->comp('/sub/check_perm', item => "edit_user", neptun => $neptun)) {
-   $data->{MSG} = "Nem vagy jogosult a felhasználó adatainak módosítására!";
-   redirect("news");
+    $data->{MSG} = "Nem vagy jogosult a felhasználó adatainak módosítására!";
+    redirect("news");
 } else {
-   $admin = "N" if $admin ne "Y";
-   if (!$modify_person->execute($name, $email, $admin, $neptun)) {
-      $data->{MSG} = "A felhasználó adatait nem sikerült módosítani.";
-   } else {
-      $data->{MSG} = "A felhasználó adatai módosítva.";
-      $m->comp('/sub/log', "edit user", neptun => $neptun);
-   }
+    if (!$modify_person->execute($admin, $neptun)) {
+        $data->{MSG} = "A felhasználó adatait nem sikerült módosítani.";
+    } else {
+        $data->{MSG} = "A felhasználó adatai módosítva.";
+        $m->comp('/sub/log', "edit user", neptun => $neptun);
+    }
 
-   redirect("user_details", neptun => $neptun);
+    redirect("user_details", neptun => $neptun);
 }
 </%init>

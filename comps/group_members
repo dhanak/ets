@@ -49,7 +49,7 @@ $modify => 0
 <& TR, \$row &>
 <& form, action => "action_modify_group",
     hidden => { action=>"add", groupID=>$groupID, confirmed=>"1" } &>
-<td colspan="2"><input type="text" name="neptun" id="neptun" size="30" maxlength="6">
+<td colspan="2"><input type="text" name="neptun" id="neptun" size="30" maxlength="10">
 <& autocomplete, inputID => "neptun", suffix => "2", throbberID => undef,
   href => "autocomplete_people", params => {field=>"neptun"} &>
 <td colspan="3" align="center"><input type="submit" value="Felvesz">

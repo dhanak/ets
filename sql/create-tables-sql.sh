@@ -14,80 +14,22 @@ CREATE TABLE news (
 INSERT INTO news VALUES
   (0, "${ETS_ADMIN_NEPTUN_CODE}", "Üdvözlünk az ETS-ben!", NOW());
 
-CREATE TABLE links (
-  id              INT(8) PRIMARY KEY AUTO_INCREMENT,
-  type            CHAR(4),
-  name            VARCHAR(64),
-  url             VARCHAR(255)
-);
-
 CREATE TABLE people (
   neptun          CHAR(10) PRIMARY KEY,
   name            VARCHAR(64) NOT NULL DEFAULT "",
   email           VARCHAR(64) NOT NULL DEFAULT "",
-  admin           CHAR(1) NOT NULL DEFAULT "N",
-  god             CHAR(1) NOT NULL DEFAULT "N",
-  licence         CHAR(1) NOT NULL DEFAULT "N" -- FIXME
+  admin           BOOLEAN NOT NULL DEFAULT FALSE,
+  god             BOOLEAN NOT NULL DEFAULT FALSE,
+  licence         BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-INSERT INTO people VALUES
-  ("${ETS_ADMIN_NEPTUN_CODE}", "DP Admin", "", "Y", "Y", "N");
+INSERT INTO people (neptun, name, admin, god) VALUES
+  ("${ETS_ADMIN_NEPTUN_CODE}", "DP Admin", TRUE, TRUE);
 
 CREATE TABLE session (
   sid             CHAR(36) PRIMARY KEY, -- uuid4
   data            TEXT,
   last            DATETIME
-);
-
-CREATE TABLE categories (
-  id              CHAR(4) PRIMARY KEY,
-  name            VARCHAR(64) NOT NULL,
-  chapter         INT(4)
-);
-
-CREATE TABLE catgroups (
-  rank            INT(4) PRIMARY KEY,
-  name            VARCHAR(64) NOT NULL,
-  members         TEXT
-);
-
-CREATE TABLE levels (
-  id              INT(4) PRIMARY KEY,
-  name            VARCHAR(64) NOT NULL
-);
-
-INSERT INTO levels VALUES
-  ("0", "könnyû"),
-  ("1", "közepes"),
-  ("2", "nehéz");
-
-CREATE TABLE exercises (
-  id              INT(8) PRIMARY KEY AUTO_INCREMENT,
-  category        CHAR(4) NOT NULL,
-  scheme          CHAR(4) NOT NULL,
-  level           INT(4) NOT NULL,
-  data            TEXT
-);
-
-CREATE TABLE scripts (
-  id              INT(8) PRIMARY KEY AUTO_INCREMENT,
-  name            VARCHAR(64) NOT NULL,
-  script          TEXT,
-  UNIQUE          (name)
-);
-
-CREATE TABLE progress (
-  neptun          CHAR(10) NOT NULL,
-  category        CHAR(4) NOT NULL,
-  done            INT(4),
-  PRIMARY KEY     (neptun, category)
-);
-
-CREATE TABLE complete (
-  neptunSID       CHAR(36) NOT NULL,
-  exercise        INT(8) NOT NULL,
-  count           INT(4),
-  PRIMARY KEY     (neptunSID, exercise)
 );
 
 CREATE TABLE log (

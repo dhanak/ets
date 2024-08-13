@@ -24,8 +24,8 @@ $neptun => $data->{NEPTUN}	# passed through 'action_show_page'
 <TR><TD CLASS="spec" ALIGN=right>E-mail:     <TD><% $email %>
 <TR><TD CLASS="spec" ALIGN=right>Jogkör:
 <TD><SELECT NAME="admin">
-<OPTION value="Y" <% $priv eq "Y" && "selected" %>>Adminisztrátor</OPTION>
-<OPTION value="N" <% $priv ne "Y" && "selected" %>>Felhasználó</OPTION>
+<OPTION value="1" <% $priv && "selected" %>>Adminisztrátor</OPTION>
+<OPTION value="0" <% !$priv && "selected" %>>Felhasználó</OPTION>
 </SELECT>
 <TR><TD><TD><INPUT type=submit NAME=modify VALUE="Módosít">
 </FORM>
@@ -37,7 +37,7 @@ $neptun => $data->{NEPTUN}	# passed through 'action_show_page'
 <TR><TD CLASS="spec" ALIGN=right>Név:        <TD><% $name %>
 <TR><TD CLASS="spec" ALIGN=right>E-mail:     <TD><% $email %>
 <TR><TD CLASS="spec" ALIGN=right>Jogkör:
-    <TD><% $priv eq "Y" ? "Adminisztrátor" : "Felhasználó" %>
+    <TD><% $priv ? "Adminisztrátor" : "Felhasználó" %>
 
 % }
 
@@ -93,7 +93,7 @@ $neptun => $data->{NEPTUN}	# passed through 'action_show_page'
 <TABLE>
 <& form, action => "action_set_responses",
     hidden => { neptun => $neptun,
-		queries => join ",", map {$_->{id}} @$queries } &>
+                queries => join ",", map {$_->{id}} @$queries } &>
 % foreach $i (@$queries) {
     <TR>
     <TD align=right>
@@ -140,19 +140,19 @@ my (@groups);
 <%init>
 if (!defined $get_personal_info) {
     $get_personal_info = # get personal information
-	$dbh->prepare("SELECT name, admin, email FROM people WHERE neptun=?");
+        $dbh->prepare("SELECT name, admin, email FROM people WHERE neptun=?");
     $get_queries = # get current queries
-	$dbh->prepare("SELECT id, type, text, answer, deadline
+        $dbh->prepare("SELECT id, type, text, answer, deadline
                        FROM queries LEFT JOIN responses
                        ON queries.id = responses.query AND user = ?
                        WHERE deadline >= NOW()-1
                        ORDER BY deadline DESC");
     $get_groups =
-	$dbh->prepare("SELECT gm.groupID, p.name, p.email
+        $dbh->prepare("SELECT gm.groupID, p.name, p.email
                        FROM group_members AS gm, groups AS g, people AS p
                        WHERE gm.neptun=? AND g.groupID=gm.groupID AND g.head=p.neptun");
     $get_times =
-	$dbh->prepare("SELECT groupTimeID as id, startsAt FROM group_times
+        $dbh->prepare("SELECT groupTimeID as id, startsAt FROM group_times
                        WHERE groupID=? ORDER BY startsAt");
 }
 
