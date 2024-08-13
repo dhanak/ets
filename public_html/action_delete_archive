@@ -1,0 +1,25 @@
+<%doc> This is a -*- mason -*- template.
+Delete a database archive file 'file'.
+</%doc>
+
+<%args>
+$file
+</%args>
+
+<%once>;
+my ($db, $table, $record);
+</%once>
+
+<%init>;
+if (!$m->comp('/sub/check_perm', item=>"db_archive_form")) {
+    $data->{MSG} = "Nem vagy jogosult archiválásra!";
+    redirect("news");
+} else {
+    if (unlink $file) {
+	$data->{MSG} = "<span class=\"good\">A $file archívum törölve</span>";
+    } else {
+	$data->{MSG} = "<span class=\"bad\">A $file archívumot nem sikerült törölni!</span>";
+    }
+    redirect("db_archive_form");
+}
+</%init>

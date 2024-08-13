@@ -8,13 +8,12 @@ $confirmed => undef
 </%args>
 
 <%once>;
-my ($get, $set, $specs);
+my ($sth);
 </%once>
 
 <%init>;
-if (!defined $get) {
-    $get = $dbh->prepare('SELECT value FROM parameters WHERE id="archspecs"');
-    $set = $dbh->prepare('REPLACE INTO parameters (id,value) VALUES ("archspecs",?)');
+if (!defined $sth) {
+    $sth = $dbh->prepare('DELETE FROM archive_specs WHERE name=?');
 }
 
 if (!$m->comp('/sub/check_perm', item=>"db_archive_form")) {
@@ -22,17 +21,11 @@ if (!$m->comp('/sub/check_perm', item=>"db_archive_form")) {
     redirect("news");
 } else {
     if (defined $confirmed) {
-	$get->execute;
-	($specs) = $get->fetchrow_array;
-	$get->finish;
-	
-	{ no strict; $specs = eval ($specs || "{}"); use strict; }
-	delete $specs->{$name};
-	$specs = Dumper($specs);
-	
-	$set->execute($specs);
-
-	$data->{MSG} = "Specifikáció törölve.";
+        if ($sth->execute($name)) {
+            $data->{MSG} = '<span class="good">Specifikáció törölve.</span>';
+        } else {
+            $data->{MSG} = '<span class="good">A specifikációt nem sikerült törölni.</span>';
+        }
     }
     redirect("db_archive_form");
 }

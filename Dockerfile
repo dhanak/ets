@@ -84,6 +84,7 @@ RUN cpan App::cpanminus && cpanm \
 
 # set environment variables
 ENV ETS_ROOT=/opt/ets
+ENV DB_ARCHIVE_DIR=/mnt/archives
 ENV GUTS_WORK_DIR=/mnt/guts
 
 # set working directory
@@ -111,8 +112,10 @@ RUN sed -i \
         ${HTTPD_PREFIX}/conf/httpd.conf && \
     cat apache/openidc.conf apache/ets.conf >>${HTTPD_PREFIX}/conf/httpd.conf
 
-# set up volume
+# set up volumes
+RUN mkdir ${DB_ARCHIVE_DIR} && chmod a+rwx,+t ${DB_ARCHIVE_DIR}
 RUN mkdir ${GUTS_WORK_DIR} && for dir in env hwks logs mails spools; do \
         mkdir ${GUTS_WORK_DIR}/${dir}; \
     done
+VOLUME ${DB_ARCHIVE_DIR}
 VOLUME ${GUTS_WORK_DIR}

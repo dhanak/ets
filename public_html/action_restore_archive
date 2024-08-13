@@ -1,0 +1,44 @@
+<%doc> This is a -*- mason -*- template.
+Restore a database archive based from file 'file'.
+</%doc>
+
+<%args>
+$file
+$replace => undef
+</%args>
+
+<%once>;
+my ($db, $table, $record);
+</%once>
+
+<%init>;
+if (!$m->comp('/sub/check_perm', item=>"db_archive_form")) {
+    $data->{MSG} = "Nem vagy jogosult archiválásra!";
+    redirect("news");
+} else {
+    if (open ARCH, "gunzip -c $file |") {
+        <ARCH>;			# drop first (specification) line
+        { no strict; $db = eval (join "", <ARCH>); use strict; }
+        if ($@) {
+            $data->{MSG} = "<span class=\"bad\">$@</span>";
+        } else {
+            foreach $table (keys %$db) {
+                if ($replace) {
+                    $dbh->do("DELETE FROM $table") or $data->{MSG} .= "$@";
+                }
+                foreach $record (@{$db->{$table}}) {
+                    my @keys = keys %$record;
+                    $dbh->do("INSERT INTO $table (" . (join ",", @keys) . ") " .
+                             "VALUES (" . (join ",", (("?") x @keys)) . ")",
+                             {}, values %$record) or $data->{MSG} .= "$@";
+                }
+            }
+        }
+        $data->{MSG} = '<span class="good">Sikeres helyreállítás</span>';
+    } else {
+        $data->{MSG} = "<span class=\"bad\">Az archívumot nem sikerült megnyitni!</span>";
+    }
+
+    redirect("db_archive_form");
+}
+</%init>

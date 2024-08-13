@@ -1,0 +1,66 @@
+<%doc> This is a -*- mason -*- template.
+Create a database archive based on the specification 'spec'.
+</%doc>
+
+<%args>
+$name
+$spec
+</%args>
+
+<%once>;
+my ($table, $specchar, $colspec, $order, $fetchcols, $col, $sth, %db);
+my ($day, $month, $year, $hour, $minute, $now);
+</%once>
+
+<%init>;
+if (!$m->comp('/sub/check_perm', item=>"db_archive_form")) {
+    $data->{MSG} = "Nem vagy jogosult archiválásra!";
+    redirect("news");
+} else {
+    %db = ();
+    table: foreach $table (split / +/, $spec) {
+        ($table, $specchar, $colspec) = ($table =~ /^([^+-]*)([+-]?)(.*)$/);
+        ($table, $order) = split /:/, $table;
+
+        $fetchcols = {};	# fetch all by default
+        if ($specchar eq "+") {
+            foreach $col (split /,/, $colspec) {
+                $fetchcols->{$col} = 1;
+            }
+        } elsif ($specchar eq "-") {
+            $colspec =~ s/ +//g;
+            foreach $col (@{ $dbh->selectcol_arrayref("SHOW COLUMNS FROM $table") }) {
+                $fetchcols->{$col} = 1 if (",$colspec," !~ /,$col,/);
+            }
+        }
+
+        if (defined $order) {
+            $order =~ s/\^([^,]*)/$1 DESC/g;
+            $order = "ORDER BY $order";
+        }
+
+        $sth = $dbh->prepare("SELECT * FROM $table $order");
+        $sth->execute or next table;
+        $db{$table} = $sth->fetchall_arrayref($fetchcols);
+    }
+
+    ($minute, $hour, $day,$month,$year) = (localtime)[1..5];
+    $now = sprintf "%02d%02d%02d-%02d%02d",
+                     $year % 100, $month+1, $day, $hour, $minute;
+    if (open ARCH, "| gzip > $ENV{DB_ARCHIVE_DIR}/$name-$now.gz") {
+        local $Data::Dumper::Indent = 1;
+        local $Data::Dumper::Terse = 1;
+        local $Data::Dumper::Quotekeys = 0;
+
+        print ARCH $name, " !!! ", $spec, " !!! ", scalar localtime, "\n";
+        print ARCH Dumper(\%db);
+        close ARCH;
+
+        $data->{MSG} = '<span class="good">Sikeres archiválás</span>';
+    } else {
+        $data->{MSG} = '<span class="bad">Az archívumot nem sikerült létrehozni!</span>';
+    }
+
+    redirect($data->{SCREEN});
+}
+</%init>

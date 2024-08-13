@@ -32,18 +32,19 @@ listája.</p>
 <tr>
 <th>Név
 <th>Specifikáció
-% foreach $name (sort keys %$specs) {
+% $sth->execute;
+% while (defined ($spec = $sth->fetchrow_hashref)) {
 <& TR, \$row &>
-<td><% $name %>
-<td><% $specs->{$name} %>
+<td><% $spec->{name} %>
+<td><% $spec->{spec} %>
 <td align=center>
   <& js_confirm, img => "delete.png", text => "Töröl",
-      question => "Biztosan törölni akarod a '$name' nevű archíválás specifikációt?",
+      question => "Biztosan törölni akarod a '$spec->{name}' nevű specifikációt?",
       action   => "action_delete_archive_spec",
-      hidden   => { name => $name } &>
+      hidden   => { name => $spec->{name} } &>
 <td align=center>
   <& link, img => "save.png", text => "Archivál", href => "action_save_archive",
-     params => { name => $name, spec => $specs->{$name} } &>
+     params => { name => $spec->{name}, spec => $spec->{spec} } &>
 % }
 <& TR, \$row &>
 <& form, action => "action_add_archive_spec" &>
@@ -60,8 +61,8 @@ listája.</p>
 <th>Név
 <th>Specifikáció
 <th>Dátum
-% while (<$ENV{ETS_ROOT}/sql/archive/*.bz2>) {
-%   next unless open ARCH, "bunzip2 -c $_ |";
+% while (<$ENV{DB_ARCHIVE_DIR}/*.gz>) {
+%   next unless open ARCH, "gunzip -c $_ |";
 %   my $archline = <ARCH>;
 %   close ARCH;
 %   chomp $archline;
@@ -72,12 +73,12 @@ listája.</p>
 <td><% $spec %>
 <td><% $date %>
 <td align=center>
-<& js_confirm, img => "delete.png", text => "Töröl", 
+<& js_confirm, img => "delete.png", text => "Töröl",
     question => "Biztosan törölni akarod a '$name ($date)' archívumot?",
     action  => "action_delete_archive",
     hidden  => { file => $_ } &>
 <td align=center>
-<& js_confirm, img => "restore.png", text => "Helyreállít", 
+<& js_confirm, img => "restore.png", text => "Helyreállít",
     question => "Biztosan helyre akarod állítani a '$name ($date)' archívumot?",
     action  => "action_restore_archive",
     options => { replace => "Az érintett táblák felülírása (hozzáírás helyett)" },
@@ -86,19 +87,17 @@ listája.</p>
 % }
 </table>
 
-<%once>
-my ($get, $row, $specs, $name, $spec, $date);
+<%once>;
+my ($sth, $row, $name, $spec, $date);
 </%once>
 
-<%init>
-if (!defined $get) {
-    $get = $dbh->prepare('SELECT value FROM parameters WHERE id="archspecs"');
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare('SELECT name, spec FROM archive_specs ORDER BY name');
 }
-
-$get->execute;
-($specs) = $get->fetchrow_array;
-$get->finish;
-{ no strict; $specs = eval ($specs || "{}"); use strict; }
-
 $row = 0;
 </%init>
+
+<%cleanup>;
+$sth->finish;
+</%cleanup>

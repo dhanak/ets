@@ -55,6 +55,15 @@ CREATE TABLE responses (
   INDEX           (query)
 );
 
+CREATE TABLE archive_specs (
+  name            VARCHAR(64) PRIMARY KEY,
+  spec            TEXT
+);
+
+INSERT INTO archive_specs VALUES
+  ("semester", "people:name scores_meta:idx-idx scores:neptun,id queries responses groups group_members group_times:groupID,startsAt presence"),
+  ("scores", "scores:id");
+
 CREATE TABLE parameters (
   id              CHAR(16) PRIMARY KEY,
   value           TEXT

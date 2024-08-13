@@ -27,6 +27,7 @@ services:
       - live
     restart: unless-stopped
     volumes:
+      - archives:/mnt/archives
       - guts:/mnt/guts
 
   mariadb:
@@ -72,5 +73,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  archives:
   db:
   guts:

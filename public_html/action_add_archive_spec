@@ -8,30 +8,23 @@ $spec
 </%args>
 
 <%once>;
-my ($get, $set, $specs);
+my ($sth);
 </%once>
 
 <%init>;
 if (!defined $get) {
-    $get = $dbh->prepare('SELECT value FROM parameters WHERE id="archspecs"');
-    $set = $dbh->prepare('REPLACE INTO parameters (id,value) VALUES ("archspecs",?)');
+    $sth = $dbh->prepare('INSERT INTO archive_specs VALUES (?, ?)');
 }
 
 if (!$m->comp('/sub/check_perm', item=>"db_archive_form")) {
     $data->{MSG} = "Nem vagy jogosult archiválásra!";
     redirect("news");
 } else {
-    $get->execute;
-    ($specs) = $get->fetchrow_array;
-    $get->finish;
-    
-    { no strict; $specs = eval ($specs || "{}"); use strict; }
-    $specs->{$name} = $spec;
-    $specs = Dumper($specs);
-    
-    $set->execute($specs);
-
-    $data->{MSG} = "Specifikáció felvéve.";
+    if ($set->execute($name, $spec)) {
+        $data->{MSG} = '<span class="good">Specifikáció felvéve.</span>';
+    } else {
+        $data->{MSG} = '<span class="bad">A specifikációt nem sikerült felvenni.</span>';
+    }
     redirect("db_archive_form");
 }
 </%init>
