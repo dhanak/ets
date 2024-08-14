@@ -1,3 +1,11 @@
+#
+# env files
+#
 .env
 env.live
-/obsolete/
+
+#
+# suggested mount points
+#
+archives
+work

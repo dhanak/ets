@@ -27,8 +27,8 @@ services:
       - live
     restart: unless-stopped
     volumes:
-      - archives:/mnt/archives
-      - guts:/mnt/guts
+      - ${ARCHIVE_MOUNT:-archives}:/mnt/archives
+      - ${GUTS_WORK_MOUNT:-guts}:/mnt/guts
 
   mariadb:
     build:
