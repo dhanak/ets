@@ -13,7 +13,9 @@ hallgatói információs rendszere, az ETS.
         - [Docker build és futtatás](#docker-build-és-futtatás)
         - [Apache2 reverse proxy beállítása](#apache2-reverse-proxy-beállítása)
     - [Backup és visszaállítás](#backup-és-visszaállítás)
-    - [Emailek fejlesztői környezetben](#emailek-fejlesztői-környezetben)
+    - [Emailek a fejlesztői környezetben](#emailek-a-fejlesztői-környezetben)
+    - [Keycloak szerver a fejlesztői környezetben](#keycloak-szerver-a-fejlesztői-környezetben)
+        - [Kezdeti keycloak beállítások](#kezdeti-keycloak-beállítások)
 
 <!-- markdown-toc end -->
 
@@ -133,7 +135,7 @@ $ gunzip -c ets-db-backup-....sql.gz | \
     docker compose exec -T mariadb mariadb -uets -pets ets
 ```
 
-## Emailek fejlesztői környezetben
+## Emailek a fejlesztői környezetben
 
 Fejlesztői környezetben a rendszer nem küld éles emaileket, hanem egy
 [MailCatcher](https://mailcatcher.me/) nevű beágyazott SMTP szerveren gyűjti
@@ -143,6 +145,65 @@ megtekinteni a docker host gépen, a 1080-as porton:
 ```
 $ xdg-open http://localhost:1080
 ```
+
+## Keycloak szerver a fejlesztői környezetben
+
+Az OpenID Connect azonosításhoz fejlesztői környezetben egy
+[keycloak](https://www.keycloak.org/) szervert futtatunk. Ebben
+alapértelmezésben be van állítva egy `ets` realm, két felhasználóval:
+
+* admin/admin (Neptun kód: ADMIN1);
+* jakab/jakab (Neptun kód: JAKAB1).
+
+Az ETS saját adatbázisába alapértelmezésben ADMIN1 fel van véve
+adminisztrátorként, így vele rögtön be tudunk lépni. JAKAB1 nincs, ezért őt
+ismeretlen (vendég) felhasználóként mutatja a rendszer. Ahhoz, hogy teljes jogú
+felhasználó legyen, az ETS adatbázisába is fel kell venni a felhasználók közé a
+JAKAB1 Neptun kódot.
+
+További felhasználók rögzíthetők a keycloak belépési oldalán a Register linkre
+klikkelve, vagy a keycloak administrációs oldalán a <http://localhost:8081>
+címen. (A külső port állítható az `OIDC_EXTERNAL_PORT` környezeti változóval.)
+
+### Kezdeti keycloak beállítások
+
+A kezdeti beállításokat (realm, admin és jakab felhasználók) az `ets-realm.json`
+file tartalmazza. Ennek létrehozása nem teljesen magától értetődő, a következő
+technikát értemes használni:
+
+```
+$ docker compose run -it --rm --name keycloak-export --service-ports \
+    --entrypoint /bin/bash keycloak
+
+bash-5.1$ /opt/keycloak/bin/kc.sh start-dev --import-realm
+...
+2024-08-14 08:39:14,281 WARN  [org.keycloak.quarkus.runtime.KeycloakMain] (main) Running the server in development mode. DO NOT use this configuration in production.
+```
+
+Ezek után a <http://localhost:8081> címen állítsuk be a realm-et ízlés szerint,
+nem megfeledkezve a felhasználókról és a jelszavaikról sem. Majd a konténerben:
+
+```
+<Ctrl-C>
+2024-08-14 08:39:39,390 INFO  [io.quarkus] (Shutdown thread) Keycloak stopped in 0.030s
+
+bash-5.1$ /opt/keycloak/bin/kc.sh export --realm ets --file /tmp/ets-realm.json
+...
+2024-08-14 08:40:02,293 INFO  [org.keycloak.services] (main) KC-SERVICES0034: Export of realm 'ets' requested.
+2024-08-14 08:40:02,293 INFO  [org.keycloak.exportimport.singlefile.SingleFileExportProvider] (main) Exporting realm 'ets' into file /tmp/ets-realm.json
+2024-08-14 08:40:03,026 INFO  [org.keycloak.services] (main) KC-SERVICES0035: Export finished successfully
+...
+2024-08-14 08:40:03,371 INFO  [io.quarkus] (main) Keycloak stopped in 0.246s
+```
+
+Végezetül egy másik terminálban (miközben még fut a konténer!):
+
+```
+$ docker compose cp keycloak-export:/tmp/ets-realm.json .
+Successfully copied 76.3kB to .
+```
+
+Ezután kiléphetünk a futó konténerből.
 
 <!-- Local Variables: -->
 <!-- markdown-toc-header-toc-title: **Tartalom** -->
