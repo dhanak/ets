@@ -1,9 +1,10 @@
 % This is a -*- prolog -*- file.
 :- module(guts, [main/0]).
 
+:- use_module(library(file_systems)).
 :- use_module(library(lists)).
 :- use_module(library(system)).
-:- use_module(library(charsio)).
+:- use_module(library(codesio)).
 
 :- use_module(utils).
 :- use_module(log).
@@ -89,8 +90,7 @@ filename(timeguard, F) :-
 %% directory.
 testfiles(SubDir, Dir, Files) :-
     subdirectory(env_var, SubDir, Dir),
-    directory_files(Dir, Files0),
-    findall(K-F, (member(F, Files0),
+    findall(K-F, (file_member_of_directory(Dir, F, _),
                   match(F, 'test*d.txt', [K0]),
                   atom_number(K0, K)), Files1),
     keysort(Files1, Files2),
@@ -187,7 +187,7 @@ read_mail_ID(ID) :-
     get_line(S, Line0),
     close(S),
     wait(PID, _),
-    (   append(Line, [0'',0' ], Line0)
+    (   append(Line, [0''',0' ], Line0)
     ->  true
     ;   Line = Line0
     ),
@@ -347,9 +347,10 @@ extract(Name, WorkDir, Report) :-
 %% mail files called Name.
 find_latest_version(Name, Version) :-
     directory(hwks_mails, MailD),
-    directory_files(MailD, Files),
-    findall(V, (member(F, Files), file_version(F, Name, V)), Vers),
-    max_list(Vers, Version).
+    findall(V,
+            (file_member_of_directory(MailD, F, _), file_version(F, Name, V)),
+            Versions),
+    max_member(Version, Versions).
 
 %% file_version(?File, ?Name, ?Version): File is called Name and has Version.
 file_version(File, Name, Version) :-
@@ -377,8 +378,9 @@ unpack(MailF, WorkDir) :-
 
 %% purge(+Directory): purges mail directory Directory.
 purge(Dir) :-
-    directory_files(Dir, Files0),
-    findall(F, (member(F, Files0), file_version(F,_,_)), Files),
+    findall(F,
+            (file_member_of_directory(Dir, F, _), file_version(F,_,_)),
+            Files),
     working_directory(OldD, Dir),
     purge0(Files),
     working_directory(_, OldD).
@@ -456,12 +458,12 @@ produce_report(Report , _, _, _) :-
 mail_student(Name, Subject, MailPrinter) :-
     split_name(Name, _, Neptun),
     db_get_email(Neptun, Email),
-    with_output_to_chars(MailPrinter, MailBody),
+    with_output_to_codes(MailPrinter, MailBody),
     atom_concat(['From: dp@iit.bme.hu\n',
                  'MIME-Version: 1.0\n',
                  'Content-Type: text/plain; charset=iso-8859-2\n',
                  'Content-Transfer-Encoding: quoted-printable'], Headers),
-    format_to_chars('mimencode -q | mail -s "~w" -a "~w" ~w',
+    format_to_codes('mimencode -q | mail -s "~w" -a "~w" ~w',
                     [Subject,Headers,Email], CmdC),
     atom_codes(Cmd, CmdC),
     exec(Cmd, [pipe(Mail),null,std], PID),
@@ -586,7 +588,7 @@ run_tests(Program, Good) :-
     mktemp('solution.XXXXXX', Out),
     findall(1, (get_testfile(N, In, Ref),
                 successful_test(Program, N, In, Out, Ref)), Goods),
-    delete_file(Out, [ignore]),
+    ensure_success(delete_file(Out)),
     length(Goods, Good),
     testcase_count(Total),
     ensure_success(templates:print_lang_tail(Total, Good)).
@@ -608,7 +610,7 @@ get_testfile(N, In, '/dev/null') :-
     testsuite_placement(file(File)), !,
     read_testfile(File, Tests),
     mktemp('data.XXXXXX', In),
-    undo(guts:delete_file(In, [ignore])), % delete when backtracking
+    undo(guts:ensure_success(guts:delete_file(In))), % delete when backtracking
     nth(N, Tests, Test),
     write_lines(In, [Test]).
 get_testfile(N, In, '/dev/null') :-
@@ -788,9 +790,38 @@ run_testd(Conf) :-
 %%%
 
 %% Each predicate called guts_<service> is responsible for a service.
-guts_testd(Conf) :-
-    open_log,
-    call_cleanup(run_testd(Conf), close_log).
+guts_help :-
+    print('Possible actions and mandatory arguments:'), nl,
+    print('  help     print this help screen'), nl,
+    nl,
+    print('  confcsv  <config-file>'), nl,
+    print('           dump contents of <config-file> in csv format'), nl,
+    print('  extract  <semester> <class> <name> [<version>]'), nl,
+    print('           extract a mail of a student'), nl,
+    print('  mail     <config-file>'), nl,
+    print('           receive and process a mail on standard input, w/ deadline check'), nl,
+    print('  purge    <semester> <class>'), nl,
+    print('           clean up mail directory, leaving only latest versions'), nl,
+    print('  report   <semester> <class> <suite>'), nl,
+    print('           send test reports to students'), nl,
+    print('  submit   <config-file> <class> <name>'), nl,
+    print('           receive standard input as a homework (for WWW submission, no deadline check)'), nl,
+    print('  testd    <config-file>'), nl,
+    print('           run test daemon with specified configuration'), nl.
+
+guts_confcsv(Conf) :-
+    fail_on_error(load_files([Conf]),
+                  error('Couldn''t read configuration file: ~w', [Conf])),
+    format('semester,class,name,suite,start,end,opts~n', []),
+    semester(Semester), !,
+    (   testclass(Class, Name, Suite, Begin, End, Opts),
+        Begin = date(BY,BM,BD),
+        End = date(EY,EM,ED),
+        format('~w,~w,"~w",~w,~d-~|~`0t~d~2+-~|~`0t~d~2+,~d-~|~`0t~d~2+-~|~`0t~d~2+,"~w"~n',
+               [Semester,Class,Name,Suite,BY,BM,BD,EY,EM,ED,Opts]),
+        fail
+    ;   true
+    ).
 
 guts_extract(Semester, Class, Name) :-
     guts_extract(Semester,Class,Name,latest).
@@ -803,6 +834,10 @@ guts_extract(Semester, Class, Name, Version) :-
     ;   atom_number(Version, Ver),
         extract(Name, Ver, Dir, print)
     ).
+
+guts_mail(Conf) :-
+    read_mail(Mail, Name, Class),
+    receive_homework(Conf, Class, Mail, Name, true, mail).
 
 guts_purge(Semester, Class) :-
     assert(semester(Semester)),
@@ -818,40 +853,21 @@ guts_report(Semester, Class, Suite) :-
     assert(semester(Semester)),
     assert(testID(Class,Suite)),
     directory(hwks_rep, RepD),
-    directory_files(RepD, Files),
     %% iterate-by-failure starts here
-    member(Name, Files),
-    split_path(File, RepD, Name),
+    file_member_of_directory(RepD, Name, File),
     file_property(File, type(regular)),
     print(Name), nl,
     mail_student(Name, Subject, templates:test_done(Subject, File)),
     fail.
 guts_report(_, _, _).
 
-guts_mail(Conf) :-
-    read_mail(Mail, Name, Class),
-    receive_homework(Conf, Class, Mail, Name, true, mail).
-
 guts_submit(Conf, Class, Name) :-
     read_lines(Mail),
     receive_homework(Conf, Class, Mail, Name, fail, print).
 
-guts_help :-
-    print('Possible actions and mandatory arguments:'), nl,
-    print('  testd    <config-file>'), nl,
-    print('           run test daemon with specified configuration'), nl,
-    print('  extract  <semester> <class> <name> [<version>]'), nl,
-    print('           extract a mail of a student'), nl,
-    print('  purge    <semester> <class>'), nl,
-    print('           clean up mail directory, leaving only latest versions'), nl,
-    print('  report   <semester> <class> <suite>'), nl,
-    print('           send test reports to students'), nl,
-    print('  mail     <config-file>'), nl,
-    print('           receive and process a mail on standard input, w/ deadline check'), nl,
-    print('  submit   <config-file> <class> <name>'), nl,
-    print('           receive standard input as a homework (for WWW submission, no deadline check)'), nl,
-    nl,
-    print('  help     print this help screen'), nl.
+guts_testd(Conf) :-
+    open_log,
+    call_cleanup(run_testd(Conf), close_log).
 
 %% action(Action, Args): does action Action with args Args.  Calls guts_<action>
 action(Action0, Args) :-

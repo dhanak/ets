@@ -1,4 +1,4 @@
-% This is a -*- prolog -*- file.
+﻿% This is a -*- prolog -*- file.
 :- module(templates, []).
 
 :- use_module(library(system)).

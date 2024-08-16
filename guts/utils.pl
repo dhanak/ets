@@ -21,7 +21,6 @@
               write_lines/1,	% write_lines(+Lines)
               write_lines/2,	% write_lines(+File, +Lines)
 
-              directory_exists/1,	% directory_exists(+Directory)
               match/2,              % match(+File, +Pattern)
               match/3,              % match(+File, +Pattern, -Matches)
               lock/1,               % lock(+File)
@@ -35,7 +34,9 @@
               error/2           % error(+Format, +Args)
           ]).
 
+:- use_module(library(file_systems)).
 :- use_module(library(lists)).
+:- use_module(library(process)).
 :- use_module(library(system)).
 
 %%% fail_on_error(Goal): call Goal and in case of an exception print error
@@ -262,13 +263,6 @@ write_lines0(S, Lines) :-
     fail.
 write_lines0(_,_).
 
-%%% directory_exists(D): D is an existing directory.
-%%% :- pred directory_exists(+atom).
-directory_exists(D) :-
-    %	file_exists(D, [read,write]),	% FIXME: causes mkdirhier to fail!
-    file_exists(D, [exists]).
-%	file_property(D, type(directory)). % FIXME: causes mkdirhier to fail for softlinks!
-
 %%% match(File, Pattern): Pattern wildcard pattern matches file name File.
 %%% :- pred match(+atom, +atom).
 match(File, Pattern) :-
@@ -302,19 +296,20 @@ pattern_match0(Name, Name, []).
 %%% :- pred lock(+atom).
 lock(F) :-
     lockfile(F, LockF),
-    atom_concat([lockfile, ' \'', LockF, '\''], Cmd),
-    exec(Cmd, [null, null, pipe(S)], PID),
-    call_cleanup((	 wait(PID, 0) -> true
-                 ;	 get_line(S, ErrorC),
+    process_create(path(dotlockfile),
+                   [file(LockF)],
+                   [stderr(pipe(Err)),wait(Exit)]),
+    call_cleanup((	 Exit=exit(0) -> true
+                 ;	 get_line(Err, ErrorC),
                      atom_codes(Error, ErrorC),
                      throw(lockfile(Error))
-                 ), close(S)).
+                 ), close(Err)).
 
 %%% unlock(F): removes lockfile from F.
 %%% :- pred unlock(+atom).
 unlock(F) :-
     lockfile(F, LockF),
-    delete_file(LockF, []).
+    delete_file(LockF).
 
 lockfile(F, LockF) :-
     atom_concat(F, '.lock', LockF).
@@ -363,7 +358,7 @@ time(Cmd, Queries, Real, User, System) :-
                   number_codes(Real, RealC),
                   number_codes(User, UserC),
                   number_codes(System, SysC)),
-                 delete_file(TimeF, [ignore])).
+                 ensure_success(delete_file(TimeF))).
 
 %%% relative_file_name(FAbs, FRel): FRel is the relative path of FAbs with
 %%% respect to the current working directory.

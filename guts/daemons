@@ -1,0 +1,85 @@
+#!/bin/bash
+usage="
+Usage: $(basename "$0") <command> [args...]
+
+Where <command> is one of
+  help  - present this help page
+  check - check for running daemons and restart those not running
+  list  - list all guarded daemons (that should be running)
+  run   - run a protected daemon
+"
+
+header="# daemon runner process file"
+ps="/bin/ps -oargs= -p"
+infdir="${HOME}/.daemons"
+
+if [[ ! -d $infdir ]]; then
+    /bin/mkdir "$infdir"
+fi
+
+# main functions
+
+check () {
+    for inff in "$infdir"/*.inf; do
+        [[ -f $inff ]] || continue
+        # check whether it's a valid daemon process file
+        if [[ $(head -1 "$inff") != "$header" ]]; then
+            /bin/rm "$inff"
+            continue
+        fi
+
+        . "$inff"               # sets pid, psline, wd & command
+        psout=$($ps "$pid")
+        if [[ $psline != "$psout" ]]; then
+            echo "Restarting $command..."
+            /bin/rm "$inff"
+            ( cd "$wd" && $command ) & # run in a subshell
+        fi
+    done
+}
+
+run () {
+    wd=$(pwd)
+    "$@" &                      # run command in background
+    pid=$!
+    psline=$($ps $pid)
+    if [[ -n $psline ]]; then
+        cat >"$infdir/$pid.inf" <<EOF
+$header
+pid=$pid
+psline='$psline'
+wd='$wd'
+command='$0 run$(printf ' "%s"' "$@")'
+EOF
+        wait $pid
+        /bin/rm "$infdir/$pid.inf"
+    fi
+}
+
+list () {
+    for inff in "$infdir"/*.inf; do
+        [[ -f $inff ]] || continue
+        # check whether it's a valid daemon process file
+        if [[ $(head -1 "$inff") != "$header" ]]; then
+            /bin/rm "$inff"
+            continue
+        fi
+
+        . "$inff"               # sets pid, psline, wd & command
+        echo "$psline"
+    done
+}
+
+if [[ -z $1 ]]; then
+    set help
+fi
+
+cmd=$1; shift
+case $cmd in
+    (help)  echo "$usage" ;;
+    (check) check ;;
+    (run)   run "$@" </dev/null >"$infdir/$$.log" 2>&1 &
+            echo Command started, output redirected to "$infdir/$$.log" ;;
+    (list)  list ;;
+    (*)     echo "$(basename "$0"): unknown command: $cmd"; exit 1 ;;
+esac

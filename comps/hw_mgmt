@@ -7,8 +7,7 @@ $conf => "env/submit.conf"
 </%args>
 
 <H3 class="topic">HF tesztosztályok</H3>
-% $_ = "$ENV{GUTS_WORK_DIR}/$conf";
-% if (-r && -f) {
+% if (@$classes) {
 <TABLE width="100%">
 <TR>
 <TH width="15%">Osztály
@@ -17,7 +16,7 @@ $conf => "env/submit.conf"
 <TH width="20%">-ig
 <TH width="15%">File
 
-% foreach $class (@{ $m->comp('/sub/parse_hw_classes', conf => $conf) }) {
+% foreach $class (@$classes) {
 <& TR, \$row &>
 <TD><% $class->{class} %>
 <TD><% $class->{name} %>
@@ -28,14 +27,14 @@ $conf => "env/submit.conf"
 </TABLE>
 % } else {
 <DIV class="error">
-A konfigurációs állomány nem olvasható!
+Hiba történt a guts szervertől való olvasás közben! (Üres konfiguráció?)
 </DIV>
 % }
-
 <%once>;
-my ($row, $class);
+my ($row, $class, $classes);
 </%once>
 
 <%init>;
 $row = 0;
+$classes = $m->comp('/sub/parse_hw_classes', conf => $conf);
 </%init>

@@ -48,10 +48,11 @@ Az állomány neve <tt><% $class->{file} %></tt>.
 % }
 
 <h3 class="topic">Beadott feladatok</h3>
-<& hw_show_submissions, $neptun ? (neptun => $neptun) : () &>
+<& hw_show_submissions, classes => $classes,
+    $neptun ? (neptun => $neptun) : () &>
 
 <%once>;
-my ($class, @classes, $year, $month, $day, $today, $row);
+my ($class, $classes, @classes, $year, $month, $day, $today, $row);
 my ($get_name, $studname);
 </%once>
 
@@ -70,10 +71,11 @@ if ($neptun && ($m->comp('/sub/is_supervisor', neptun => uc $neptun) ||
     $neptun = undef
 }
 
+$classes = $m->comp('/sub/parse_hw_classes', conf => $conf);
 @classes = ();
 ($day, $month, $year) = (localtime)[3..5];
 $today = sprintf "%4d-%02d-%02d", $year + 1900, $month+1, $day;
-foreach $class (@{ $m->comp('/sub/parse_hw_classes', conf => $conf) }) {
+foreach $class (@$classes) {
     push @classes, $class if
         $m->comp('/sub/is_admin') ||
         $neptun ||

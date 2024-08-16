@@ -15,10 +15,12 @@ services:
       - EMAIL_SENDER_TRANSPORT_sasl_password=${SMTP_PASSWORD-}
       - EMAIL_SENDER_TRANSPORT_sasl_username=${SMTP_USERNAME-}
       - ETS_BASE_URL=${ETS_BASE_URL:-http://localhost:${HTTP_EXTERNAL_PORT:-8080}}
+      - GUTS_SERVER=guts:31337
       - HTTP_EXTERNAL_PORT=${HTTP_EXTERNAL_PORT:-8080}
       - OIDC_CLIENT_ID
       - OIDC_PROVIDER
       - OIDC_SECRET
+      - TZ=${TZ:-Europe/Budapest}
       - SITENAME=${SITENAME:-DP Elektronikus Tanársegéd}
     ports:
       - 127.0.0.1:${HTTP_EXTERNAL_PORT:-8080}:80
@@ -28,7 +30,6 @@ services:
     restart: unless-stopped
     volumes:
       - ${ARCHIVE_MOUNT:-archives}:/mnt/archives
-      - ${GUTS_WORK_MOUNT:-guts}:/mnt/guts
 
   mariadb:
     build:
@@ -41,6 +42,7 @@ services:
       - MARIADB_ROOT_PASSWORD=neduddgi
       - CONTACT=${CONTACT:-dp@iit.bme.hu}
       - ETS_ADMIN_NEPTUN_CODE
+      - TZ=${TZ:-Europe/Budapest}
     profiles:
       - develop
       - live
@@ -48,8 +50,33 @@ services:
     volumes:
       - db:/var/lib/mysql
 
+  guts:
+    build:
+      args:
+        - SICSTUS_SITENAME=${SICSTUS_SITENAME?}
+        - SICSTUS_LICENSE_CODE=${SICSTUS_LICENSE_CODE?}
+        - SICSTUS_EXPIRATION_DATE=${SICSTUS_EXPIRATION_DATE?}
+      context: .
+      target: guts-runtime
+    environment:
+      - DB_DATABASE=ets
+      - DB_HOST=mariadb
+      - DB_PASSWORD=ets
+      - DB_USER=ets
+      - TZ=${TZ:-Europe/Budapest}
+    ports:
+      - 127.0.0.1:31337:31337
+    profiles:
+      - develop
+      - live
+    restart: unless-stopped
+    volumes:
+      - ${GUTS_WORK_MOUNT:-guts}:/opt/guts/work
+
   mailcatcher:
     image: dockage/mailcatcher
+    environment:
+      - TZ=${TZ:-Europe/Budapest}
     ports:
       - 127.0.0.1:1080:1080
     profiles:
@@ -65,6 +92,7 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin
       - KC_HOSTNAME=http://localhost:${OIDC_EXTERNAL_PORT:-8081}
       - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
+      - TZ=${TZ:-Europe/Budapest}
     command: ["start-dev", "--import-realm"]
     ports:
       - 127.0.0.1:${OIDC_EXTERNAL_PORT:-8081}:8080

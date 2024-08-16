@@ -60,8 +60,7 @@ mys_handle *mys_connect(const char *host, const char *user, const char *passwd,
   handle = (mys_handle *)SP_malloc(sizeof(mys_handle));
   mysql_init(&handle->mh);
 
-  if (mysql_real_connect(&handle->mh, host, user, passwd, db,
-                         __MYSQL_PORT__, __MYSQL_SOCKET__, 0) == NULL) {
+  if (mysql_real_connect(&handle->mh, host, user, passwd, db, 0, NULL, 0) == NULL) {
     exception("mysql_connect/5", mysql_error(&handle->mh));
     goto mc_mrc_error;
   }
@@ -169,7 +168,7 @@ void mys_fetch_row(mys_result *result, SP_term_ref row)
     if (sqlrow[i] == NULL) {	/* null value, return as [] */
       SP_put_string(value, "[]");
     } else if (IS_NUM(result->fields[i].type))
-      SP_put_number_chars(value, sqlrow[i]); /* numerical field */
+      SP_put_number_codes(value, sqlrow[i]); /* numerical field */
     else {			/* string field, needs conversion */
       const char *str;
       if ((str = convert(result->ih, sqlrow[i])) == NULL) {

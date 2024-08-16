@@ -1,7 +1,6 @@
 <%doc> This is a -*- mason -*- template.
-Parse GUTS submission configuration file.  Requires the relative path (to
-$ENV{GUTS_WORK_DIR}) of the configuration file in the 'conf' parameter, and
-returns a pointer to an array of hashes.
+Parse GUTS submission configuration file. Returns a pointer to an array of
+hashes. Uses the `confcsv` service of the guts server.
 </%doc>
 
 <%args>
@@ -11,40 +10,23 @@ $conf => "env/submit.conf"
 <& html_page &>
 
 <%once>;
-use open ':encoding(UTF-8)';
+use IO::Socket::INET;
+use Text::CSV qw(csv);
 
-my ($output, $semester, $classes);
+my ($class, $classes, $data, $semester, $socket);
 </%once>
 
 <%init>;
 $classes = [];
-if (open FILE, "$ENV{GUTS_WORK_DIR}/$conf") {
-    while (<FILE>) {
-        chomp;
-        if (/^semester\(('?)(.*)\g1\)\.$/) {
-            $semester = $2;
-        } elsif (/^testclass\(
-                        ('?)(.*?)\g1,\s*           # class
-                        ('?)(.*?)\g3,\s*           # name
-                        ('?)(.*?)\g5,\s*           # suite
-                        date\((.+),(.+),(.+)\),\s* # begin
-                        date\((.+),(.+),(.+)\),\s* # end
-                        (\[[^]]*\])                # opts
-                  \).$/x) {
-            my $class = {
-                semester => $semester,
-                class => $2,
-                name  => $4,
-                suite => $6,
-                start => sprintf("%4d-%02d-%02d", $7, $8, $9),
-                end   => sprintf("%4d-%02d-%02d", $10, $11, $12),
-                opts  => $13,
-                ()#$13 =~ /file\((.+?)\)/ ? (file => $1) : ()
-            };
-            $class->{file} = $2 if ($class->{opts} =~ /file\(('?)(.+?)\g1\)/);
-            push @$classes, $class;
-        }
-    }
+$socket = new IO::Socket::INET(PeerAddr => $ENV{GUTS_SERVER}, Proto => 'tcp')
+    or die "Can't open socket to $ENV{GUTS_SERVER}";
+print $socket "confcsv work/$conf\n"; # \n is important!
+$classes = csv(in => $socket,
+               encoding => ":encoding(utf-8)",
+               headers => "auto");
+$socket->close();
+foreach $class (@$classes) {
+    $class->{file} = $2 if ($class->{opts} =~ /file\(('?)(.+?)\g1\)/);
 }
 return $classes;
 </%init>

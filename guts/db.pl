@@ -8,13 +8,13 @@
 
 :- use_module(library(lists)).
 :- use_module(library(system)).
-:- use_module(library(charsio)).
+:- use_module(library(codesio)).
 :- use_module(mysql).
 
 :- meta_predicate db_transaction(-,:).
 
 format_to_atom(Fmt, Args, Atom) :-
-    format_to_chars(Fmt, Args, Chars),
+    format_to_codes(Fmt, Args, Chars),
     atom_chars(Atom, Chars).
 
 db_transaction(DB, Goal) :-
@@ -44,11 +44,9 @@ db_set_score(Neptun, Field, Value) :-
 db_set_score(DB, Neptun, Field, Value) :-
     datime(datime(Y,Mo,D,H,Mi,S)),
     format_to_atom('GUTS - ~w.~w.~w. ~w:~w:~w', [Y,Mo,D,H,Mi,S], Note),
-    format_to_atom('INSERT INTO scores (id,neptun,value,notes)
-                    VALUES ("~w","~w",~w,"~w")',
+    format_to_atom('INSERT INTO scores (id,neptun,value,notes) VALUES ("~w","~w",~w,"~w")',
                    [Field,Neptun,Value,Note], Insert),
-    format_to_atom('UPDATE scores SET value=~w, notes="~w"
-                    WHERE id="~w" AND neptun="~w"',
+    format_to_atom('UPDATE scores SET value=~w, notes="~w" WHERE id="~w" AND neptun="~w"',
                    [Value,Note,Field,Neptun], Update),
     catch(mysql_query(DB, Insert, _), mysql_error(_,_),
           mysql_query(DB, Update, _)).

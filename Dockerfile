@@ -1,5 +1,5 @@
-ARG ALPINE_VERSION=3.20
 ARG APACHE_VERSION=2.4.61
+ARG DEBIAN_VERSION=bookworm
 ARG KEYCLOAK_VERSION=25.0.2
 ARG PERL_VERSION=5.40.0
 ARG MARIADB_VERSION=lts
@@ -24,31 +24,6 @@ FROM quay.io/keycloak/keycloak:${KEYCLOAK_VERSION} AS keycloak
 
 # copy initial realm data
 COPY ets-realm.json /opt/keycloak/data/import/
-
-##
-## SICStus install image
-##
-FROM alpine:${ALPINE_VERSION} AS sicstus
-
-ARG SICSTUS_VERSION=4.9.0
-ARG SICSTUS_PLATFORM=x86_64-linux-glibc2.28
-
-RUN wget -O- https://sicstus.sics.se/sicstus/products4/sicstus/${SICSTUS_VERSION}/binaries/linux/sp-${SICSTUS_VERSION}-${SICSTUS_PLATFORM}.tar.gz | tar xz
-
-WORKDIR sp-${SICSTUS_VERSION}-${SICSTUS_PLATFORM}
-
-ARG SICSTUS_SITENAME
-ARG SICSTUS_LICENSE_CODE
-ARG SICSTUS_EXPIRATION_DATE
-
-COPY <<EOF install.cache
-    installdir='/opt/sicstus'
-    sitename='${SICSTUS_SITENAME}'
-    licensecode='${SICSTUS_LICENSE_CODE}'
-    expires='${SICSTUS_EXPIRATION_DATE}'
-EOF
-
-RUN ./InstallSICStus --batch
 
 ##
 ## ETS image
@@ -79,13 +54,13 @@ RUN cpan App::cpanminus && cpanm \
         Email::Stuffer \
         File::MMagic \
         HTML::Mason \
+        Text::CSV \
         URI \
         UUID
 
 # set environment variables
 ENV ETS_ROOT=/opt/ets
 ENV DB_ARCHIVE_DIR=/mnt/archives
-ENV GUTS_WORK_DIR=/mnt/guts
 
 # set working directory
 WORKDIR ${ETS_ROOT}
@@ -112,10 +87,82 @@ RUN sed -i \
         ${HTTPD_PREFIX}/conf/httpd.conf && \
     cat apache/openidc.conf apache/ets.conf >>${HTTPD_PREFIX}/conf/httpd.conf
 
-# set up volumes
+# set up volume
 RUN mkdir ${DB_ARCHIVE_DIR} && chmod a+rwx,+t ${DB_ARCHIVE_DIR}
+VOLUME ${DB_ARCHIVE_DIR}
+
+##
+## GUTS install image
+##
+FROM perl:${PERL_VERSION}-${DEBIAN_VERSION} AS guts-build
+
+ARG SICSTUS_VERSION=4.9.0
+ARG SICSTUS_PLATFORM=x86_64-linux-glibc2.28
+
+# download and extract prolog from SICStus website
+RUN wget -O- https://sicstus.sics.se/sicstus/products4/sicstus/${SICSTUS_VERSION}/binaries/linux/sp-${SICSTUS_VERSION}-${SICSTUS_PLATFORM}.tar.gz | tar xz
+
+WORKDIR /usr/src/app/sp-${SICSTUS_VERSION}-${SICSTUS_PLATFORM}
+
+ARG SICSTUS_SITENAME
+ARG SICSTUS_LICENSE_CODE
+ARG SICSTUS_EXPIRATION_DATE
+
+# put install.cache in place
+COPY <<EOF install.cache
+    installdir='/opt/sicstus'
+    sitename='${SICSTUS_SITENAME}'
+    licensecode='${SICSTUS_LICENSE_CODE}'
+    expires='${SICSTUS_EXPIRATION_DATE}'
+EOF
+
+# run batch installation
+RUN ./InstallSICStus --batch
+
+# extend path
+ENV PATH=/opt/sicstus/bin:${PATH}
+ENV LD_LIBRARY_PATH=/opt/sicstus/lib
+
+WORKDIR /opt/guts
+
+# copy and build guts binaries
+COPY ./guts/ ./
+RUN make && make clean
+
+##
+## guts runtime image
+##
+FROM debian:${DEBIAN_VERSION}-slim AS guts-runtime
+
+# install extra debian dependencies
+RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
+    apt-get update && \
+    apt-get install -y busybox liblockfile-bin libmariadb3 locales && \
+    busybox --install
+
+# configure UTF-8 locale (for SICStus)
+ENV LANG=en_US.UTF-8
+RUN sed -i -e "s/# $LANG.*/$LANG UTF-8/" /etc/locale.gen && \
+    dpkg-reconfigure --frontend=noninteractive locales && \
+    update-locale LANG=$LANG
+
+# copy from build image
+COPY --from=guts-build /opt/sicstus/ /opt/sicstus/
+COPY --from=guts-build /opt/guts/ /opt/guts/
+
+ENV GUTS_ROOT=/opt/guts
+ENV GUTS_WORK_DIR=${GUTS_ROOT}/work
+
+# extend path
+ENV PATH=/opt/sicstus/bin:${PATH}
+ENV LD_LIBRARY_PATH=/opt/sicstus/lib
+
+# setup workdir volume
 RUN mkdir ${GUTS_WORK_DIR} && for dir in env hwks logs mails spools; do \
         mkdir ${GUTS_WORK_DIR}/${dir}; \
     done
-VOLUME ${DB_ARCHIVE_DIR}
 VOLUME ${GUTS_WORK_DIR}
+
+# workdir and netcat server command
+WORKDIR ${GUTS_ROOT}
+CMD ["nc", "-p", "31337", "-ll", "-e", "./guts-serve.sh"]

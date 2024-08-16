@@ -3,6 +3,7 @@ Show earlier submissions and latest test reports.
 </%doc>
 
 <%args>
+$classes => []
 $conf => "env/submit.conf"
 $neptun => $data->{NEPTUN}
 </%args>
@@ -12,7 +13,7 @@ $neptun => $data->{NEPTUN}
 <TH width="40%">Feladat
 <TH width="50%">Beadott változatok
 <TH width="10%">Tesztnapló
-% foreach $class (@allclasses) {
+% foreach $class (@$classes) {
 <& TR, \$row &>
 <TD><% $class->{name} %> <% exists $class->{file} ? "(<tt>$class->{file}</tt>)" : "" %>
 <TD>
@@ -47,10 +48,12 @@ $neptun => $data->{NEPTUN}
 </TABLE>
 
 <%once>;
-my ($class, @allclasses, $row);
+my ($class, $row);
 </%once>
 
 <%init>;
-@allclasses = @{ $m->comp('/sub/parse_hw_classes', conf => $conf) };
+if (!@$classes) {
+    $classes = $m->comp('/sub/parse_hw_classes', conf => $conf);
+}
 $row = 0;
 </%init>
