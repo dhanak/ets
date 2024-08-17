@@ -59,10 +59,15 @@ services:
       context: .
       target: guts-runtime
     environment:
+      - CONTACT=${CONTACT:-dp@iit.bme.hu}
       - DB_DATABASE=ets
       - DB_HOST=mariadb
       - DB_PASSWORD=ets
       - DB_USER=ets
+      - SMTP_HOST=${SMTP_HOST:-mailcatcher}
+      - SMTP_PORT=${SMTP_PORT:-1025}
+      - SMTP_PASSWORD=${SMTP_PASSWORD-}
+      - SMTP_USERNAME=${SMTP_USERNAME-}
       - TZ=${TZ:-Europe/Budapest}
     ports:
       - 127.0.0.1:31337:31337

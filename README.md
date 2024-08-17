@@ -27,6 +27,9 @@ hallgatói információs rendszere, az ETS.
   * a régebbi, v1-es `docker-compose` python csomag nem jó!
 * Apache2 web szerver konfigurált HTTPS eléréssel
 * engedélyezett OpenID Connect Provider szolgáltatás (pl. <https://idp.bme.hu>)
+* érvényes SICStus Prolog licenc: a licenc paramétereit a `SICSTUS_SITENAME`,
+  `SICSTUS_LICENSE_CODE` és `SICSTUS_EXPIRATION_DATE` környezeti változókban
+  kell beállítani
 
 ## Telepítés
 

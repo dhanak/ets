@@ -13,19 +13,20 @@ $conf => "env/submit.conf"
 use IO::Socket::INET;
 use Text::CSV qw(csv);
 
-my ($class, $classes, $data, $semester, $socket);
+my ($classes, $socket);
 </%once>
 
 <%init>;
 $classes = [];
 $socket = new IO::Socket::INET(PeerAddr => $ENV{GUTS_SERVER}, Proto => 'tcp')
     or die "Can't open socket to $ENV{GUTS_SERVER}";
-print $socket "confcsv work/$conf\n"; # \n is important!
+print $socket "confcsv work/$conf\n";
+$socket->shutdown(SHUT_WR);     # send EOF (shut down for writing)
 $classes = csv(in => $socket,
                encoding => ":encoding(utf-8)",
                headers => "auto");
 $socket->close();
-foreach $class (@$classes) {
+foreach my $class (@$classes) {
     $class->{file} = $2 if ($class->{opts} =~ /file\(('?)(.+?)\g1\)/);
 }
 return $classes;

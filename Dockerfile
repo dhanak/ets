@@ -52,8 +52,8 @@ RUN cpan App::cpanminus && cpanm \
         Data::Dumper \
         DBD::MariaDB \
         Email::Stuffer \
-        File::MMagic \
         HTML::Mason \
+        Math::Round \
         Text::CSV \
         URI \
         UUID
@@ -137,7 +137,8 @@ FROM debian:${DEBIAN_VERSION}-slim AS guts-runtime
 # install extra debian dependencies
 RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     apt-get update && \
-    apt-get install -y busybox liblockfile-bin libmariadb3 locales && \
+    apt-get install -y busybox curl file \
+        liblockfile-bin libmariadb3 locales && \
     busybox --install
 
 # configure UTF-8 locale (for SICStus)

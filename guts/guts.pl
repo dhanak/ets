@@ -3,6 +3,7 @@
 
 :- use_module(library(file_systems)).
 :- use_module(library(lists)).
+:- use_module(library(process)).
 :- use_module(library(system)).
 :- use_module(library(codesio)).
 
@@ -183,10 +184,12 @@ read_testfile(File, Tests) :-
 
 %% read_mail_ID(-ID): ID is the mail file name in the current test directory.
 read_mail_ID(ID) :-
-    exec('file mail', [null,pipe(S),null], PID),
-    get_line(S, Line0),
-    close(S),
-    wait(PID, _),
+    process_create(path(file),
+                   [mail],
+                   [stdin(null),stdout(pipe(Out)),stderr(null),process(Proc)]),
+    read_line(Out, Line0),
+    close(Out),
+    process_wait(Proc, _),
     (   append(Line, [0''',0' ], Line0)
     ->  true
     ;   Line = Line0
@@ -459,23 +462,36 @@ mail_student(Name, Subject, MailPrinter) :-
     split_name(Name, _, Neptun),
     db_get_email(Neptun, Email),
     with_output_to_codes(MailPrinter, MailBody),
-    atom_concat(['From: dp@iit.bme.hu\n',
-                 'MIME-Version: 1.0\n',
-                 'Content-Type: text/plain; charset=iso-8859-2\n',
-                 'Content-Transfer-Encoding: quoted-printable'], Headers),
-    format_to_codes('mimencode -q | mail -s "~w" -a "~w" ~w',
-                    [Subject,Headers,Email], CmdC),
-    atom_codes(Cmd, CmdC),
-    exec(Cmd, [pipe(Mail),null,std], PID),
-    format(Mail, '~s', [MailBody]),
-    close(Mail),
-    %	wait(PID, 0), !.
-    wait(PID, EC),
-    log_warning('Running ~w results in exit code ~w', [exec(Cmd, [pipe(Mail),null,std], PID), EC]),
-    EC=0,!.
-
+    environ('CONTACT', Sender),
+    smtp_server(Url, UserPwd),
+    process_create(path(curl),
+                   [Url,'--user', UserPwd,
+                    '--mail-from', Sender,
+                    '--mail-rcpt', Email,
+                    '--no-progress-meter', '-T-'],
+                   [stdin(pipe(In)),stdout(null),stderr(std),process(Proc)]),
+    format(In, 'From: ~w\nTo: ~w\nSubject: ~w\n', [Sender,Email,Subject]),
+    format(In, 'Content-Transfer-Encoding: binary\n\n~s', [MailBody]),
+    close(In),
+    process_wait(Proc, exit(EC)),
+    (   EC=0
+    ->  !
+    ;   log_warning('Sending mail finished with code ~d', [EC]),
+        fail
+    ).
 mail_student(Name, _, _) :-
     log_warning('Sending mail to ~w failed', [Name]).
+
+%% smtp_url(-Url, -UserPwd): return URL and user:pwd of smtp serrver
+smtp_server(Url, UserPwd) :-
+    environ('SMTP_HOST', Host),
+    environ('SMTP_PORT', Port),
+    format_to_codes('smtp://~w:~w', [Host,Port], UrlC),
+    atom_codes(Url, UrlC),
+    environ('SMTP_USERNAME', User),
+    environ('SMTP_PASSWORD', Pwd),
+    format_to_codes('~w:~w', [User,Pwd], UserPwdC),
+    atom_codes(UserPwd, UserPwdC).
 
 %% receive_homework(+Conf, +Class, +Mail, +FullName, +DateRangeCheck, +Report): common
 %% predicate for guts_mail and guts_submit.

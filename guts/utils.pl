@@ -15,7 +15,6 @@
               mkdirhier/1,		% mkdirhier(+Directory)
               read_file/2,		% read_file(+File, -Data)
               write_file/2,		% write_file(+File, +Data)
-              get_line/2,		% get_line(+Stream, -CharList)
               read_lines/1,		% read_lines(-Lines)
               read_lines/2,		% read_lines(+File, -Lines)
               write_lines/1,	% write_lines(+Lines)
@@ -200,32 +199,12 @@ write_terms(S, TL) :-
     fail.
 write_terms(_,_).
 
-%%% get_line(S, CL): CL is the string read up to the end of the line from S.
-%%% If reading past end of file, returns 'end_of_file' in CL first, raises
-%%% an exception second time.
-%%% :- pred get_string(+stream, -list(int)).
-get_line(S, CL) :-
-    peek_code(S, C),
-    (   C = -1
-    ->  get_code(S, _),
-        CL = end_of_file
-    ;   get_line(S, C, CL)).
-
-get_line(_, -1, CL) :- !, CL = [].	% leave end of file mark on stream
-get_line(S, 0'\n, CL) :- !,
-    get_code(S, _),
-    CL = [].
-get_line(S, C, [C|CL]) :-
-    get_code(S, _),
-    peek_code(S, NC),
-    get_line(S, NC, CL).
-
 %% read_lines(L): reads lines from current input to L.  L is a list of list
 %% of character codes, newline characters are not included.
 %% :- pred read_lines(-list(list(char))).
 read_lines(L) :-
     current_input(In),
-    get_line(In, L0),
+    read_line(In, L0),
     read_lines(In, L0, L).
 
 %% read_lines(F, L): reads lines from F to L.  L is a list of list of character
@@ -233,13 +212,13 @@ read_lines(L) :-
 %% :- pred read_lines(+atom, -list(list(char))).
 read_lines(F, L) :-
     fail_on_error(open(F, read, S)),
-    call_cleanup((get_line(S, L0),
+    call_cleanup((read_line(S, L0),
                   read_lines(S, L0, L)),
                  close(S)).
 
 read_lines(_, end_of_file, L) :- !, L = [].
 read_lines(S, H, [H|T]) :-
-    get_line(S, NH),
+    read_line(S, NH),
     read_lines(S, NH, T).
 
 %% write_lines(L): writes lines L to current output.  L is a list of list
@@ -298,9 +277,9 @@ lock(F) :-
     lockfile(F, LockF),
     process_create(path(dotlockfile),
                    [file(LockF)],
-                   [stderr(pipe(Err)),wait(Exit)]),
+                   [stdin(null),stdout(null),stderr(pipe(Err)),wait(Exit)]),
     call_cleanup((	 Exit=exit(0) -> true
-                 ;	 get_line(Err, ErrorC),
+                 ;	 read_line(Err, ErrorC),
                      atom_codes(Error, ErrorC),
                      throw(lockfile(Error))
                  ), close(Err)).

@@ -15,7 +15,7 @@
 
 format_to_atom(Fmt, Args, Atom) :-
     format_to_codes(Fmt, Args, Chars),
-    atom_chars(Atom, Chars).
+    atom_codes(Atom, Chars).
 
 db_transaction(DB, Goal) :-
     environ('DB_HOST', Host),

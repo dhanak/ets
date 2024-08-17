@@ -26,9 +26,9 @@ $sth->finish;
 # remove accents (decompose and remove diacritical marks)
 $name = NFKD($name);
 $name =~ s/\p{NonspacingMark}//g;
-# Accidental carriage retunrs
-$name =~ s/\r//g;
-# Other nonprintable characters
+# Remove whitespaces
+$name =~ s/\s//g;
+# Replace Other nonprintable characters with ?
 $name =~ s/[^[:print:]]/?/g;
 
 return "$name.$neptun";

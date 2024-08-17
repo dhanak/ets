@@ -12,19 +12,18 @@ $suite   => undef
 </%args>
 
 <%once>;
-use File::MMagic;
-use Encode::Detect::Detector;
-
-my $mm = new File::MMagic;
+#use File::MMagic;
+#use Encode::Detect::Detector;
+#my $mm = new File::MMagic;
 
 sub cmdout {
     my ($output, $error) = runcmd($_[0], "");
-    my $ct = "text/plain";
-    my $en = "UTF-8";
-    $ct = $mm->checktype_contents($output) if defined $mm;
-    $en = Encode::Detect::Detector::detect($output) if defined $mm;
-    $ct = "text/plain; charset=utf-8" if $ct eq "text/plain" and $en eq "UTF-8";
-    $ct = "application/octet-stream;" if $ct eq "application/octet-stream";
+    my $ct = "text/plain; charset=utf-8";
+    #my $en = "UTF-8";
+    #$ct = $mm->checktype_contents($output) if defined $mm;
+    #$en = Encode::Detect::Detector::detect($output) if defined $mm;
+    #$ct = "text/plain; charset=utf-8" if $ct eq "text/plain" and $en eq "UTF-8";
+    #$ct = "application/octet-stream;" if $ct eq "application/octet-stream";
     $r->content_type($ct);
     if (exists $_[1]) {
         $r->headers_out()->{"Content-Disposition"} = "inline; filename=\"$_[1]\"";
