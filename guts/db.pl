@@ -8,14 +8,10 @@
 
 :- use_module(library(lists)).
 :- use_module(library(system)).
-:- use_module(library(codesio)).
 :- use_module(mysql).
+:- use_module(utils).
 
 :- meta_predicate db_transaction(-,:).
-
-format_to_atom(Fmt, Args, Atom) :-
-    format_to_codes(Fmt, Args, Chars),
-    atom_codes(Atom, Chars).
 
 db_transaction(DB, Goal) :-
     environ('DB_HOST', Host),

@@ -52,6 +52,7 @@ RUN cpan App::cpanminus && cpanm \
         Data::Dumper \
         DBD::MariaDB \
         Email::Stuffer \
+        IO::Socket::SSL \
         HTML::Mason \
         Math::Round \
         Text::CSV \

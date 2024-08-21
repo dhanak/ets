@@ -15,7 +15,7 @@ my ($get_email, $set_flag, $email, $body);
 <%init>;
 if (!defined $get_email) {
     $get_email = $dbh->prepare("SELECT email FROM people WHERE neptun=?");
-    $set_flag  = $dbh->prepare("UPDATE people SET licence='Y' WHERE neptun=?");
+    $set_flag  = $dbh->prepare("UPDATE people SET licence=1 WHERE neptun=?");
 }
 
 $get_email->execute($data->{NEPTUN});

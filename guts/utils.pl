@@ -10,6 +10,7 @@
 
               atom_number/2,	% atom_number(?Number, ?Atom)
               atom_concat/2,	% atom_concat(+Atoms, -Concatenated)
+              format_to_atom/3, % format_to_atom(+Format, +Args, -Atom)
 
               split_path/3,		% split_path(+Path, -Dir, -File)
               mkdirhier/1,		% mkdirhier(+Directory)
@@ -34,6 +35,7 @@
           ]).
 
 :- use_module(library(file_systems)).
+:- use_module(library(codesio)).
 :- use_module(library(lists)).
 :- use_module(library(process)).
 :- use_module(library(system)).
@@ -126,6 +128,12 @@ atom_concat0([], Atom, Atom).
 atom_concat0([H|T], A0, A) :-
     atom_concat(A0, H, A1),
     atom_concat0(T, A1, A).
+
+%%% format_to_atom(+Format, +Args, -Atom): format a specification with arguments
+%%% into an atom, using format_to_codes/3 and atom_codes/2.
+format_to_atom(Fmt, Args, Atom) :-
+    format_to_codes(Fmt, Args, Chars),
+    atom_codes(Atom, Chars).
 
 %%% split_path(FullPath, Dir, FileName): FullPath is Dir/FileName.
 %%% :- pred split_path(atom, atom, atom).

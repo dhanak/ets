@@ -464,14 +464,26 @@ mail_student(Name, Subject, MailPrinter) :-
     with_output_to_codes(MailPrinter, MailBody),
     environ('CONTACT', Sender),
     smtp_server(Url, UserPwd),
-    process_create(path(curl),
-                   [Url,'--user', UserPwd,
-                    '--mail-from', Sender,
-                    '--mail-rcpt', Email,
-                    '--no-progress-meter', '-T-'],
+    format_to_atom('From: ~s', Sender, FromH),
+    format_to_atom('To: ~s', Email, ToH),
+    format_to_atom('Subject: ~s', Subject, SubjectH),
+    Args0 = ['--ssl',           % use STARTTLS if available
+             '--no-progress-meter',
+             '--url', Url,
+             '--mail-from', Sender,
+             '--mail-rcpt', Email,
+             '--header', FromH,
+             '--header', ToH,
+             '--header', SubjectH,
+             % read body from stdin and encode it in quoted printable form
+             '--form', '=<-;encoder=quoted-printable'],
+    (   UserPwd=':'
+    ->  Args = [ '--user', UserPwd|Args0]
+    ;   Args = Args0
+    ),
+    process_create(path(curl), Args,
                    [stdin(pipe(In)),stdout(null),stderr(std),process(Proc)]),
-    format(In, 'From: ~w\nTo: ~w\nSubject: ~w\n', [Sender,Email,Subject]),
-    format(In, 'Content-Transfer-Encoding: binary\n\n~s', [MailBody]),
+    format(In, '~s', [MailBody]),
     close(In),
     process_wait(Proc, exit(EC)),
     (   EC=0
@@ -486,12 +498,10 @@ mail_student(Name, _, _) :-
 smtp_server(Url, UserPwd) :-
     environ('SMTP_HOST', Host),
     environ('SMTP_PORT', Port),
-    format_to_codes('smtp://~w:~w', [Host,Port], UrlC),
-    atom_codes(Url, UrlC),
+    format_to_atom('smtp://~w:~w', [Host,Port], Url),
     environ('SMTP_USERNAME', User),
     environ('SMTP_PASSWORD', Pwd),
-    format_to_codes('~w:~w', [User,Pwd], UserPwdC),
-    atom_codes(UserPwd, UserPwdC).
+    format_to_atom('~w:~w', [User,Pwd], UserPwd).
 
 %% receive_homework(+Conf, +Class, +Mail, +FullName, +DateRangeCheck, +Report): common
 %% predicate for guts_mail and guts_submit.
