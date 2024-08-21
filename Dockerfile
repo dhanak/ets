@@ -97,8 +97,20 @@ VOLUME ${DB_ARCHIVE_DIR}
 ##
 FROM perl:${PERL_VERSION}-${DEBIAN_VERSION} AS guts-build
 
+ARG ERLANG_VERSION=27.0.1
+ARG ELIXIR_VERSION=1.17.2
 ARG SICSTUS_VERSION=4.9.0
 ARG SICSTUS_PLATFORM=x86_64-linux-glibc2.28
+
+# download and install kerl, install erlang
+RUN wget https://raw.githubusercontent.com/kerl/kerl/master/kerl && \
+    chmod a+x kerl && \
+    KERL_DEBUG=1 ./kerl build-install ${ERLANG_VERSION} ${ERLANG_VERSION} /opt/erlang
+
+# download and extract elixir
+RUN wget -O/dev/shm/elixir.zip \
+    "https://builds.hex.pm/builds/elixir/v${ELIXIR_VERSION}.zip" && \
+    unzip -d/opt/elixir /dev/shm/elixir.zip
 
 # download and extract prolog from SICStus website
 RUN wget -O- https://sicstus.sics.se/sicstus/products4/sicstus/${SICSTUS_VERSION}/binaries/linux/sp-${SICSTUS_VERSION}-${SICSTUS_PLATFORM}.tar.gz | tar xz
@@ -149,6 +161,8 @@ RUN sed -i -e "s/# $LANG.*/$LANG UTF-8/" /etc/locale.gen && \
     update-locale LANG=$LANG
 
 # copy from build image
+COPY --from=guts-build /opt/erlang/ /opt/erlang/
+COPY --from=guts-build /opt/elixir/ /opt/elixir/
 COPY --from=guts-build /opt/sicstus/ /opt/sicstus/
 COPY --from=guts-build /opt/guts/ /opt/guts/
 
@@ -156,7 +170,7 @@ ENV GUTS_ROOT=/opt/guts
 ENV GUTS_WORK_DIR=${GUTS_ROOT}/work
 
 # extend path
-ENV PATH=/opt/sicstus/bin:${PATH}
+ENV PATH=/opt/sicstus/bin:/opt/elixir/bin:/opt/erlang/bin:${PATH}
 ENV LD_LIBRARY_PATH=/opt/sicstus/lib
 
 # setup workdir volume
