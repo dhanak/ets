@@ -54,9 +54,9 @@ services:
   guts:
     build:
       args:
-        - SICSTUS_SITENAME=${SICSTUS_SITENAME?}
-        - SICSTUS_LICENSE_CODE=${SICSTUS_LICENSE_CODE?}
-        - SICSTUS_EXPIRATION_DATE=${SICSTUS_EXPIRATION_DATE?}
+        - SICSTUS_SITENAME=${SICSTUS_SITENAME}
+        - SICSTUS_LICENSE_CODE=${SICSTUS_LICENSE_CODE}
+        - SICSTUS_EXPIRATION_DATE=${SICSTUS_EXPIRATION_DATE}
       context: .
       target: guts-runtime
     environment:

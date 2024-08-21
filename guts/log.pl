@@ -7,6 +7,7 @@
               log_warning/2     % log_warning(+MessageFormat, +Args)
           ]).
 
+:- use_module(library(process)).
 :- use_module(library(system)).
 :- use_module(utils).
 
@@ -45,7 +46,7 @@ log_warning(Format, Args) :-
 
 logfile(F) :-
     guts:subdirectory(work, 'logs', LD),
-    pid(P),
+    process_id(P),
     number_codes(P, PC),
     append_lists(["guts_",PC,".log"], LFC),
     atom_codes(LF, LFC),

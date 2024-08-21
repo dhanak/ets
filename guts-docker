@@ -18,6 +18,9 @@ fi
 # invoke shell or guts command directly
 if [[ $* == shell ]]; then
     exec docker compose $cmd ${extra[0]} guts /bin/bash
+elif [[ $1 == testd ]]; then
+    # run testd command protected by daemons script
+    exec docker compose $cmd ${extra[1]} guts ./daemons run ./guts "$@"
 else
     exec docker compose $cmd ${extra[1]} guts ./guts "$@"
 fi

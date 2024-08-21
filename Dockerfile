@@ -150,8 +150,8 @@ FROM debian:${DEBIAN_VERSION}-slim AS guts-runtime
 # install extra debian dependencies
 RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     apt-get update && \
-    apt-get install -y busybox curl file \
-        liblockfile-bin libmariadb3 locales && \
+    apt-get install -y busybox curl file procps locales \
+        liblockfile-bin libmariadb3 && \
     busybox --install
 
 # configure UTF-8 locale (for SICStus)
@@ -161,10 +161,10 @@ RUN sed -i -e "s/# $LANG.*/$LANG UTF-8/" /etc/locale.gen && \
     update-locale LANG=$LANG
 
 # copy from build image
-COPY --from=guts-build /opt/erlang/ /opt/erlang/
-COPY --from=guts-build /opt/elixir/ /opt/elixir/
+COPY --from=guts-build /opt/erlang/  /opt/erlang/
+COPY --from=guts-build /opt/elixir/  /opt/elixir/
 COPY --from=guts-build /opt/sicstus/ /opt/sicstus/
-COPY --from=guts-build /opt/guts/ /opt/guts/
+COPY --from=guts-build /opt/guts/    /opt/guts/
 
 ENV GUTS_ROOT=/opt/guts
 ENV GUTS_WORK_DIR=${GUTS_ROOT}/work
@@ -174,9 +174,9 @@ ENV PATH=/opt/sicstus/bin:/opt/elixir/bin:/opt/erlang/bin:${PATH}
 ENV LD_LIBRARY_PATH=/opt/sicstus/lib
 
 # setup workdir volume
-RUN mkdir ${GUTS_WORK_DIR} && for dir in env hwks logs mails spools; do \
+RUN mkdir ${GUTS_WORK_DIR} && for dir in daemons env hwks logs mails spools; do \
         mkdir ${GUTS_WORK_DIR}/${dir}; \
-    done
+    done && ln -s ${GUTS_WORK_DIR}/daemons ${HOME}/.daemons
 VOLUME ${GUTS_WORK_DIR}
 
 # workdir and netcat server command
