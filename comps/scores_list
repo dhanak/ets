@@ -1,6 +1,5 @@
 <%doc> This is a -*- mason -*- template.
-List the specified scores in the database for all students. 'DP Admin '
-and demonstrators whose names end in '(d)' are not listed.
+List the specified scores in the database for all students.
 @ids stores the IDs of the scores to fetch, $formulae is a newline
 separated list of additional formulae of the form "column=formula".
 </%doc>
@@ -12,8 +11,6 @@ $formulae
 
 <h3 class="topic">Hallgatók pontszámai</h3>
 
-<p align="center">DP Admin és a (d)-vel megjelölt demonstrátorok pontszámai nélkül.</p>
-
 <TABLE width="100%">
 <TR>
 <TH>Neptun kód
@@ -21,13 +18,11 @@ $formulae
 <% map { "<TH>" . $_ } @ids %>
 
 % while (defined ($i = $get_people->fetchrow_hashref)) {
-% if ((rindex($i->{name},'(d)') == -1) && (rindex($i->{name},'DP Admin') == -1)) {
 <& TR, \$row &>
 <TD><% $i->{neptun} %>
 <TD><% $i->{name} %>
 % foreach ($m->comp('/sub/get_score', neptun => $i->{neptun}, formulae => \@formulae)) {
 <TD align=right><% $_ %>
-% }
 % }
 % }
 </TABLE>

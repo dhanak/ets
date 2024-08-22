@@ -9,7 +9,7 @@ sub start_request_hook {
     my ( $self, $context ) = @_;
     my $args_ref = $context->args();
     foreach my $arg ( @{$args_ref} ) {
-        utf8::is_utf8($arg) || utf8::decode($arg);
+        ref($arg) || utf8::is_utf8($arg) || utf8::decode($arg);
     }
     # convert ENV from UTF-8 to internal
     foreach (keys %ENV) {
