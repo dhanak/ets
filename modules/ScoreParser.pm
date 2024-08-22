@@ -7,7 +7,7 @@ require Exporter;
 @EXPORT = qw(&parseScores);
 
 # Line format:
-# NEPTUN:P1:P2:P3:P4:lang=LNG,group=GRP,corr=CORR % comment
+# NEPTUN:P1:P2:P3:...:group=GRP,corr=CORR % comment
 
 # Parse scores from handle passed as an argument
 sub parseScores(*) {
@@ -15,27 +15,23 @@ sub parseScores(*) {
     my $fh = shift;
 
     while (<$fh>) {
-	chomp;			# strip whitespaces
-	s/ *%.*$//;		# strip line end komments
-	next if /^$/;		# skip if line is empty
+        chomp;                  # strip white spaces
+        s/ *%.*$//;             # strip line end comments
+        next if /^$/;           # skip if line is empty
 
-	my ($neptun,$p1,$p2,$p3,$p4,$rems) = split /:/, uc $_;
-	my @scores = ($p1,$p2,$p3,$p4);
-	my ($Lang,$Group,$Corr) = split /,/, $rems;
-	my ($n1,$lang) = split /=/, $Lang;
-	my ($n2,$group) = split /=/, $Group;
-	my ($n3,$corr) = split /=/, $Corr;
-
-	if ($#scores != 3) {	# this doesn't seem to be a score line
-	    carp "Suspicious looking line $. skipped.\n";
-	    next;
-	}
-
-	push @allScores, { neptun => $neptun,
-			   group => $group,
-			   language => $lang,
-			   scores => \@scores,
-			   corrector => $corr };
+        my @fields = split /:/, uc $_;
+        my $neptun = $fields[0];
+        my @scores = @fields[1..$#fields-1];
+        my %notes = ();
+        foreach my $part (split /,/, $fields[$#fields]) {
+            my ($label, $value) = split /=/, $part;
+            $notes{$label} = $value;
+        }
+        push @allScores, {
+            neptun => $neptun,
+            notes  => \%notes,
+            scores => \@scores,
+        };
     }
 
     return @allScores;

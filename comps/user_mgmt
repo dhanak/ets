@@ -94,7 +94,7 @@ $first_char => undef
 <h4>Felhasználók felvétele</h4>
 
 <& form, action => "action_add_users", hidden => { first_char => $first_char } &>
-<P>Neptun-kódok, whitespace karakerekkel elválasztva:</P>
+<P>Neptun kódok, whitespace karakerekkel elválasztva:</P>
 <P ALIGN="center"><TEXTAREA NAME="neptun" ROWS="3" COLS="80"></TEXTAREA></P>
 <P ALIGN="center"><INPUT TYPE="submit" NAME="submit" VALUE="Felvesz"></P>
 </FORM>

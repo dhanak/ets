@@ -18,11 +18,12 @@ A feltöltendő állomány formátuma a következő:
 <li>minden sor egy hallgatónak felel meg;
 <li>a sorok szerkezete a következő:
 <pre>
-NEPTUN:P1:P2:P3:P4:lang=LANG,group=GROUP,corr=CORR
+NEPTUN:P1:P2:P3:...:group=GROUP,corr=CORR
 </pre>
-ahol NEPTUN a neptunkód, P1, P2, P3 és P4 a négy feladatra adott pontszám,
-LANG az adott programnyelv, GROUP a javított csoport, CORR pedig a javító
-monogramja.
+ahol NEPTUN a neptunkód, P1, P2, P3, stb. a feladatokra adott pontszámok, GROUP
+a javított csoport, CORR pedig a javító monogramja. A végén további kulcs-érték
+párok is szerepelhetnek (pl. lang=LANG), ezek az adatbázisban a notes oszlopban
+fognak megjelenni.
 <li>tetszőleges sorban lehet megjegyzés, % jelet követően a sor végéig;
 <li>az üres sorok nem számítanak.
 </ul>
@@ -31,13 +32,28 @@ monogramja.
 <TABLE>
 <TR><TD>A pontszámok típusa:
 <TD><SELECT NAME=type size=1>
-<OPTION SELECTED>nzh</OPTION>
-<OPTION>pzh</OPTION>
-<OPTION>ppzh</OPTION>
-<OPTION>besz</OPTION>
+% foreach my $type (@types) {
+<OPTION><% $type->{type} %></OPTION>
+% }
 </SELECT>
 <TR><TD>A pontszámok állománya:
 <TD><INPUT TYPE=file NAME=file SIZE=60>
 <TR><TD colspan=2><INPUT TYPE=submit NAME=submit VALUE="Feltölt">
 </TABLE>
 </FORM>
+
+<%once>;
+my ($sth, @types);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("SELECT DISTINCT LEFT(id, CHAR_LENGTH(id) - 1) AS type
+                          FROM scores_meta
+                          WHERE formula IS NULL AND id LIKE '%1'");
+}
+
+$sth->execute;
+@types = @{$sth->fetchall_arrayref({})};
+$sth->finish;
+</%init>
