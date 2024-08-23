@@ -28,7 +28,7 @@ $scores => []
     <TD><% $people[0]{name} %>
     <TD>
 <%perl>
-    my $notes = defined $line->{notes} ? $line->{notes} : "";
+    my $notes = exists $line->{notes} ? $line->{notes} : "";
     KEY: foreach my $key (sort keys %$line) {
         next KEY if ($key eq "neptun" || $key eq "notes");
         # leading zero denotes octal number; with '0 +' evaluated as decimal

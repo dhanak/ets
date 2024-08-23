@@ -13,42 +13,71 @@ $neptun => $data->{NEPTUN}
 <TH width="40%">Feladat
 <TH width="50%">Beadott változatok
 <TH width="10%">Tesztnapló
-% foreach $class (@$classes) {
+% foreach my $class (@$classes) {
 <& TR, \$row &>
 <TD><% $class->{name} %> <% exists $class->{file} ? "(<tt>$class->{file}</tt>)" : "" %>
 <TD>
-% my $canon   = $m->comp('/sub/canonical_name', neptun => $neptun );
-% my $basedir = "$ENV{GUTS_WORK_DIR}/hwks/${$class}{semester}/${$class}{class}";
-% my $none    = 1;
-% for (sort { $a<=>$b } (map { /([0-9]*)$/ } <$basedir/mails/$canon.*>)) {
-%   $none = 0;
-<& link, text => $_, href => "action_download_submission", newwindow => 1,
-   params => { neptun   => $neptun,
-               semester => $class->{semester},
-               class    => $class->{class},
-               file     => $class->{file},
-               version  => $_ }  &>
-% }
-% if ($none) {
-&ndash;
-% }
-<TD align="center">
-% $_ = "$basedir/reports/${$class}{suite}/$canon";
-% if (-r && -f) {
-<& link, img => "list.png", text => "Listáz", href => "action_download_submission",
-   newwindow => 1,
-   params => { neptun   => $neptun,
-               semester => $class->{semester},
-               class    => $class->{class},
-               suite    => $class->{suite} }  &>
-% } else {
-&ndash;
-% }
-% }
+
+<%perl>;
+#
+# 1. list submitted homework files
+#
+my $canon = $m->comp('/sub/canonical_name', neptun => $neptun );
+my $socket = new IO::Socket::INET(PeerAddr => $ENV{GUTS_SERVER}, Proto => 'tcp')
+    or die "Can't open socket to $ENV{GUTS_SERVER}";
+print $socket "list-submissions $class->{semester} $class->{class} $canon\n";
+$socket->shutdown(SHUT_WR);     # send EOF (shut down for writing)
+my $none = 1;
+foreach (<$socket>) {
+    chomp;
+    $none = 0;
+    s/^.*\.//;   # delete everything up to the last period, keeping version only
+    $m->comp('link',
+             text => $_,
+             href => "action_download_submission",
+             params => {
+                 neptun   => $neptun,
+                 semester => $class->{semester},
+                 class    => $class->{class},
+                 version  => $_
+             });
+}
+$socket->close;
+if ($none) {
+    $m->print('&ndash;');
+}
+
+#
+# 2. list reports
+#
+$socket = new IO::Socket::INET(PeerAddr => $ENV{GUTS_SERVER}, Proto => 'tcp')
+    or die "Can't open socket to $ENV{GUTS_SERVER}";
+print $socket "list-reports $class->{semester} $class->{class} $class->{suite} $canon\n";
+$socket->shutdown(SHUT_WR);     # send EOF (shut down for writing)
+$m->print('<TD align="center">');
+if (<$socket>) {
+    $m->comp('link',
+             img => "list.png"
+             , text => "Listáz",
+             href => "action_download_submission",
+             params => {
+                 neptun   => $neptun,
+                 semester => $class->{semester},
+                 class    => $class->{class},
+                 suite    => $class->{suite}
+             });
+} else {
+    $m->print('&ndash;');
+}
+$socket->close;
+</%perl>
+% } # end of foreach
 </TABLE>
 
 <%once>;
-my ($class, $row);
+use IO::Socket::INET;
+
+my $row;
 </%once>
 
 <%init>;

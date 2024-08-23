@@ -6,30 +6,12 @@ Display a submitted homework version or a report log.
 $neptun
 $semester
 $class
-$file    => undef
 $version => undef
 $suite   => undef
 </%args>
 
 <%once>;
-#use File::MMagic;
-#use Encode::Detect::Detector;
-#my $mm = new File::MMagic;
-
-sub cmdout {
-    my ($output, $error) = runcmd($_[0], "");
-    my $ct = "text/plain; charset=utf-8";
-    #my $en = "UTF-8";
-    #$ct = $mm->checktype_contents($output) if defined $mm;
-    #$en = Encode::Detect::Detector::detect($output) if defined $mm;
-    #$ct = "text/plain; charset=utf-8" if $ct eq "text/plain" and $en eq "UTF-8";
-    #$ct = "application/octet-stream;" if $ct eq "application/octet-stream";
-    $r->content_type($ct);
-    if (exists $_[1]) {
-        $r->headers_out()->{"Content-Disposition"} = "inline; filename=\"$_[1]\"";
-    }
-    $m->out($output);
-}
+use IO::Socket::INET;
 </%once>
 
 <%init>;
@@ -39,32 +21,27 @@ if (!$m->comp('/sub/check_perm', item => "download_submission", neptun => $neptu
     $m->comp('html_page');
 } else {
     my $name = $m->comp('/sub/canonical_name', neptun => $neptun);
-    my $basedir = "$ENV{GUTS_WORK_DIR}/hwks/$semester/$class";
-
+    my $socket = new IO::Socket::INET(PeerAddr => $ENV{GUTS_SERVER},
+                                      Proto => 'tcp')
+        or die "Can't open socket to $ENV{GUTS_SERVER}";
+    $r->content_type("text/plain; charset=utf-8");
     if ($version) {
-        $_ = "$basedir/mails/$name.$version";
-        if (-r && -f) {
-            if (!$file) {
-                open IN, "<$_";
-                my @parts = split(/ +/, <IN>);
-                chomp($file = $parts[2]);
-                close IN;
-            }
-            cmdout("uudecode -o- '$_'", $file);
-        } else {
-            $data->{MSG} = "<span class=bad>Nem találtam ilyen beadott verziót!</span>";
-            $data->{SCREEN} = "hw_submit";
-            $m->comp('html_page');
-        }
-    } else {
-        $_ = "$basedir/reports/$suite/$name";
-        if (-r && -f) {
-            cmdout("cat '$_'", "${class}_log.txt");
-        } else {
-            $data->{MSG} = "<span class=bad>Nem találtam ilyen tesztnaplót!</span>";
-            $data->{SCREEN} = "hw_submit";
-            $m->comp('html_page');
-        }
+        # download specific homework file version
+        print $socket "cat-submission ${semester} ${class} ${name}.${version}\n";
+        $socket->shutdown(SHUT_WR); # send EOF (shut down for writing)
+        my $header = <$socket>;
+        my ($fn) = ($header =~ /^begin 644 (.*)$/);
+        $r->headers_out()->set('Content-Disposition' =>
+                               'attachment; filename="' . $fn . '"');
+        $m->out(unpack('u', <$socket>)); # uudecode
+    } elsif ($suite) {
+        # download latest test report
+        print $socket "cat-report ${semester} ${class} ${suite} ${name}\n";
+        $socket->shutdown(SHUT_WR); # send EOF (shut down for writing)
+        $r->headers_out()->set('Content-Disposition' =>
+                               'attachment; filename="test-report.txt"');
+        $m->out(<$socket>);
     }
+    $socket->close;
 }
 </%init>
