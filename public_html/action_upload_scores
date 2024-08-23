@@ -1,16 +1,12 @@
 <%doc> This is a -*- mason -*- template.
 </%doc>
 
-<& html_page, type => $type, lines => \@lines &>
-
-<%args>
-$type
-</%args>
+<& html_page, scores => $scores &>
 
 <%once>;
-use ScoreParser;
+use Text::CSV qw(csv);
 
-my ($fh, @lines);
+my $scores;
 </%once>
 
 <%init>;
@@ -18,8 +14,12 @@ if (!$m->comp('/sub/check_perm', item => "upload_scores_form")) {
     $data->{MSG} = "Nem vagy jogosult pontszámok feltöltésére!";
     $data->{SCREEN} = "news";
 } else {
-    $fh = $m->cgi_object->upload('file');
-    @lines = parseScores $fh;
+    my $fh = $m->cgi_object->upload('file');
+    $scores = csv(in => $fh,
+                  encoding => ":encoding(utf-8)",
+                  headers => "lc",
+                  comment_str => "#",
+                  skip_empty_rows => "skip");
     close $fh;
     $data->{SCREEN} = "upload_scores";
 }

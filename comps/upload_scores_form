@@ -8,52 +8,35 @@ Offer a form for score upload
 FIGYELEM!</p>
 A pontszámok feltöltése visszavonhatatlanul módosítja a pontszámadatbázist!<br>
 Feltöltés előtt készíts biztonsági másolatot az
-<& link, text => "Archiválás", href => "action_show_page",
+<& link,
+    text => "Archiválás",
+    href => "action_show_page",
     params => { page => "db_archive_form" } &>
 menüpont segítségével!
 </DIV>
 
-A feltöltendő állomány formátuma a következő:
+A feltöltendő állomány egy CSV, fejléc sorral:
 <ul>
-<li>minden sor egy hallgatónak felel meg;
-<li>a sorok szerkezete a következő:
-<pre>
-NEPTUN:P1:P2:P3:...:group=GROUP,corr=CORR
-</pre>
-ahol NEPTUN a neptunkód, P1, P2, P3, stb. a feladatokra adott pontszámok, GROUP
-a javított csoport, CORR pedig a javító monogramja. A végén további kulcs-érték
-párok is szerepelhetnek (pl. lang=LANG), ezek az adatbázisban a notes oszlopban
-fognak megjelenni.
-<li>tetszőleges sorban lehet megjegyzés, % jelet követően a sor végéig;
-<li>az üres sorok nem számítanak.
+<li>a legelső sor a fejléc, az oszlopok neveivel;
+<li>minden további sor egy-egy hallgató pontszámait adja meg;
+<li>az üres és a <tt>#</tt>-tel kezdődő sorok nem számítanak;
+<li>kötelező oszlop: <tt>neptun</tt>;
+<li>opcionális oszlop: <tt>notes</tt>;
+<li>minden egyéb oszlop egy pontszámtípust jelöl (a <tt>scores-meta</tt>
+  táblából).
 </ul>
+A <tt>notes</tt> oszlopban lehetnek pl. vesszővel elválasztott
+<tt>kulcs=érték</tt> párok, de bármi egyéb is. Például:
+
+<pre>
+  neptun,nzh11,nzh12,nzh13,notes
+  TANULO,7,4,3,"lang=pl,corr=HP,group=A"
+</pre>
 
 <& form, action => "action_upload_scores", enctype => "multipart/form-data" &>
 <TABLE>
-<TR><TD>A pontszámok típusa:
-<TD><SELECT NAME=type size=1>
-% foreach my $type (@types) {
-<OPTION><% $type->{type} %></OPTION>
-% }
-</SELECT>
-<TR><TD>A pontszámok állománya:
+<TR><TD>A feltöltendő CSV állomány:
 <TD><INPUT TYPE=file NAME=file SIZE=60>
 <TR><TD colspan=2><INPUT TYPE=submit NAME=submit VALUE="Feltölt">
 </TABLE>
 </FORM>
-
-<%once>;
-my ($sth, @types);
-</%once>
-
-<%init>;
-if (!defined $sth) {
-    $sth = $dbh->prepare("SELECT DISTINCT LEFT(id, CHAR_LENGTH(id) - 1) AS type
-                          FROM scores_meta
-                          WHERE formula IS NULL AND id LIKE '%1'");
-}
-
-$sth->execute;
-@types = @{$sth->fetchall_arrayref({})};
-$sth->finish;
-</%init>

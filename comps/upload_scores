@@ -3,8 +3,7 @@ Upload scores to the database after parsing from a file.
 </%doc>
 
 <%args>
-$type
-$lines => []
+$scores => []
 </%args>
 
 <h3 class="topic">Pontszámok feltöltése</h3>
@@ -15,7 +14,7 @@ $lines => []
 <TH>Név
 <TH>Státusz
 </TR>
-% LINE: foreach my $line (@$lines) {
+% LINE: foreach my $line (@$scores) {
     <& TR, \$row &>
     <TD><% $line->{neptun} %>
 <%perl>
@@ -29,20 +28,18 @@ $lines => []
     <TD><% $people[0]{name} %>
     <TD>
 <%perl>
-    while (my ($i, $raw_score) = each @{$line->{scores}}) {
-        my $id = $type . ($i + 1);
+    my $notes = defined $line->{notes} ? $line->{notes} : "";
+    KEY: foreach my $key (sort keys %$line) {
+        next KEY if ($key eq "neptun" || $key eq "notes");
         # leading zero denotes octal number; with '0 +' evaluated as decimal
-        my $score = eval 0 + $raw_score || 0;
-        my $notes = join(", ",
-                         map { lc($_) . "=" . $line->{notes}->{$_} }
-                         sort keys %{$line->{notes}});
-        if ($insert->execute($score, $notes, $id, $line->{neptun})) {
+        my $score = eval 0 + $line->{$key} || 0;
+        if ($insert->execute($score, $notes, $key, $line->{neptun})) {
             $inserted++;
-            $m->print(" +", $id);
+            $m->print(" +", $key);
         } else {
-            $update->execute($score, $notes, $id, $line->{neptun});
+            $update->execute($score, $notes, $key, $line->{neptun});
             $updated++;
-            $m->print(" *", $id);
+            $m->print(" *", $key);
         }
     }
 }
