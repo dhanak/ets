@@ -62,7 +62,8 @@ CREATE TABLE archive_specs (
 
 INSERT INTO archive_specs VALUES
   ("semester", "people:name scores_meta:idx-idx scores:neptun,id queries responses groups group_members group_times:groupID,startsAt presence"),
-  ("scores", "scores:id");
+  ("scores", "scores:neptun,id"),
+  ("scores_meta", "scores_meta");
 
 CREATE TABLE scores_meta (
   idx             INT(4) PRIMARY KEY AUTO_INCREMENT,

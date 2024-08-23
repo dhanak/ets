@@ -12,7 +12,7 @@ my ($sth);
 </%once>
 
 <%init>;
-if (!defined $get) {
+if (!defined $sth) {
     $sth = $dbh->prepare('INSERT INTO archive_specs VALUES (?, ?)');
 }
 
@@ -20,7 +20,7 @@ if (!$m->comp('/sub/check_perm', item=>"db_archive_form")) {
     $data->{MSG} = "Nem vagy jogosult archiválásra!";
     redirect("news");
 } else {
-    if ($set->execute($name, $spec)) {
+    if ($sth->execute($name, $spec)) {
         $data->{MSG} = '<span class="good">Specifikáció felvéve.</span>';
     } else {
         $data->{MSG} = '<span class="bad">A specifikációt nem sikerült felvenni.</span>';
