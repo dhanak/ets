@@ -4,7 +4,6 @@ package HTML::Mason::Commands;
 
 use lib qw(modules);
 
-use RunCmd;
 use DBD::MariaDB;
 use Data::Dumper;
 use Text::Wrap;
