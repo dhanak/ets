@@ -1,5 +1,5 @@
 <%doc> This is a -*- mason -*- template.
-Check whether user is authorized to log in.
+Send license agreement details to the user.
 </%doc>
 
 <%args>
@@ -7,119 +7,40 @@ $accept
 </%args>
 
 <%once>;
+use open ':encoding(utf-8)';
 use Email::Stuffer;
 
-my ($get_email, $set_flag, $email, $body);
+my ($get_email, $set_flag);
 </%once>
 
 <%init>;
 if (!defined $get_email) {
     $get_email = $dbh->prepare("SELECT email FROM people WHERE neptun=?");
-    $set_flag  = $dbh->prepare("UPDATE people SET licence=1 WHERE neptun=?");
+    $set_flag = $dbh->prepare("UPDATE people SET licence=1 WHERE neptun=?");
 }
 
+die 'Licence agreement not accepted!' unless $accept;
+
 $get_email->execute($data->{NEPTUN});
-($email) = $get_email->fetchrow_array;
+my ($email) = $get_email->fetchrow_array;
 $get_email->finish;
 
 $set_flag->execute($data->{NEPTUN});
 
-$body = <<END;
-                           Licenc-megállapodás
-
-Alulírott, a BME Villamosmérnöki és Informatikai Karának hallgatója
-tudomásul veszem, hogy a SICStus Prolog szoftver rendelkezésemre bocsátott
-változatát az alábbi feltételek mellett telepíthetem az általam használt
-számítógépre:
-
-1. A szoftvert kizárólag tanulásra és kutatási feladatokra használom.
-
-2. A szoftvert az alább megadott weblapról, a megadott névvel és jelszóval
-   tölthetem le:
-
-               Web-lap:                http://dp.iit.bme.hu/sicstus/
-               Felhasználói név:       sicstus
-               Letöltési jelszó:       Mee8ohc1
-
-   Az InstallSICStus*.exe állományok a Windows változatokat, a
-   *.tar.gz állományok a különféle unix változatokat tartalmazzák.
-
-   Az installáláskor, illetve jelszóváltáskor az alábbi
-   licenc-adatokat kell megadni:
-
-    Windows 8/10 64 bit:
-               Sitename:               BUTE DP23a Course
-               License-code:           cf33-c683-79m5-a5dt-v8gh
-               Expiration date:        20240131
-
-    Linux glibc2.17 64 bit:
-    Linux glibc2.28 64 bit:
-               Sitename:               BUTE DP23a Course
-               License-code:           ha35-c683-79m5-a52r-o7gt
-               Expiration date:        20240131
-
-    Mac OS X 10.15 Mojave (Darwin 18.0.0) 64 bit
-    Mac OS X 10.15 Mojave (Darwin 18.0.0) 64 bit:
-               Sitename:               BUTE DP23a Course
-               License-code:           be4a-c683-79m5-aq7e-qhhp
-               Expiration date:        20240131
-
-3. A szoftvert, a jelszót, a kulcsot, valamint a licenc-kódokat harmadik
-   félnek nem adom tovább.
-
-4. Egyéb kérdésekben a  Software Licence Agreement-ben leírtakat
-   tekintem irányadónak, lásd http://www.sics.se/sicstus/license4-academic.html
-
-
-Budapest, 2023. október 4.
-
---------------------------------------------
-
-Help with SICStus installation
-
-Files InstallSICStus*.exe contain the Windows versions, the files  *.tar.gz
-contain various linux/unix versions.
-
-In the present course we will not need any add-ons, such as Tcl/Tk, ODBC,
-Java interfaces, etc, therefore you may use the default "prebuilt"
-installation.
-
-For Linux, glibc versions need not match exactly, the only important thing
-is that your glibc version is greater or equal to that of the SICStus
-distribution.
-
-UNIX installation (extracted from http://sicstus.sics.se/download4.html)
-Follow these steps:
-
-  1. Download the binary distribution. Unpack by typing:
-
-     % cat <downloaded-file>.tar.gz | gzip -cd | tar xf -
-
-     If tar reports an error, try GNU tar instead.
-
-  2. Execute the installation script by:
-
-     % cd sp-<version>-<platform>
-     % ./InstallSICStus
-
-     and follow the instructions. The installation-script will ask you
-     some questions about your license, installation directory,
-     locations of third-party software, etc. If you don't understand
-     the question, pressing return will give you the default action
-     which is probably what you want.
-
-  3. Launch the development system by executing sicstus, located in the
-     bin sub-directory of the installation path specified to
-     InstallSICStus.
-END
-
-Email::Stuffer
-    ->from($ENV{CONTACT})
-    ->to($email)
-    ->subject('SICStus licenc')
-    ->text_body($body)
-    ->send_or_die;
-
-$data->{MSG} = "Licenc-adatok elküldve.";
-redirect("news");
+my $body = open(LIC, "<LICENSE.sicstus") ? do { local $/; <LIC>; } : "";
+close LIC;
+if ($body) {
+    Email::Stuffer
+        ->from($ENV{CONTACT})
+        ->to($email)
+        ->subject('SICStus Prolog licencadatok')
+        ->text_body($body)
+        ->send_or_die;
+    $data->{MSG} = 'Licenc-adatok elküldve.';
+    redirect("news");
+} else {
+    $data->{MSG} =
+        '<span class="bad">A licencadatok nem találhatók.</span>';
+    redirect("licence");
+}
 </%init>

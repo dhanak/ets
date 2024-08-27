@@ -10,7 +10,7 @@ services:
       - DB_PASSWORD=ets
       - DB_USER=ets
       - EMAIL_SENDER_TRANSPORT=SMTP
-      - EMAIL_SENDER_TRANSPORT_helo=${SMTP_HELO:-${HOSTNAME}}
+      - EMAIL_SENDER_TRANSPORT_helo=${SMTP_HELO}
       - EMAIL_SENDER_TRANSPORT_host=${SMTP_HOST:-mailcatcher}
       - EMAIL_SENDER_TRANSPORT_port=${SMTP_PORT:-1025}
       - EMAIL_SENDER_TRANSPORT_sasl_password=${SMTP_PASSWORD-}
@@ -24,6 +24,7 @@ services:
       - OIDC_SECRET
       - TZ=${TZ:-Europe/Budapest}
       - SITENAME=${SITENAME:-DP Elektronikus Tanársegéd}
+    hostname: httpd
     ports:
       - 127.0.0.1:${HTTP_EXTERNAL_PORT:-8080}:80
     profiles:
@@ -32,6 +33,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${ARCHIVE_MOUNT:-archives}:/mnt/archives
+      - ${SICSTUS_LICENSE_FILE:-/dev/null}:/opt/ets/LICENSE.sicstus:ro
 
   mariadb:
     build:
@@ -45,6 +47,7 @@ services:
       - CONTACT=${CONTACT:-dp@iit.bme.hu}
       - ETS_ADMIN_NEPTUN_CODE
       - TZ=${TZ:-Europe/Budapest}
+    hostname: mariadb
     profiles:
       - develop
       - live
@@ -66,12 +69,13 @@ services:
       - DB_HOST=mariadb
       - DB_PASSWORD=ets
       - DB_USER=ets
-      - SMTP_HELO=${SMTP_HELO:-${HOSTNAME}}
+      - SMTP_HELO
       - SMTP_HOST=${SMTP_HOST:-mailcatcher}
       - SMTP_PORT=${SMTP_PORT:-1025}
       - SMTP_PASSWORD=${SMTP_PASSWORD-}
       - SMTP_USERNAME=${SMTP_USERNAME-}
       - TZ=${TZ:-Europe/Budapest}
+    hostname: guts
     ports:
       - 127.0.0.1:31337:31337
     profiles:
@@ -85,6 +89,7 @@ services:
     image: dockage/mailcatcher
     environment:
       - TZ=${TZ:-Europe/Budapest}
+    hostname: mailcatcher
     ports:
       - 127.0.0.1:1080:1080
     profiles:
@@ -95,13 +100,14 @@ services:
     build:
       context: .
       target: keycloak
+    command: ["start-dev", "--import-realm"]
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
       - KC_HOSTNAME=http://localhost:${OIDC_EXTERNAL_PORT:-8081}
       - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
       - TZ=${TZ:-Europe/Budapest}
-    command: ["start-dev", "--import-realm"]
+    hostname: keycloak
     ports:
       - 127.0.0.1:${OIDC_EXTERNAL_PORT:-8081}:8080
     profiles:
