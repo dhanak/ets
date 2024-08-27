@@ -477,9 +477,9 @@ mail_student(Name, Subject, MailPrinter) :-
              '--header', SubjectH,
              % read body from stdin and encode it in quoted printable form
              '--form', '=<-;encoder=quoted-printable'],
-    (   UserPwd=':'
-    ->  Args = [ '--user', UserPwd|Args0]
-    ;   Args = Args0
+    (   UserPwd = ':'
+    ->  Args = Args0
+    ;   Args = [ '--user', UserPwd|Args0]
     ),
     process_create(path(curl), Args,
                    [stdin(pipe(In)),stdout(null),stderr(std),process(Proc)]),
