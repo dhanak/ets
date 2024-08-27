@@ -496,9 +496,10 @@ mail_student(Name, _, _) :-
 
 %% smtp_url(-Url, -UserPwd): return URL and user:pwd of smtp serrver
 smtp_server(Url, UserPwd) :-
+    environ('SMTP_HELO', Helo),
     environ('SMTP_HOST', Host),
     environ('SMTP_PORT', Port),
-    format_to_atom('smtp://~w:~w', [Host,Port], Url),
+    format_to_atom('smtp://~w:~w/~w', [Host,Port,Helo], Url),
     environ('SMTP_USERNAME', User),
     environ('SMTP_PASSWORD', Pwd),
     format_to_atom('~w:~w', [User,Pwd], UserPwd).
