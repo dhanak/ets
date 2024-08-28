@@ -107,34 +107,10 @@ split_name(Full, Name, Neptun) :-
     atom_codes(Name, NameC),
     atom_codes(Neptun, NeptunC).
 
-%% run(+Cmd): command Cmd is run with its output forwarded to the current
-%% output stream.  If the exit code is nonzero, call fails.
-run(Cmd) :- run(Cmd, [status(0)]).
-
-%% run(+Cmd, +Queries): command Cmd is run (see run/1).
-run(Cmd, Queries) :-
-    atom(Cmd), !,
-    run([Cmd], Queries).
-run(Cmd, Queries) :-
-    current_output(S),
-    (   current_stream(F, write, S) -> true
-    ;   F = user
-    ),
-    flush_output,
-    run(F, S, Cmd, Queries).
-
-%% run(+File, +Stream, +Command, -Status)
-run(user, _, Cmd, Queries) :- !,
-    ext_command(Cmd, Queries).
-run(F, S, Cmd0, Queries) :-
-    append(Cmd0, ['>>', q(F), '2>&1'], Cmd),
-    call_cleanup(ext_command(Cmd, Queries),
-                 seek(S, 0, eof, _)).
-
 %% delete_files(+Patterns): all files matching Patterns are deleted.
 delete_files([]) :- !.
 delete_files(Patterns) :-
-    ext_command(['rm -f'|Patterns]).
+    process_create(path(sh), ['-c', 'rm'|Patterns], [wait(exit(0))]).
 
 %% link_files(+FromDir, +Files): files Files from the directory FromDir are
 %% soft linked to the current directory, with the shortest possible relative
@@ -183,16 +159,10 @@ read_testfile(File, Tests) :-
 
 %% read_mail_ID(-ID): ID is the mail file name in the current test directory.
 read_mail_ID(ID) :-
-    process_create(path(file),
-                   [mail],
-                   [stdin(null),stdout(pipe(Out)),stderr(null),process(Proc)]),
-    read_line(Out, Line0),
+    process_create(path(readlink), ['-f', mail],
+                   [wait(exit(0)),stdout(pipe(Out))]),
+    read_line(Out, Line),
     close(Out),
-    process_wait(Proc, _),
-    (   append(Line, [0''',0' ], Line0)
-    ->  true
-    ;   Line = Line0
-    ),
     atom_codes(Path, Line),
     split_path(Path, _, ID).
 
@@ -292,7 +262,7 @@ evaluate(RefF, SolF) :-
 compare_with(builtin, RefF, SolF) :-
     compare(RefF, SolF).
 compare_with(separate(EvalPrg), RefF, SolF) :-
-    ext_command([EvalPrg, q(RefF), q(SolF)]).
+    run(file(EvalPrg), [file(RefF), file(SolF)]).
 compare_with(embedded, _, SolF) :-
     open(SolF, read, S),
     call_cleanup(get_code(S, 0'1), close(S)).
@@ -372,11 +342,7 @@ file_version(File, Name, Version) :-
 
 %% unpack(+File, +WorkDir): file MailF is extracted to WorkDir.
 unpack(MailF, WorkDir) :-
-    working_directory(OldDir, WorkDir),
-    %	call_cleanup((run([uudecode, '-o dp.zip', q(MailF)]),
-    %             run([unzip, '-q', 'dp.zip']),
-    call_cleanup(run([uudecode, q(MailF)]),
-                 working_directory(_, OldDir)).
+    process_create(path(uudecode), [file(MailF)], [wait(exit(0)),cwd(WorkDir)]).
 
 %% purge(+Directory): purges mail directory Directory.
 purge(Dir) :-
@@ -481,11 +447,11 @@ mail_student(Name, Subject, MailPrinter) :-
     ;   Args = [ '--user', UserPwd|Args0]
     ),
     process_create(path(curl), Args,
-                   [stdin(pipe(In)),stdout(null),stderr(std),process(Proc)]),
+                   [stdin(pipe(In)),stdout(null),process(Proc)]),
     format(In, '~s', [MailBody]),
     close(In),
     process_wait(Proc, exit(EC)),
-    (   EC=0
+    (   EC = 0
     ->  !
     ;   log_warning('Sending mail finished with code ~d', [EC]),
         fail
@@ -657,13 +623,14 @@ successful_test(Program, N, In, Out, Ref) :-
     ),
     atom_number(LimitA, Limit),
     ensure_success(templates:print_testcase(N, Limit)),
-    Queries0 = [status(Code)],
-    (   timer(yes)
-    ->  Queries = [time(_,Time,_)|Queries0]
-    ;   Queries = Queries0, Time = 'N/A'
-    ),
     log('Running test ~w with time limit ~w', [N,Limit]),
-    run([Guard, LimitA, '5', Program, q(In), q(Out)], Queries),
+    statistics(runtime, _),
+    %% TODO: redirect stdout and stderr to current_output/1?
+    process_create(file(Guard),
+                   [LimitA, '5', file(Program), In, Out],
+                   [wait(exit(Code))]),
+    statistics(runtime, [_, TimeMS]),
+    Time is TimeMS / 1000,
     (   Code = 0
     ->  evaluate(Ref, Out, Status)
     ;   exitcode_to_status(Code, Status)
@@ -881,7 +848,6 @@ guts_report(Semester, Class, Suite) :-
     directory(hwks_rep, RepD),
     %% iterate-by-failure starts here
     file_member_of_directory(RepD, Name, File),
-    file_property(File, type(regular)),
     print(Name), nl,
     mail_student(Name, Subject, templates:test_done(Subject, File)),
     fail.

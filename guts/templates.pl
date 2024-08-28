@@ -81,21 +81,17 @@ print_lang_tail(Total, Good) :-
     format('~t~d~2+ megoldás jó a ~|~t~d~2+-~p.~n', [Good, Total, Bol]),
     print('------------------------'), nl.
 
-explain_status(timeout,_) :-
+explain_status(timeout, _) :-
     nl, print('>>>>> Túllépte az idõkorlátot.'), nl, nl.
-explain_status(sizeout,_) :-
+explain_status(sizeout, _) :-
     nl, print('>>>>> Túllépte a memóriakorlátot (pl. nagy adatstruktúrák vagy a konzolra kiírt üzenetek miatt)'), nl, nl.
-explain_status(signal(Signal),_) :-
+explain_status(signal(Signal), _) :-
     format('~n>>>>> A futás megszakadt, oka ismeretlen (~d signal).~n',
            [Signal]).
-explain_status(exception,_) :-
+explain_status(exception, _) :-
     nl, print('>>>>> Kezeletlen kivétel.'), nl, nl.
-explain_status(Status,Time) :-
-    (   Time = 'N/A' -> TimeStr = ''
-    ;   atom_number(TimeA, Time),
-        atom_concat([' ', TimeA, ' sec alatt'], TimeStr)
-    ),
-    format('~n>>>>> A program lefutott~a, a megoldás ', [TimeStr]),
+explain_status(Status, Time) :-
+    format('~n>>>>> A program lefutott ~g s alatt, a megoldás ', [Time]),
     (   Status = success
     ->  print('HELYES.')
     ;   print('HIBÁS.')

@@ -25,10 +25,10 @@
               match/3,              % match(+File, +Pattern, -Matches)
               lock/1,               % lock(+File)
               unlock/1,             % unlock(+File)
-              ext_command/1,        % ext_command(+CommandList)
-              ext_command/2,        % ext_command(+CommandList, +Queries)
               relative_file_name/2,	% relative_file_name(+FAbs, -FRel)
               create_soft_link/2,	% create_soft_link(+From, +To)
+              run/1,                % run(+CommandWithArgs)
+              run/2,                % run(+Command, +Args)
 
               warning/2,		% warning(+Format, +Args)
               error/2           % error(+Format, +Args)
@@ -212,17 +212,20 @@ write_terms(_,_).
 %% :- pred read_lines(-list(list(char))).
 read_lines(L) :-
     current_input(In),
-    read_line(In, L0),
-    read_lines(In, L0, L).
+    read_lines(In, L).
 
 %% read_lines(F, L): reads lines from F to L.  L is a list of list of character
 %% codes, newline characters are not included.
+%% :- pred read_lines(+stream, -list(list(char))).
 %% :- pred read_lines(+atom, -list(list(char))).
 read_lines(F, L) :-
+    atom(F), !,
     fail_on_error(open(F, read, S)),
-    call_cleanup((read_line(S, L0),
-                  read_lines(S, L0, L)),
-                 close(S)).
+    call_cleanup(read_lines(S, L), close(S)).
+read_lines(S, L) :-
+    S = '$stream'(_), !,
+    read_line(S, L0),
+    read_lines(S, L0, L).
 
 read_lines(_, end_of_file, L) :- !, L = [].
 read_lines(S, H, [H|T]) :-
@@ -283,10 +286,9 @@ pattern_match0(Name, Name, []).
 %%% :- pred lock(+atom).
 lock(F) :-
     lockfile(F, LockF),
-    process_create(path(dotlockfile),
-                   [file(LockF)],
+    process_create(path(dotlockfile), [file(LockF)],
                    [stdin(null),stdout(null),stderr(pipe(Err)),wait(Exit)]),
-    call_cleanup((	 Exit=exit(0) -> true
+    call_cleanup((	 Exit = exit(0) -> true
                  ;	 read_line(Err, ErrorC),
                      atom_codes(Error, ErrorC),
                      throw(lockfile(Error))
@@ -300,52 +302,6 @@ unlock(F) :-
 
 lockfile(F, LockF) :-
     atom_concat(F, '.lock', LockF).
-
-%%% ext_command(Cmd) = ext_command(Cmd, 0).
-%%% :- pred ext_command(+atom), ext_command(+list(atom)).
-ext_command(Cmd) :- ext_command(Cmd, [status(0)]).
-
-%%% ext_command(Cmd, Queries): Cmd is an atom or a list of atoms: the head
-%%% is the command to execute, the rest is the argument list.  Queries is a
-%%% list of queries regarding the run.
-%%% :- pred ext_command(+atom, +list(term)), ext_command(+list(atom), +list(term)).
-ext_command(Cmd, Queries) :-
-    atom(Cmd), !,
-    ext_command([Cmd], Queries).
-ext_command(Cmd, Queries) :-
-    select(time(Real,Usr,Sys), Queries, Queries1), !, % measure time!
-    time(Cmd, Queries1, Real, Usr, Sys).
-ext_command([Cmd|Args], Queries) :-
-    ext_command(Args, Cmd, Queries).
-
-ext_command([Arg|Args], Cmd, Queries) :-
-    (   Arg = q(Arg1)
-    ->  atom_concat([Cmd, ' \'', Arg1, '\''], Cmd1)
-    ;   Arg = qq(Arg1)
-        ->  atom_concat([Cmd, ' "', Arg1, '"'], Cmd1)
-    ;   atom_concat([Cmd, ' ', Arg], Cmd1)
-    ),
-    ext_command([Cmd1|Args], Queries).
-ext_command([], Cmd, Queries) :-
-    ensure_success(memberchk(status(Status), Queries)),
-    ensure_success(memberchk(cmdline(Cmd), Queries)),
-    system(Cmd, Status0),
-    Status is Status0 // 256.
-
-%%% time(Cmd, Queries, Real, Usr, Sys): runs command like ext_command/2
-%%% but also measures used CPU time and returns results in third argument.
-%%% :- pred time(+list(atom), +list(term), -num, -num, -num).
-time(Cmd, Queries, Real, User, System) :-
-    mktemp('/tmp/time.XXXXXX', TimeF),
-    call_cleanup((ext_command(['/usr/bin/time', '-o', q(TimeF), '-p'|Cmd], Queries),
-                  read_lines(TimeF, Lines),
-                  memberchk([0'r,0'e,0'a,0'l|RealC], Lines),
-                  memberchk([0'u,0's,0'e,0'r|UserC], Lines),
-                  memberchk([0's,0'y,0's|SysC], Lines),
-                  number_codes(Real, RealC),
-                  number_codes(User, UserC),
-                  number_codes(System, SysC)),
-                 ensure_success(delete_file(TimeF))).
 
 %%% relative_file_name(FAbs, FRel): FRel is the relative path of FAbs with
 %%% respect to the current working directory.
@@ -395,14 +351,39 @@ relative_directory(DirA0, DirB0, Dir) :-
 %%% :- pred create_soft_link(+atom, +atom).
 create_soft_link(From, To) :-
     (   directory_exists(To)
-    ->  working_directory(OldD, To),
+    ->  Dir = To,
         ToF = '.'
-    ;   split_path(To, Dir, ToF),
-        working_directory(OldD, Dir)
+    ;   split_path(To, Dir, ToF)
     ),
     relative_file_name(From, FromRel),
-    call_cleanup(ext_command([ln, '-s', q(FromRel), q(ToF)]),
-                 working_directory(_, OldD)).
+    process_create(path(ln), ['-s', file(FromRel), file(ToF)]
+                   , [wait(exit(0)),cwd(Dir)]).
+
+%%% run(+CommandWithArgs): run a command with arguments, and succeed if it
+%%% terminates normally.
+run([Cmd|Args]) :-
+    run(Cmd, Args).
+run(Cmd) :-
+    atom(Cmd),
+    run(Cmd, []).
+
+%%% run(+CommandWithArgs): run a command with arguments, and succeed if it
+%%% terminates normally.
+run(Cmd, Args) :-
+    (   atom_codes(Cmd, CmdC),
+        member(0'/, CmdC)
+    ->  Path = Cmd
+    ;   Path = path(Cmd)
+    ),
+    process_create(Path, Args,
+                   [wait(Status),stdout(pipe(Out)),stderr(pipe(Err))]),
+    read_lines(Out, OutL),
+    write_lines(OutL),
+    close(Out),
+    read_lines(Err, ErrL),
+    write_lines(ErrL),
+    close(Err), !,
+    Status = exit(0).
 
 %%% warning(Txt, Args): The format Txt with Args as an argument list is
 %%% printed as a warning.
