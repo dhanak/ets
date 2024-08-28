@@ -135,11 +135,9 @@ $sid = $cookies{'ETS_SESSION_ID'} ? $cookies{'ETS_SESSION_ID'}->value : "";
 
 if (!valid_sid($sid) || !defined session_read()) {
     session_new();
-    $data = { SCREEN => "news" };
+    $data = {};
+    redirect("news");
 }
-
-# check login
-$m->comp('sub/logged_in');
 
 # Allow access to components only in the public_html directory, everything
 # else is hidden by returning 404 (page not found) error.

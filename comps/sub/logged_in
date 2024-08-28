@@ -14,16 +14,13 @@ if (!defined $get) {
 
 $name = "$ENV{OIDC_CLAIM_family_name} $ENV{OIDC_CLAIM_given_name}";
 
-if (!defined $ENV{OIDC_CLAIM_neptun_code}) {
-    $data = {
-        NEPTUN => undef,
-        SCREEN => "news"
-    };
+if ($data->{NEPTUN} && !defined $ENV{OIDC_CLAIM_neptun_code}) {
+    $data = {};
+    redirect("news");
 } elsif ($data->{NEPTUN} ne $ENV{OIDC_CLAIM_neptun_code}) {
     $get->execute(uc $ENV{OIDC_CLAIM_neptun_code});
     $user = $get->fetchrow_hashref;
     $get->finish;
-
     if (!defined $user) {
         $r->log->notice("Login by guest user $ENV{OIDC_CLAIM_neptun_code}");
         $m->comp('/sub/log', "login",
@@ -34,7 +31,6 @@ if (!defined $ENV{OIDC_CLAIM_neptun_code}) {
             NEPTUN => $ENV{OIDC_CLAIM_neptun_code},
             NAME   => $name,
             MSG    => "Ismeretlen Neptun-kód, belépés vendégként.",
-            SCREEN => "news"
         };
     } else {
         $r->log->notice("Login by known user $ENV{OIDC_CLAIM_neptun_code}");
@@ -48,12 +44,12 @@ if (!defined $ENV{OIDC_CLAIM_neptun_code}) {
             KNOWN  => 1,
             ADMIN  => $user->{admin},
             GOD    => $user->{god},
-            MSG    => "Sikeres belépés!",
-            SCREEN => "news"
+            MSG    => '<span class="good">Sikeres belépés</span>',
         };
         # update user info in the database
         $update->execute($name, $ENV{OIDC_CLAIM_email}, $data->{NEPTUN});
     }
+    redirect("news");
 }
 
 return $data->{KNOWN};
