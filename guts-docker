@@ -4,23 +4,22 @@
 #
 # ./guts-docker shell - to run a shell in the container
 # ./guts-docker <cmd> <args> - to directly run a guts command in the container
+#
+set -euo pipefail
 
 # check for running container
-id=$(docker compose ps -q guts)
-if [[ -n $id ]]; then
-    cmd='exec'
-    extra=('' '-T')
-else
-    cmd='run --rm'
-    extra=('-it' '')
+if [[ -z $(docker compose ps -q guts) ]]; then
+    echo 'Make sure the guts container is up by running the following command:'
+    echo '$ docker compose up -d guts'
+    exit 1
 fi
 
 # invoke shell or guts command directly
 if [[ $* == shell ]]; then
-    exec docker compose $cmd ${extra[0]} guts /bin/bash
-elif [[ $1 == testd ]]; then
+    exec docker compose exec guts /bin/bash
+elif [[ ${1-} == testd ]]; then
     # run testd command protected by daemons script
-    exec docker compose $cmd ${extra[1]} guts ./daemons run ./guts "$@"
+    exec docker compose exec -T guts ./daemons run ./guts "$@"
 else
-    exec docker compose $cmd ${extra[1]} guts ./guts "$@"
+    exec docker compose exec -T guts ./guts "$@"
 fi

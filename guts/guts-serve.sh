@@ -6,6 +6,8 @@
 #   - stdout (with copy of stderr) is sent back to the client
 #   - stderr is printed on the console (i.e., docker log)
 #
+set -euo pipefail
+
 err="$(mktemp)"
 read -a command
 if [[ ${command[0]} == "list-submissions" ]]; then
@@ -36,6 +38,7 @@ elif [[ ${command[0]} == "cat-report" ]]; then
     canonical_name=${command[4]}
     cat "${GUTS_WORK_DIR}/hwks/${semester}/${class}/reports/${suite}/${canonical_name}"
 else
+    # execute guts command
     echo "# Executing ./guts ${command[*]}" >&2
     bash -c "exec ./guts ${command[*]}" 2> >(tee "$err" >&2)
     cat "$err" && rm "$err"

@@ -1,4 +1,6 @@
 #!/bin/bash
+set -euo pipefail
+
 usage="
 Usage: $(basename "$0") <command> [args...]
 
@@ -11,11 +13,8 @@ Where <command> is one of
 
 header="# daemon runner process file"
 ps="/bin/ps -oargs= -p"
-infdir="${HOME}/.daemons"
-
-if [[ ! -d $infdir ]]; then
-    /bin/mkdir "$infdir"
-fi
+infdir="${GUTS_WORK_DIR-${HOME}}/daemons"
+mkdir -p "$infdir"
 
 # main functions
 
@@ -24,7 +23,7 @@ check () {
         [[ -f $inff ]] || continue
         # check whether it's a valid daemon process file
         if [[ $(head -1 "$inff") != "$header" ]]; then
-            /bin/rm "$inff"
+            rm "$inff"
             continue
         fi
 
@@ -32,7 +31,7 @@ check () {
         psout=$($ps "$pid")
         if [[ $psline != "$psout" ]]; then
             echo "Restarting $command..."
-            /bin/rm "$inff"
+            rm "$inff"
             ( cd "$wd" && $command ) & # run in a subshell
         fi
     done
@@ -52,7 +51,7 @@ wd='$wd'
 command='$0 run$(printf ' "%s"' "$@")'
 EOF
         wait $pid
-        /bin/rm "$infdir/$pid.inf"
+        rm "$infdir/$pid.inf"
     fi
 }
 
@@ -61,7 +60,7 @@ list () {
         [[ -f $inff ]] || continue
         # check whether it's a valid daemon process file
         if [[ $(head -1 "$inff") != "$header" ]]; then
-            /bin/rm "$inff"
+            rm "$inff"
             continue
         fi
 

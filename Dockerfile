@@ -169,15 +169,22 @@ COPY --from=guts-build /opt/guts/    /opt/guts/
 ENV GUTS_ROOT=/opt/guts
 ENV GUTS_WORK_DIR=${GUTS_ROOT}/work
 
+# add executable permissions
+RUN chmod -R a+rX ${GUTS_ROOT}
+
 # extend path
 ENV PATH=/opt/sicstus/bin:/opt/elixir/bin:/opt/erlang/bin:${PATH}
 ENV LD_LIBRARY_PATH=/opt/sicstus/lib
 
 # setup workdir volume
-RUN mkdir ${GUTS_WORK_DIR} && for dir in daemons env hwks logs mails spools; do \
-        mkdir ${GUTS_WORK_DIR}/${dir}; \
-    done && ln -s ${GUTS_WORK_DIR}/daemons ${HOME}/.daemons
+RUN mkdir ${GUTS_WORK_DIR} && \
+    for dir in daemons env hwks logs mails spools; do \
+       mkdir ${GUTS_WORK_DIR}/${dir} && chown nobody ${GUTS_WORK_DIR}/${dir}; \
+    done
 VOLUME ${GUTS_WORK_DIR}
+
+# change user of the guts process
+USER nobody
 
 # workdir and netcat server command
 WORKDIR ${GUTS_ROOT}
