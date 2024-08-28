@@ -82,9 +82,8 @@ filename(setup(Lang), F) :-
     directory(env(Lang), LangD),
     split_path(F, LangD, 'setup').
 filename(timeguard, F) :-
-    environ('ETS_ROOT', Root),
-    split_path(Dir, Root, 'guts'),
-    split_path(F, Dir, 'timeguard').
+    environ('GUTS_ROOT', Root),
+    split_path(F, Root, 'timeguard').
 
 %% testfiles(SubDir, Dir, Files): Files is a list of file names in the SubDir
 %% test directory of the current test class.  Dir is the full path of the

@@ -1,6 +1,6 @@
 # This is in fact a -*- makefile -*-.
-ETS_ROOT ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST)))/../..)
-include $(ETS_ROOT)/guts/Makefile.common
+GUTS_ROOT ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST)))/..)
+include $(GUTS_ROOT)/Makefile.common
 
 # set up required tools
 $(eval $(call set-up-tools-template,SICSTUS,sicstus))

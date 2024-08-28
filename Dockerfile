@@ -150,7 +150,7 @@ FROM debian:${DEBIAN_VERSION}-slim AS guts-runtime
 # install extra debian dependencies
 RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     apt-get update && \
-    apt-get install -y busybox curl file procps locales \
+    apt-get install -y busybox curl file locales make procps \
         liblockfile-bin libmariadb3 && \
     busybox --install
 
