@@ -624,13 +624,8 @@ successful_test(Program, N, In, Out, Ref) :-
     atom_number(LimitA, Limit),
     ensure_success(templates:print_testcase(N, Limit)),
     log('Running test ~w with time limit ~w', [N,Limit]),
-    statistics(runtime, _),
     %% TODO: redirect stdout and stderr to current_output/1?
-    process_create(file(Guard),
-                   [LimitA, '5', file(Program), In, Out],
-                   [wait(exit(Code))]),
-    statistics(runtime, [_, TimeMS]),
-    Time is TimeMS / 1000,
+    time([file(Guard), LimitA, '5', file(Program), In, Out], Code, Time),
     (   Code = 0
     ->  evaluate(Ref, Out, Status)
     ;   exitcode_to_status(Code, Status)

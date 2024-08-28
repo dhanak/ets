@@ -20,6 +20,7 @@
               read_lines/2,		% read_lines(+File, -Lines)
               write_lines/1,	% write_lines(+Lines)
               write_lines/2,	% write_lines(+File, +Lines)
+              mktemp/2,         % mktemp(+Template, -F)
 
               match/2,              % match(+File, +Pattern)
               match/3,              % match(+File, +Pattern, -Matches)
@@ -29,6 +30,7 @@
               create_soft_link/2,	% create_soft_link(+From, +To)
               run/1,                % run(+CommandWithArgs)
               run/2,                % run(+Command, +Args)
+              time/3,               % time(+CommandWithArgs, -Code, -Time)
 
               warning/2,		% warning(+Format, +Args)
               error/2           % error(+Format, +Args)
@@ -253,6 +255,12 @@ write_lines0(S, Lines) :-
     fail.
 write_lines0(_,_).
 
+mktemp(Template, F) :-
+    process_create(path(mktemp), ['--tmpdir', Template],
+                   [wait(exit(0)),stdout(pipe(Out))]),
+    read_line(Out, FC),
+    atom_codes(F, FC).
+
 %%% match(File, Pattern): Pattern wildcard pattern matches file name File.
 %%% :- pred match(+atom, +atom).
 match(File, Pattern) :-
@@ -384,6 +392,18 @@ run(Cmd, Args) :-
     write_lines(ErrL),
     close(Err), !,
     Status = exit(0).
+
+%%% time(+CommandWithArgs, -Code, -Time): run a command CommandWithArgs and
+%%% measure its user time in Time, in seconds. The program terminates with exit
+%%% status Code.
+time(Cmd, Code, Time) :-
+    mktemp('time.XXXXXX', TimeF),
+    process_create(path(time), ['-f', '%U', '-o', file(TimeF)|Cmd],
+                   [wait(exit(Code))]),
+    read_lines(TimeF, TimeL),
+    last(TimeL, TimeS),
+    number_codes(Time, TimeS),
+    ensure_success(delete_file(TimeF)).
 
 %%% warning(Txt, Args): The format Txt with Args as an argument list is
 %%% printed as a warning.
