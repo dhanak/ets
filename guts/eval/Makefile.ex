@@ -28,4 +28,4 @@ clean:
 
 .PHONY: depend
 depend: | $(LN)
-	$(LN) -sf $(GUTS_ROOT)/eval/Eval.ex
+	$(LN) -sf $(GUTS_ROOT)/eval/eval.ex
