@@ -13,7 +13,7 @@ $neptun => $data->{NEPTUN}
 <TH width="40%">Feladat
 <TH width="50%">Beadott változatok
 <TH width="10%">Tesztnapló
-% foreach my $class (@$classes) {
+% foreach my $class (@classes) {
 <& TR, \$row &>
 <TD><% $class->{name} %> <% exists $class->{file} ? "(<tt>$class->{file}</tt>)" : "" %>
 <TD>
@@ -79,12 +79,22 @@ $socket->close;
 <%once>;
 use IO::Socket::INET;
 
-my $row;
+my (@classes, $row);
 </%once>
 
 <%init>;
 if (!@$classes) {
     $classes = $m->comp('/sub/parse_hw_classes', conf => $conf);
 }
+
+@classes = ();
+my ($day, $month, $year) = (localtime)[3..5];
+my $today = sprintf "%4d-%02d-%02d", $year + 1900, $month+1, $day;
+foreach my $class (@$classes) {
+    push @classes, $class if
+        $m->comp('/sub/is_admin') ||
+        $class->{start} le $today;
+}
+
 $row = 0;
 </%init>

@@ -178,7 +178,7 @@ ENV LD_LIBRARY_PATH=/opt/sicstus/lib
 
 # setup workdir volume
 RUN mkdir ${GUTS_WORK_DIR} && \
-    for dir in daemons env hwks logs mails spools; do \
+    for dir in daemons env hwks logs spools; do \
        mkdir ${GUTS_WORK_DIR}/${dir} && chown nobody ${GUTS_WORK_DIR}/${dir}; \
     done
 VOLUME ${GUTS_WORK_DIR}

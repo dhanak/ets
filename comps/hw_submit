@@ -26,7 +26,7 @@ A HF beadásakor az alábbi hiba történt:</p>
 % if (!@classes) {
 Jelenleg egyik HF típusnak sincs beadási időszaka.
 % } else {
-% foreach $class (@classes) {
+% foreach my $class (@classes) {
 <H4><% ucfirst $class->{name} %></H4>
 <BLOCKQUOTE>
 Beadható <b><& date:display, $class->{start} &> 12:00</b> és
@@ -52,7 +52,7 @@ Az állomány neve <tt><% $class->{file} %></tt>.
     $neptun ? (neptun => $neptun) : () &>
 
 <%once>;
-my ($class, $classes, @classes, $year, $month, $day, $today, $row);
+my ($classes, @classes, $row);
 my ($get_name, $studname);
 </%once>
 
@@ -73,9 +73,9 @@ if ($neptun && ($m->comp('/sub/is_supervisor', neptun => uc $neptun) ||
 
 $classes = $m->comp('/sub/parse_hw_classes', conf => $conf);
 @classes = ();
-($day, $month, $year) = (localtime)[3..5];
-$today = sprintf "%4d-%02d-%02d", $year + 1900, $month+1, $day;
-foreach $class (@$classes) {
+my ($day, $month, $year) = (localtime)[3..5];
+my $today = sprintf "%4d-%02d-%02d", $year + 1900, $month+1, $day;
+foreach my $class (@$classes) {
     push @classes, $class if
         $m->comp('/sub/is_admin') ||
         $neptun ||
