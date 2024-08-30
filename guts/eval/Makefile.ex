@@ -6,10 +6,9 @@ include $(GUTS_ROOT)/Makefile.common
 $(eval $(call set-up-tools-template,ELIXIRC,elixirc))
 $(eval $(call set-up-tools-template,LN,ln))
 
-SOURCES := $(filter-out Makefile.ex,$(wildcard *.ex))
-TARGETS := $(patsubst %.ex,%.beam,$(SOURCES))
-
-.SUFFIXES: .ex .beam
+SOURCES := eval.ex $(filter-out Makefile.ex eval.ex,$(wildcard *.ex))
+TARGETS := $(shell echo $(SOURCES) | \
+	sed -E -e 's/(\b|_)([a-z])/\U\2/g' -e 's/([^ ]+)\.Ex/Elixir.\1.beam/g')
 
 default: all
 
@@ -20,12 +19,22 @@ all: $(TARGETS)
 .PHONY: clean
 #: Remove all build files
 clean:
-	$(RM) *.beam
 	$(RM) $(TARGETS)
+	[ -L eval.ex ] && $(RM) eval.ex
 
-%.beam: %.ex | $(ELIXIRC)
-	$(ELIXIRC) $<
+%.beam: | $(ELIXIRC)
+	$(ELIXIRC) $^
+
+eval.ex: | $(LN)
+	$(LN) -sf $(GUTS_ROOT)/eval/$@
 
 .PHONY: depend
-depend: | $(LN)
-	$(LN) -sf $(GUTS_ROOT)/eval/eval.ex
+depend: .depend
+
+.depend: $(SOURCES)
+	@for f in $(SOURCES); do \
+		echo -n "$$f" | sed -E -e 's/(^|_)([a-z])/\U\2/g' -e 's/(.+)\.ex/Elixir.\1.beam/g'; \
+		echo ": $$f"; \
+	done >.depend
+
+include .depend
