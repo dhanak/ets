@@ -13,11 +13,8 @@ test_class_closed('Hataridon kivuli beadas', Name,
     format('~NA(z) ~w csak ~w. ~w ~w. és ~w. ~w ~w. között adható be.~n',
            [Name,FY,FMN,FD,TY,TMN,TD]).
 
-ill_formed_mail('Hibas levelformatum', LogF) :-
-    read_lines(LogF, Lines),
-    write('A hiba oka:'), nl,
-    nl,
-    write_lines(Lines).
+ill_formed_mail('Hibas levelformatum') :-
+    write('A hiba oka: ismeretlen'), nl.
 
 mail_spooled('HF felveve', ClassName, Version, Pos, Running) :-
     format('A(z) ~w ~w. verziója megérkezett.~n', [ClassName, Version]),
@@ -40,7 +37,6 @@ test_done('HF tesztnaplo', LogF) :-
 print_report_head(ID) :-
     datime(datime(_,Month,Day,Hour,Min,_)),
     monthname(Month, MName),
-    current_host(Host),
     atom_codes(ID, IDC),
     append(Name, [0'.|Version], IDC),
     fail_on_error(number_codes(_, Version), silent),
@@ -51,9 +47,8 @@ print_report_head(ID) :-
     ;   true
     ),
     format('A program verziószáma:          ~s~n', [Version]),
-    format('A teszt idõpontja:              ~w ~d. ~|~`0t~d~2+:~|~`0t~d~2+~n',
-           [MName,Day,Hour,Min]),
-    format('A tesztet futtató hoszt:        ~w~2n', [Host]).
+    format('A teszt időpontja:              ~w ~d. ~|~`0t~d~2+:~|~`0t~d~2+~n',
+           [MName,Day,Hour,Min]).
 
 print_lang_separator :-
     nl,
@@ -72,7 +67,7 @@ print_lang_head(pl) :-
     nl.
 
 print_testcase(N, Limit) :-
-    format('~t~d~2+. teszteset, idõlimit = ~|~t~d~3+ sec~n', [N, Limit]),
+    format('~t~d~2+. teszteset, időlimit = ~|~t~d~3+ sec~n', [N, Limit]),
     print('---------------------------------'), nl.
 
 print_lang_tail(Total, Good) :-
@@ -82,7 +77,7 @@ print_lang_tail(Total, Good) :-
     print('------------------------'), nl.
 
 explain_status(timeout, _) :-
-    nl, print('>>>>> Túllépte az idõkorlátot.'), nl, nl.
+    nl, print('>>>>> Túllépte az időkorlátot.'), nl, nl.
 explain_status(sizeout, _) :-
     nl, print('>>>>> Túllépte a memóriakorlátot (pl. nagy adatstruktúrák vagy a konzolra kiírt üzenetek miatt)'), nl, nl.
 explain_status(signal(Signal), _) :-
@@ -114,12 +109,12 @@ bol(Num, Bol) :-                % Num < 100
     Num mod 10 =:= 0, !,
     Tens is (Num // 10) mod 10,
     (   member(Tens, [1,4,5,7,9])
-    ->  Bol = 'bõl'
+    ->  Bol = 'ből'
     ;   Bol = 'ból'
     ).
 bol(Num, Bol) :-
     Ones is Num mod 10,
     (   member(Ones, [1,2,4,5,7,9])
-    ->  Bol = 'bõl'
+    ->  Bol = 'ből'
     ;   Bol = 'ból'
     ).

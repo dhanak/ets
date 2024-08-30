@@ -4,9 +4,11 @@
               fail_on_error/2,	% fail_on_error(+Goal, +Option)
               on_nonsuccess/2,	% on_nonsuccess(+Goal, +Cleanup)
               ensure_success/1,	% ensure_success(+Goal)
+              undo/1,           % undo(+Goal)
               append_lists/2,	% append_lists(?Lists, ?List)
               between/3,		% between(?int, +int, +int)
               stable_sort/2,	% stable_sort(+List, -List)
+              nth/3,            % nth(?N, ?List, ?Elem)
 
               atom_number/2,	% atom_number(?Number, ?Atom)
               atom_concat/2,	% atom_concat(+Atoms, -Concatenated)
@@ -27,11 +29,13 @@
               lock/1,               % lock(+File)
               unlock/1,             % unlock(+File)
               relative_file_name/2,	% relative_file_name(+FAbs, -FRel)
+              relative_file_name/3,	% relative_file_name(+Dir, +FAbs, -FRel)
               create_soft_link/2,	% create_soft_link(+From, +To)
               run/1,                % run(+CommandWithArgs)
               run/2,                % run(+Command, +Args)
               time/3,               % time(+CommandWithArgs, -Code, -Time)
 
+              info/2,           % info(+Format, +Args)
               warning/2,		% warning(+Format, +Args)
               error/2           % error(+Format, +Args)
           ]).
@@ -81,6 +85,13 @@ ensure_success(Goal) :-
     ;   true
     ).
 
+%%% undo(Goal): calls Goal exactly once while backtracking.
+%%% :- pred undo(+goal).
+:- meta_predicate undo(:).
+undo(_).
+undo(Goal) :-
+    Goal, !, fail.
+
 %%% append_lists(Lists, List): List is the concatenation of Lists.
 %%% :- pred append_lists(?list(list(term)) ?list(term)).
 append_lists([], []).
@@ -109,6 +120,11 @@ stable_sort(List1, List2) :-
     findall(X-1, member(X, List1), List1K),
     keysort(List1K, List2K),
     findall(X, member(X-1, List2K), List2).
+
+%%% nth(N, List, Elem): unifies Elem with the Nth element of List, from 1.
+%%% :- pred nth(?number, ?list(term), ?term).
+nth(N, List, Elem) :-
+    nth1(N, List, Elem, _).
 
 %%% atom_number(Atom, Number): converts atom Atom to number Number or vice versa.
 %%% :- pred atom_number(+atom, -number), atom_number(-atom, +number).
@@ -315,7 +331,11 @@ lockfile(F, LockF) :-
 %%% respect to the current working directory.
 %%% :- pred relative_file_name(+atom, -atom).
 relative_file_name(FAbs, FRel) :-
-    working_directory(Dir0, Dir0),
+    current_directory(Dir),
+    relative_file_name(Dir, FAbs, FRel).
+
+%%% :- pred relative_file_name(+atom, +atom, -atom).
+relative_file_name(Dir0, FAbs, FRel) :-
     split_path(FAbs, FDir0, FName),
     atom_codes(Dir0, Dir0C),
     atom_codes(FDir0, FDir0C),
@@ -363,7 +383,7 @@ create_soft_link(From, To) :-
         ToF = '.'
     ;   split_path(To, Dir, ToF)
     ),
-    relative_file_name(From, FromRel),
+    relative_file_name(Dir, From, FromRel),
     process_create(path(ln), ['-s', file(FromRel), file(ToF)]
                    , [wait(exit(0)),cwd(Dir)]).
 
@@ -384,7 +404,7 @@ run(Cmd, Args) :-
     ;   Path = path(Cmd)
     ),
     process_create(Path, Args,
-                   [wait(Status),stdout(pipe(Out)),stderr(pipe(Err))]),
+                   [wait(Status),stdin(null),stdout(pipe(Out)),stderr(pipe(Err))]),
     read_lines(Out, OutL),
     write_lines(OutL),
     close(Out),
@@ -399,11 +419,17 @@ run(Cmd, Args) :-
 time(Cmd, Code, Time) :-
     mktemp('time.XXXXXX', TimeF),
     process_create(path(time), ['-f', '%U', '-o', file(TimeF)|Cmd],
-                   [wait(exit(Code))]),
+                   [wait(exit(Code)),stdin(null),stdout(null)]),
     read_lines(TimeF, TimeL),
     last(TimeL, TimeS),
     number_codes(Time, TimeS),
     ensure_success(delete_file(TimeF)).
+
+%%% info(Txt, Args): The format Txt with Args as an argument list is
+%%% printed as an informational message.
+%%% :- pred info(+atom, +list(term)).
+info(Txt, Args) :-
+    print_message(informational, format(Txt, Args)).
 
 %%% warning(Txt, Args): The format Txt with Args as an argument list is
 %%% printed as a warning.

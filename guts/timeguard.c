@@ -69,12 +69,15 @@ int main(int argc, char *argv[])
     fprintf(stderr, "fork() failed.\n");
     exit(ERR_FORK);
   } else if (pid == 0) {
+    rlim.rlim_cur = rlim.rlim_max = 0; /* core limit */
+    if (setrlimit(RLIMIT_CORE, &rlim))
+      fprintf(stderr, "Failed to disable core dumps.\n");
 
     rlim.rlim_cur = rlim.rlim_max = limit; /* time limit */
     if (setrlimit(RLIMIT_CPU, &rlim))
       fprintf(stderr, "Failed to set CPU time limit.\n");
 
-    rlim.rlim_cur = rlim.rlim_max = 150 * 1024; /* 150k file size limit */
+    rlim.rlim_cur = rlim.rlim_max = 100 * 1024 * 1024; /* 100M file size limit */
     if (setrlimit(RLIMIT_FSIZE, &rlim))
       fprintf(stderr, "Failed to set file size limit.\n");
 

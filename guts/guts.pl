@@ -8,7 +8,6 @@
 :- use_module(library(codesio)).
 
 :- use_module(utils).
-:- use_module(log).
 :- use_module(db).
 :- use_module(templates).
 
@@ -108,9 +107,13 @@ split_name(Full, Name, Neptun) :-
     atom_codes(Neptun, NeptunC).
 
 %% delete_files(+Patterns): all files matching Patterns are deleted.
-delete_files([]) :- !.
 delete_files(Patterns) :-
-    process_create(path(sh), ['-c', 'rm'|Patterns], [wait(exit(0))]).
+    member(Pattern, Patterns),
+    absolute_file_name('.', File,
+                       [glob(Pattern), solutions(all), fileerrors(fail)]),
+    delete_file(File),
+    fail.
+delete_files(_).
 
 %% link_files(+FromDir, +Files): files Files from the directory FromDir are
 %% soft linked to the current directory, with the shortest possible relative
@@ -288,23 +291,23 @@ compare(RefF, SolF) :-
 extract(Name, Version, WorkDir, Report) :-
     filename(mail(Name,Version), MailF), % check mail file
     on_nonsuccess(file_exists(MailF, read),
-                  log('Extract failed: mailfile ~w is not readable', [MailF])),
-    (   file_exists(WorkDir)	% reset working directory
-    ->  delete_file(WorkDir)
+                  info('Extract failed: mailfile ~w is not readable', [MailF])),
+    (   directory_exists(WorkDir) % reset working directory
+    %   The following should work but it refuses to delete a nonempty dir
+    %-> delete_directory(WorkDir, [if_nonempty(delete)])
+    ->  run(['rm', '-rf', WorkDir])
     ;   true
     ),
     make_directory(WorkDir),
     split_path(MailL, WorkDir, 'mail'), % create soft link
-    log('Linking mail file ~w to ~w', [MailF,MailL]),
+    info('Linking mail file ~w to ~w', [MailF,MailL]),
     create_soft_link(MailF, MailL),
-    split_path(LogF, WorkDir, 'extract.log'), % open logfile
-    tell(LogF),
-    log('Unpacking mail'),
-    (   call_cleanup(unpack(MailL, WorkDir), told)
-    ->  delete_file(LogF)
-    ;   log('Unpacking mail failed, sending report'),
+    info('Unpacking mail', []),
+    (   unpack(MailL, WorkDir)
+    ->  true
+    ;   info('Unpacking mail failed, sending report', []),
         produce_report(Report, Name, Subject,
-                       templates:ill_formed_mail(Subject, LogF)),
+                       templates:ill_formed_mail(Subject)),
         fail
     ).
 
@@ -312,7 +315,7 @@ extract(Name, Version, WorkDir, Report) :-
 %% extracted, see extract/3.
 extract(Name, WorkDir, Report) :-
     find_latest_version(Name, Version),
-    log('Latest version is ~w', [Version]),
+    info('Latest version is ~w', [Version]),
     extract(Name, Version, WorkDir, Report).
 
 %% find_latest_version(+Name, -Version): Version is the latest version of the
@@ -333,7 +336,7 @@ file_version(File, Name, Version) :-
     (   append(NameC, [0'.|VerC], FileC),
         fail_on_error(number_codes(Version, VerC), silent)
     ->  atom_codes(Name, NameC)
-    ;   log_warning('Illegally formatted mail file name ~w', [File]),
+    ;   warning('Illegally formatted mail file name ~w', [File]),
         fail
     ).
 file_version(File, Name, Version) :-
@@ -349,9 +352,9 @@ purge(Dir) :-
     findall(F,
             (file_member_of_directory(Dir, F, _), file_version(F,_,_)),
             Files),
-    working_directory(OldD, Dir),
+    current_directory(OldD, Dir),
     purge0(Files),
-    working_directory(_, OldD).
+    current_directory(_, OldD).
 
 %% purge0(+Files): purge Files in current directory.
 purge0([]) :- !.
@@ -420,7 +423,7 @@ produce_report(print, _, _, PrintReport) :- !,
     call(PrintReport).
 produce_report(silent, _, _, _) :- !.
 produce_report(Report , _, _, _) :-
-    log_warning('Unknown report type ~w', [Report]).
+    warning('Unknown report type ~w', [Report]).
 
 %% mail_student(+Name, +Subject, +MailPrinter)
 mail_student(Name, Subject, MailPrinter) :-
@@ -453,11 +456,11 @@ mail_student(Name, Subject, MailPrinter) :-
     process_wait(Proc, exit(EC)),
     (   EC = 0
     ->  !
-    ;   log_warning('Sending mail finished with code ~d', [EC]),
+    ;   warning('Sending mail finished with code ~d', [EC]),
         fail
     ).
 mail_student(Name, _, _) :-
-    log_warning('Sending mail to ~w failed', [Name]).
+    warning('Sending mail to ~w failed', [Name]).
 
 %% smtp_url(-Url, -UserPwd): return URL and user:pwd of smtp serrver
 smtp_server(Url, UserPwd) :-
@@ -513,11 +516,11 @@ run_all_tests(Name, WorkDir, Opts) :-
     ;   languages(Langs)
     ),
     %% run tests
-    working_directory(OldD, WorkDir),
+    current_directory(OldD, WorkDir),
     ensure_success((read_mail_ID(ID),
                     templates:print_report_head(ID))),
     run_lang_tests(Name, Langs),
-    working_directory(_, OldD).
+    current_directory(_, OldD).
 
 %% run_lang_tests(+Name, +Langs): all tests for languages Langs are run.
 run_lang_tests(_, []).
@@ -530,20 +533,20 @@ run_lang_tests(Name, [L|Ls]) :-
 
 %% run_lang_test(+Name, +Lang): all tests for Lang language are run.
 run_lang_test(Name, Lang) :-
-    log('Starting ~w test for ~w', [Lang,Name]),
+    info('Starting ~w test for ~w', [Lang,Name]),
     ensure_success(templates:print_lang_head(Lang)),
     %% read language dependent setup
     filename(setup(Lang), SetupF),
-    log('Reading language dependant setup file ~w', [SetupF]),
+    info('Reading language dependant setup file ~w', [SetupF]),
     read_file(SetupF, Setup),
     member(program(Program), Setup),
     %% delete neccessary files
-    log('Deleting unnecessary files'),
+    info('Deleting unnecessary files', []),
     (   member(delete(ToDelete), Setup)
     ->  delete_files(ToDelete)
     ;   ToDelete = []
     ),
-    log('Linking files'),
+    info('Linking files', []),
     %% link neccessary files
     (   member(link(ToLink), Setup)
     ->  directory(env(Lang), LangD),
@@ -556,18 +559,18 @@ run_lang_test(Name, Lang) :-
     ), !,
     %% run tests and delete neccessary files
     append(ToDelete, ToLink, All),
-    (   log('Running initialization code'),
+    (   info('Running initialization code', []),
         call(Init)
-    ->  log('Running tests'),
+    ->  info('Running tests', []),
         run_tests(Program, Good)
-    ;   log('Initialization code failed'),
+    ;   info('Initialization code failed', []),
         Good = 0
     ),
-    log('Cleaning up files'),
+    info('Cleaning up files', []),
     delete_files(All),
     %% update database if neccessary
     (   database(update(Field,Type))
-    ->  log('Updating database entries'),
+    ->  info('Updating database entries', []),
         testcase_count(Total),
         update_score_field(Name, Field-Lang, Type-Good/Total)
     ;   true
@@ -623,15 +626,18 @@ successful_test(Program, N, In, Out, Ref) :-
     ),
     atom_number(LimitA, Limit),
     ensure_success(templates:print_testcase(N, Limit)),
-    log('Running test ~w with time limit ~w', [N,Limit]),
-    %% TODO: redirect stdout and stderr to current_output/1?
-    time([file(Guard), LimitA, '5', file(Program), In, Out], Code, Time),
+    info('Running test ~w with time limit ~w', [N,Limit]),
+    (   atom(Program)
+    ->  Cmd = [Program, In, Out]
+    ;   append(Program, [In, Out], Cmd)
+    ),
+    time([file(Guard), LimitA, '5'|Cmd], Code, Time),
     (   Code = 0
     ->  evaluate(Ref, Out, Status)
     ;   exitcode_to_status(Code, Status)
     ),
     ensure_success(templates:explain_status(Status, Time)),
-    log('Test ~w resulted in ~w', [N,Status]),
+    info('Test ~w resulted in ~w', [N,Status]),
     Status = success.		% fail if solution is wrong
 
 %% update_score_field(+Name, +Field, +Score): score field Field for Name is
@@ -639,9 +645,9 @@ successful_test(Program, N, In, Out, Ref) :-
 update_score_field(Name, Field, Score) :-
     score_value(Score, Value),
     split_name(Name, _, Neptun),
-    log('Setting score ~w for ~w to ~w', [Field,Name,Value]),
+    info('Setting score ~w for ~w to ~w', [Field,Name,Value]),
     on_nonsuccess(db_set_score(Neptun, Field, Value),
-                  log_warning('DB update failed for ~w-~w', [Neptun,Field])).
+                  warning('DB update failed for ~w-~w', [Neptun,Field])).
 
 %% score_value(Score, Value): Value is the value of Score.
 score_value(binary-T/T,     B) :- !, B = 1.
@@ -661,7 +667,7 @@ score_value(goal(Goal0)-G/T, S) :- !,
     Goal =.. GoalL,
     call(Goal).
 score_value(Type-_, _) :-
-    log_warning('Unknown score type ~w', [Type]),
+    warning('Unknown score type ~w', [Type]),
     fail.
 
 %%%
@@ -705,11 +711,11 @@ count_test_cases(Count) :-
 test_loop :-
     repeat,
     next_job(Job),
-    log('Starting to process job ~w', [Job]),
+    info('Starting to process job ~w', [Job]),
     (   Job = halt
     ->  !, unspool_job	% test loop exit
     ;   run_job(Job),
-        log('Unspooling job ~w', Job),
+        info('Unspooling job ~w', Job),
         unspool_job,
         fail
     ).
@@ -722,7 +728,7 @@ run_job(job(Name,Opts)) :-
     (   member(language(Lang), Opts),
         languages(Langs),
         non_member(Lang, Langs)
-    ->  log_warning('Language ~w is invalid for job ~w', [Lang,Name]),
+    ->  warning('Language ~w is invalid for job ~w', [Lang,Name]),
         fail
     ;   true
     ),
@@ -734,44 +740,31 @@ run_job(job(Name,Opts)) :-
     %% ensure that mail is unpacked
     directory(student(Name), WorkDir),
     (   member(extract(Version), Opts) % extract specific version
-    ->  log('Extracting mail ~w.~w', [Name,Version]),
+    ->  info('Extracting mail ~w.~w', [Name,Version]),
         extract(Name, Version, WorkDir, Report)
     ;   member(extract, Opts)	% ... or extract latest
-        ->  log('Extracting latest mail of ~w', [Name]),
+        ->  info('Extracting latest mail of ~w', [Name]),
             extract(Name, WorkDir, Report)
-    ;   log('Testing existing directory ~w', [WorkDir]),
+    ;   info('Testing existing directory ~w', [WorkDir]),
         directory_exists(WorkDir)	% ... or directory exists
     ),
-    %% run tests sending output to logfile
+    %% run tests sending output to infofile
     (   member(language(Lang), Opts)
     ->  filename(report(Name, Lang), RepF)
     ;   filename(report(Name), RepF)
     ),
-    tell(RepF),
-    log('Running tests'),
-    call_cleanup(run_all_tests(Name, WorkDir, Opts), told),
-    log('Producing report'),
+    open(RepF, write, RepS, [encoding('UTF-8'), encoding_signature(true)]),
+    current_output(Out),
+    set_output(RepS),
+    info('Running tests', []),
+    call_cleanup(run_all_tests(Name, WorkDir, Opts),
+                 (set_output(Out), close(RepS))),
+    info('Producing report', []),
     produce_report(Report, Name, Subject,
                    templates:test_done(Subject, RepF)),
     !.
 run_job(Job) :-
-    log_warning('Do not know how to handle job ~w', [Job]).
-
-%% run_testd(+ConfFile): run the test daemon
-run_testd(Conf) :-
-    log('Launching test daemon'),
-    log('Reading configuration file'),
-    fail_on_error(load_files([Conf]),
-                  error('Couldn''t read configuration file: ~w', [Conf])),
-    log('Making directories'),
-    make_directories,
-    log('Counting test cases'),
-    testsuite_placement(Placement),
-    count_test_cases(Placement),
-    touch_spoolfile,
-    log('Starting test loop'),
-    test_loop,
-    log('Halting test daemon').
+    warning('Do not know how to handle job ~w', [Job]).
 
 %%%
 %%% Main service entry points
@@ -853,8 +846,18 @@ guts_submit(Conf, Class, Name) :-
     receive_homework(Conf, Class, Mail, Name, fail, print).
 
 guts_testd(Conf) :-
-    open_log,
-    call_cleanup(run_testd(Conf), close_log).
+    info('Reading configuration file', []),
+    fail_on_error(load_files([Conf]),
+                  error('Couldn''t read configuration file: ~w', [Conf])),
+    info('Making directories', []),
+    make_directories,
+    info('Counting test cases', []),
+    testsuite_placement(Placement),
+    count_test_cases(Placement),
+    touch_spoolfile,
+    info('Starting test loop', []),
+    test_loop,
+    info('Halting test daemon', []).
 
 %% action(Action, Args): does action Action with args Args.  Calls guts_<action>
 action(Action0, Args) :-
@@ -869,6 +872,7 @@ action(Action, _) :-
           [Action]).
 
 main :-
+    set_prolog_flag(informational, on),
     prolog_flag(argv, Args),
     (   Args = [Action|Rest]
     ->  action(Action, Rest)
