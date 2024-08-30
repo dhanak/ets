@@ -3,6 +3,7 @@
 # Usage:
 #
 # ./guts-docker shell - to run a shell in the container
+# ./guts-docker daemons ... - to run a daemons command in the container
 # ./guts-docker <cmd> <args> - to directly run a guts command in the container
 #
 set -euo pipefail
@@ -17,6 +18,9 @@ fi
 # invoke shell or guts command directly
 if [[ $* == shell ]]; then
     exec docker compose exec guts /bin/bash
+elif [[ ${1-} == daemons ]]; then
+    shift                       # drop "daemons"
+    exec docker compose exec -T guts ./daemons "$@"
 elif [[ ${1-} == testd ]]; then
     # run testd command protected by daemons script
     exec docker compose exec -T guts ./daemons run ./guts "$@"
