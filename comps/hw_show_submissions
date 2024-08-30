@@ -35,6 +35,7 @@ foreach (<$socket>) {
     $m->comp('link',
              text => $_,
              href => "action_download_submission",
+             newwindow => 1,
              params => {
                  neptun   => $neptun,
                  semester => $class->{semester},
@@ -60,6 +61,7 @@ if (<$socket>) {
              img => "list.png"
              , text => "Listáz",
              href => "action_download_submission",
+             newwindow => 1,
              params => {
                  neptun   => $neptun,
                  semester => $class->{semester},

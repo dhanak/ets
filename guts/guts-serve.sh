@@ -8,7 +8,6 @@
 #
 set -euo pipefail
 
-err="$(mktemp)"
 read -a command
 if [[ ${command[0]} == "list-submissions" ]]; then
     # list homework submission files
@@ -40,6 +39,7 @@ elif [[ ${command[0]} == "cat-report" ]]; then
 else
     # execute guts command
     echo "# Executing ./guts ${command[*]}" >&2
+    err="$(mktemp)"
     bash -c "exec ./guts ${command[*]}" 2> >(tee "$err" >&2)
     cat "$err" && rm "$err"
 fi

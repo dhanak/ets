@@ -32,14 +32,14 @@ if (!$m->comp('/sub/check_perm', item => "download_submission", neptun => $neptu
         my $header = <$socket>;
         my ($fn) = ($header =~ /^begin 644 (.*)$/);
         $r->headers_out()->set('Content-Disposition' =>
-                               'attachment; filename="' . $fn . '"');
+                               'inline; filename="' . $fn . '"');
         $m->out(unpack('u', <$socket>)); # uudecode
     } elsif ($suite) {
         # download latest test report
         print $socket "cat-report ${semester} ${class} ${suite} ${name}\n";
         $socket->shutdown(SHUT_WR); # send EOF (shut down for writing)
         $r->headers_out()->set('Content-Disposition' =>
-                               'attachment; filename="test-report.txt"');
+                               'inline; filename="test-report.txt"');
         $m->out(<$socket>);
     }
     $socket->close;
