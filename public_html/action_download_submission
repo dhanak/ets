@@ -33,7 +33,7 @@ if (!$m->comp('/sub/check_perm', item => "download_submission", neptun => $neptu
         my ($fn) = ($header =~ /^begin 644 (.*)$/);
         $r->headers_out()->set('Content-Disposition' =>
                                'inline; filename="' . $fn . '"');
-        $m->out(unpack('u', <$socket>)); # uudecode
+        $m->out(unpack('u', join("", <$socket>))); # uudecode
     } elsif ($suite) {
         # download latest test report
         print $socket "cat-report ${semester} ${class} ${suite} ${name}\n";
