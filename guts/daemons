@@ -41,7 +41,7 @@ run () {
     wd=$(pwd)
     "$@" &                      # run command in background
     pid=$!
-    psline=$($ps $pid)
+    psline=$($ps "$pid")
     if [[ -n $psline ]]; then
         cat >"$infdir/$pid.inf" <<EOF
 $header
@@ -49,6 +49,7 @@ pid=$pid
 psline='$psline'
 wd='$wd'
 command='$0 run$(printf ' "%s"' "$@")'
+logfile='$$.log'
 EOF
         wait $pid
         rm "$infdir/$pid.inf"

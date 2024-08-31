@@ -15,8 +15,23 @@ if [[ -z $(docker compose ps -q guts) ]]; then
     exit 1
 fi
 
-# invoke shell or guts command directly
-if [[ $* == shell ]]; then
+if [[ $# -eq 0 || ${1-} == help ]]; then
+    cat <<EOF
+Usage: $0 <command> <args>...
+
+Available commands:
+
+  help
+           print this help screen
+  shell
+           run a shell in the guts container
+  daemons  <sub-command>
+           run a daemons command in the guts container
+EOF
+    # take the rest of the help from guts
+    exec docker compose exec -T guts ./guts help | tail +4
+elif [[ $* == shell ]]; then
+    # invoke shell or guts command directly
     exec docker compose exec guts /bin/bash
 elif [[ ${1-} == daemons ]]; then
     shift                       # drop "daemons"
