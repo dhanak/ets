@@ -150,7 +150,7 @@ FROM debian:${DEBIAN_VERSION}-slim AS guts-runtime
 # install extra debian dependencies
 RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     apt-get update && \
-    apt-get install -y busybox curl file locales make procps \
+    apt-get install -y busybox curl file locales make procps uuid-runtime \
         liblockfile-bin libmariadb3 && \
     busybox --install
 
@@ -188,4 +188,6 @@ USER nobody
 
 # workdir and netcat server command
 WORKDIR ${GUTS_ROOT}
-CMD ["nc", "-p", "31337", "-ll", "-e", "./guts-serve.sh"]
+
+# main entrypoint
+ENTRYPOINT ["./entrypoint.sh"]
