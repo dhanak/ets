@@ -846,6 +846,7 @@ guts_submit(Conf, Class, Name) :-
     receive_homework(Conf, Class, Mail, Name, fail, print).
 
 guts_testd(Conf) :-
+    set_prolog_flag(informational, on),
     info('Reading configuration file', []),
     fail_on_error(load_files([Conf]),
                   error('Couldn''t read configuration file: ~w', [Conf])),
@@ -872,7 +873,6 @@ action(Action, _) :-
           [Action]).
 
 main :-
-    set_prolog_flag(informational, on),
     prolog_flag(argv, Args),
     (   Args = [Action|Rest]
     ->  action(Action, Rest)
