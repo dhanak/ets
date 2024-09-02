@@ -432,9 +432,10 @@ mail_student(Name, Subject, MailPrinter) :-
     with_output_to_codes(MailPrinter, MailBody),
     environ('CONTACT', Sender),
     smtp_server(Url, UserPwd),
+    q_encode(Subject, SubjectQ),
     format_to_atom('From: ~s', Sender, FromH),
     format_to_atom('To: ~s', Email, ToH),
-    format_to_atom('Subject: ~s', Subject, SubjectH),
+    format_to_atom('Subject: ~s', SubjectQ, SubjectH),
     Args0 = ['--ssl',           % use STARTTLS if available
              '--no-progress-meter',
              '--url', Url,
@@ -444,14 +445,15 @@ mail_student(Name, Subject, MailPrinter) :-
              '--header', ToH,
              '--header', SubjectH,
              % read body from stdin and encode it in quoted printable form
-             '--form', '=<-;encoder=quoted-printable'],
+             '--form',
+             '=<-;type=text/html;charset=utf-8;encoder=quoted-printable'],
     (   UserPwd = ':'
     ->  Args = Args0
     ;   Args = [ '--user', UserPwd|Args0]
     ),
     process_create(path(curl), Args,
                    [stdin(pipe(In)),stdout(null),process(Proc)]),
-    format(In, '~s', [MailBody]),
+    format(In, '<pre>~s</pre>', [MailBody]),
     close(In),
     process_wait(Proc, exit(EC)),
     (   EC = 0
@@ -593,7 +595,7 @@ run_tests(Program, Good) :-
 get_testfile(N, In, Ref) :-
     testsuite_placement(directory(SubDir)), !,
     testfiles(SubDir, Dir, Files),
-    nth(N, Files, In0),
+    nth1(N, Files, In0),
     atom_codes(In0, InC),
     (   append(Front, [0'd|Rear], InC)
     ->  append(Front, [0's|Rear], RefC)
@@ -606,7 +608,7 @@ get_testfile(N, In, '/dev/null') :-
     read_testfile(File, Tests),
     mktemp('data.XXXXXX', In),
     undo(guts:ensure_success(guts:delete_file(In))), % delete when backtracking
-    nth(N, Tests, Test),
+    nth1(N, Tests, Test),
     write_lines(In, [Test]).
 get_testfile(N, In, '/dev/null') :-
     testsuite_placement(embedded(Count)),
@@ -621,7 +623,7 @@ get_testfile(N, In, '/dev/null') :-
 successful_test(Program, N, In, Out, Ref) :-
     filename(timeguard, Guard),
     timelimits(Default, Limits),
-    (   nth(N, Limits, Limit) -> true
+    (   nth1(N, Limits, Limit) -> true
     ;   Limit = Default
     ),
     atom_number(LimitA, Limit),

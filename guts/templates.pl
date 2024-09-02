@@ -6,17 +6,17 @@
 :- use_module(library(lists)).
 :- use_module(utils).
 
-test_class_closed('Hataridon kivuli beadas', Name,
+test_class_closed('Határidőn kívüli beadás', Name,
           date(FY,FM,FD), date(TY,TM,TD)) :-
     monthname(FM, FMN),
     monthname(TM, TMN),
     format('~NA(z) ~w csak ~w. ~w ~w. és ~w. ~w ~w. között adható be.~n',
            [Name,FY,FMN,FD,TY,TMN,TD]).
 
-ill_formed_mail('Hibas levelformatum') :-
+ill_formed_mail('Hibás levélformátum') :-
     write('A hiba oka: ismeretlen'), nl.
 
-mail_spooled('HF felveve', ClassName, Version, Pos, Running) :-
+mail_spooled('HF felvéve', ClassName, Version, Pos, Running) :-
     format('A(z) ~w ~w. verziója megérkezett.~n', [ClassName, Version]),
     write('A feldolgozási sorban '),
     (   Pos = replace(I)
@@ -30,7 +30,7 @@ mail_spooled('HF felveve', ClassName, Version, Pos, Running) :-
     ;   true
     ).
 
-test_done('HF tesztnaplo', LogF) :-
+test_done('HF tesztnapló', LogF) :-
     read_lines(LogF, Lines),
     write_lines(Lines).
 
@@ -48,7 +48,8 @@ print_report_head(ID) :-
     ),
     format('A program verziószáma:          ~s~n', [Version]),
     format('A teszt időpontja:              ~w ~d. ~|~`0t~d~2+:~|~`0t~d~2+~n',
-           [MName,Day,Hour,Min]).
+           [MName,Day,Hour,Min]),
+    nl.
 
 print_lang_separator :-
     nl,
@@ -57,6 +58,10 @@ print_lang_separator :-
     print('==============================================================='), nl,
     nl.
 
+print_lang_head(ex) :-
+    print('Az Elixir program tesztelése'), nl,
+    print('----------------------------'), nl,
+    nl.
 print_lang_head(ml) :-
     print('Az SML program tesztelése'), nl,
     print('-------------------------'), nl,
@@ -77,19 +82,19 @@ print_lang_tail(Total, Good) :-
     print('------------------------'), nl.
 
 explain_status(timeout, _) :-
-    nl, print('>>>>> Túllépte az időkorlátot.'), nl, nl.
+    nl, print('Túllépte az időkorlátot.'), nl, nl.
 explain_status(sizeout, _) :-
-    nl, print('>>>>> Túllépte a memóriakorlátot (pl. nagy adatstruktúrák vagy a konzolra kiírt üzenetek miatt)'), nl, nl.
+    nl, print('Túllépte a memóriakorlátot (pl. nagy adatstruktúrák miatt)'), nl, nl.
 explain_status(signal(Signal), _) :-
-    format('~n>>>>> A futás megszakadt, oka ismeretlen (~d signal).~n',
+    format('~nA futás megszakadt, oka ismeretlen (~d signal).~n',
            [Signal]).
 explain_status(exception, _) :-
-    nl, print('>>>>> Kezeletlen kivétel.'), nl, nl.
+    nl, print('Kezeletlen kivétel.'), nl, nl.
 explain_status(Status, Time) :-
-    format('~n>>>>> A program lefutott ~g s alatt, a megoldás ', [Time]),
+    format('~nA program lefutott ~g s alatt, a megoldás ', [Time]),
     (   Status = success
-    ->  print('HELYES.')
-    ;   print('HIBÁS.')
+    ->  print('helyes.')
+    ;   print('hibás.')
     ), nl, nl.
 
 monthname(1, január).

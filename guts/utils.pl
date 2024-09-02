@@ -8,11 +8,11 @@
               append_lists/2,	% append_lists(?Lists, ?List)
               between/3,		% between(?int, +int, +int)
               stable_sort/2,	% stable_sort(+List, -List)
-              nth/3,            % nth(?N, ?List, ?Elem)
 
               atom_number/2,	% atom_number(?Number, ?Atom)
               atom_concat/2,	% atom_concat(+Atoms, -Concatenated)
               format_to_atom/3, % format_to_atom(+Format, +Args, -Atom)
+              q_encode/2,       % q_encode(+Atom, -Atom)
 
               split_path/3,		% split_path(+Path, -Dir, -File)
               mkdirhier/1,		% mkdirhier(+Directory)
@@ -121,11 +121,6 @@ stable_sort(List1, List2) :-
     keysort(List1K, List2K),
     findall(X, member(X-1, List2K), List2).
 
-%%% nth(N, List, Elem): unifies Elem with the Nth element of List, from 1.
-%%% :- pred nth(?number, ?list(term), ?term).
-nth(N, List, Elem) :-
-    nth1(N, List, Elem, _).
-
 %%% atom_number(Atom, Number): converts atom Atom to number Number or vice versa.
 %%% :- pred atom_number(+atom, -number), atom_number(-atom, +number).
 atom_number(Atom, Number) :-
@@ -150,8 +145,35 @@ atom_concat0([H|T], A0, A) :-
 %%% format_to_atom(+Format, +Args, -Atom): format a specification with arguments
 %%% into an atom, using format_to_codes/3 and atom_codes/2.
 format_to_atom(Fmt, Args, Atom) :-
-    format_to_codes(Fmt, Args, Chars),
-    atom_codes(Atom, Chars).
+    format_to_codes(Fmt, Args, Codes),
+    atom_codes(Atom, Codes).
+
+%%% q_encode(+Atom, -QAtom): format an atom Atom with Q-encoding to QAtom.
+%%% See https://en.wikipedia.org/wiki/MIME#Encoded-Word for Q-encoding.
+%%% :- pred q_encode(+atom, -atom).
+q_encode(Atom, QAtom) :-
+    atom_codes(Atom, Codes),
+    q_encode0(Codes, QCodes0),
+    format_to_codes('=?utf-8?Q?~s?=', [QCodes0], QCodes),
+    atom_codes(QAtom, QCodes).
+
+%%% :- pred q_encode0(+list(number), -list(number)).
+q_encode0([], []).
+q_encode0([C|Cs], Encoded) :-
+    (   C = 32
+    ->  Encoded = [0'_|Es]
+    ;   C < 128, \+ member(C, "?=")
+    ->  Encoded = [C|Es]
+    ;   A is C // 16,
+        hex(A, AC),
+        B is C mod 16,
+        hex(B, BC),
+        Encoded = [0'=,AC,BC|Es]
+    ),
+    q_encode0(Cs, Es).
+
+hex(N, H) :-
+    nth0(N, "0123456789ABCDEF", H).
 
 %%% split_path(FullPath, Dir, FileName): FullPath is Dir/FileName.
 %%% :- pred split_path(atom, atom, atom).
