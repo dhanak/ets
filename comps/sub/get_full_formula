@@ -8,27 +8,27 @@ scores.  The only argument is the id of the aggregate score.
 $formula
 </%args>
 
-<%once>
+<%once>;
 use utf8;
 use List::Util qw[min max];
 use Math::Round;
 
-my ($get_formula);
+my $get_formula;
 
 sub resolve ($$) {
-    my $id = shift;		# the ID of the score to resolve
-    my $optional = shift;	# whether score is optional
+    my $id = shift;             # the ID of the score to resolve
+    my $optional = shift;       # whether score is optional
     my $formula;
 
     if (!$get_formula->execute($id)) {
-	$data->{MSG} = "Hibás pontszám azonosító: $id";
-	return undef;
+        $data->{MSG} = "Hibás pontszám azonosító: $id";
+        return undef;
     }
-    
+
     ($formula) = $get_formula->fetchrow_array;
     $get_formula->finish;
-    if (!defined $formula) {	# NULL value means it is not an aggregate score
-	return "([[$id$optional]])";
+    if (!defined $formula) {    # NULL value means it is not an aggregate score
+        return "([[$id$optional]])";
     }
 
     # Find references with minimal match, resolve references recursively.
