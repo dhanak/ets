@@ -43,5 +43,7 @@ if (!$m->comp('/sub/check_perm', item => "download_submission", neptun => $neptu
         $m->out(<$socket>);
     }
     $socket->close;
+    # stop outputing more content (prevents empty lines at end of output)
+    $m->abort;
 }
 </%init>
