@@ -14,9 +14,9 @@ test_class_closed('Határidőn kívüli beadás', Name,
            [Name,FY,FMN,FD,TY,TMN,TD]).
 
 ill_formed_mail('Hibás levélformátum') :-
-    write('A hiba oka: ismeretlen'), nl.
+    write('A hiba oka ismeretlen.'), nl.
 
-mail_spooled('HF felvéve', ClassName, Version, Pos, Running) :-
+mail_spooled('Házi feladat beadva', ClassName, Version, Pos, Running) :-
     format('A(z) ~w ~w. verziója megérkezett.~n', [ClassName, Version]),
     write('A feldolgozási sorban '),
     (   Pos = replace(I)
@@ -30,7 +30,7 @@ mail_spooled('HF felvéve', ClassName, Version, Pos, Running) :-
     ;   true
     ).
 
-test_done('HF tesztnapló', LogF) :-
+test_done('Tesztelési napló', LogF) :-
     read_lines(LogF, Lines),
     write_lines(Lines).
 

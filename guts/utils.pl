@@ -152,12 +152,18 @@ format_to_atom(Fmt, Args, Atom) :-
 %%% See https://en.wikipedia.org/wiki/MIME#Encoded-Word for Q-encoding.
 %%% :- pred q_encode(+atom, -atom).
 q_encode(Atom, QAtom) :-
-    atom_codes(Atom, Codes),
-    q_encode0(Codes, QCodes0),
+    mktemp('encode.XXXXXX', EncF),
+    open(EncF, write, W, [encoding(utf8)]),
+    write(W, Atom),
+    close(W),
+    open(EncF, read, R, [type(binary)]),
+    get_bytes(R, Bytes),
+    close(R),
+    delete_file(EncF),
+    q_encode0(Bytes, QCodes0),
     format_to_codes('=?utf-8?Q?~s?=', [QCodes0], QCodes),
     atom_codes(QAtom, QCodes).
 
-%%% :- pred q_encode0(+list(number), -list(number)).
 q_encode0([], []).
 q_encode0([C|Cs], Encoded) :-
     (   C = 32
@@ -171,6 +177,18 @@ q_encode0([C|Cs], Encoded) :-
         Encoded = [0'=,AC,BC|Es]
     ),
     q_encode0(Cs, Es).
+
+%%% :- pred q_encode0(+list(number), -list(number)).
+get_bytes(S, Bs) :-
+    get_byte(S, B),
+    get_bytes(S, B, Bs).
+
+%%% :- pred get_bytes(+stream, +number, -list(number)).
+get_bytes(_, -1, Bs) :-
+    !, Bs = [].
+get_bytes(S, B, [B|Bs]) :-
+    get_byte(S, B1),
+    get_bytes(S, B1, Bs).
 
 hex(N, H) :-
     nth0(N, "0123456789ABCDEF", H).
