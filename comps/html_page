@@ -27,7 +27,7 @@ defined in $data->{SCREEN}.
 % if ($screen->attr_exists('window_js')) {
 <script type="text/javascript" src="include/window.js"></script>
 <link href="include/window.css" rel="stylesheet" type="text/css">
-<link href="include/alphacube.css" rel="stylesheet" type="text/css"> 
+<link href="include/alphacube.css" rel="stylesheet" type="text/css">
 % }
 </HEAD>
 
@@ -42,6 +42,12 @@ defined in $data->{SCREEN}.
 <TABLE width="100%" cellspacing="0" height="50"><TR>
 <TD id="loginfo" width="250"><& login_info &>
 <TD id="message" width="*"><% $data->{MSG} || "&nbsp;" %>
+% if ($maintenance) {
+  <% $data->{MSG} ? "<br>" : "" %>
+  <span class="bad">
+    A rendszeren jelenleg karbantartást végzünk, türelmet kérünk!
+  </span>
+% }
 % delete $data->{MSG};
 </TABLE>
 

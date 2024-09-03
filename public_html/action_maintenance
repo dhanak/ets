@@ -1,0 +1,34 @@
+<%doc> This is a -*- mason -*- template.
+Adjust maintenance mode.
+</%doc>
+
+<%args>
+$reason => undef
+$start => undef
+$stop => undef
+</%args>
+
+<%once>
+my ($delete, $insert);
+</%once>
+
+<%init>;
+if (!defined $delete) {
+    $delete = $dbh->prepare("DELETE FROM maintenance");
+    $insert = $dbh->prepare("INSERT INTO maintenance
+                             (initiator, started_at, reason)
+                             VALUES (?, NOW(), ?)");
+}
+if (!$m->comp('/sub/check_perm', item => "maintenance_mgmt")) {
+    $data->{MSG} = "Nem vagy jogosult karbantartás kezdeményezésére!";
+    redirect("news");
+} elsif ($start) {
+    $m->comp('/sub/log', "start maintenance", reason => $reason);
+    $insert->execute($data->{NEPTUN}, $reason);
+    redirect("maintenance_mgmt");
+} else {
+    $m->comp('/sub/log', "stop maintenance");
+    $delete->execute;
+    redirect("maintenance_mgmt");
+}
+</%init>

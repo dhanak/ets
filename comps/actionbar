@@ -81,4 +81,9 @@ Generate context sensitive main menu located on the left side of the screen.
 <& link, href => "action_show_page", text => "Archiválás",
    params => { page => "db_archive_form" } &><BR>
 % }
+
+% if ($m->comp('/sub/check_perm', item => "maintenance_mgmt")) {
+<& link, href => "action_show_page", text => "Karbantartás",
+   params => { page => "maintenance_mgmt" } &><BR>
+% }
 <BR>

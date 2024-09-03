@@ -9,7 +9,7 @@ use Data::Dumper;
 use Text::Wrap;
 use URI::Escape;
 
-use vars qw($sid $dbh $data);
+use vars qw($data $dbh $maintenance $sid);
 
 $Data::Dumper::Indent = 0;
 $Data::Dumper::Purity = 1;

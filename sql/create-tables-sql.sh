@@ -89,4 +89,10 @@ CREATE TABLE templates (
   contents        TEXT,
   PRIMARY KEY     (name, type)
 );
+
+CREATE TABLE maintenance (
+  initiator       CHAR(10) NOT NULL,
+  started_at      DATETIME,
+  reason          TEXT
+);
 EOF

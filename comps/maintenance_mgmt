@@ -1,0 +1,63 @@
+<%doc> This is a -*- mason -*- template.
+View and edit maintenance mode.
+</%doc>
+
+<h3 class="topic">
+  Karbantartás <% $maintenance ? "folyamatban" : "indítása" %>
+</h3>
+
+<p>Ha a karbantartás mód aktív, a normál jogú felhasználók nem érik el a
+rendszer funkcióit, csak annyit látnak, amennyit belépés nélkül is. Az
+adminisztrátorok továbbra is korlátozások nélkül használhatják a rendszert.</p>
+
+% if ($maintenance) {
+
+<table>
+  <tr>
+    <td class="spec" align="right">Kezdeményező:</td>
+    <td><% $info->{name} %></td>
+  </tr>
+  <tr>
+    <td class="spec" align="right">Kezdete:</td>
+    <td>
+      <& date:display, $info->{started_at} &>
+      <% (split / /, $info->{started_at})[1] %>
+    </td>
+  </tr>
+  <tr>
+    <td class="spec" align="right">Karbantartás oka:</td>
+    <td><% $info->{reason} %></td>
+  </tr>
+</table>
+
+<p><& form, action => "action_maintenance" &>
+    <input type="submit" name="stop" value="Leállítás"/>
+</form></p>
+
+% } else {
+
+<p><& form, action => "action_maintenance" &>
+    A karbantartás oka: &nbsp;
+    <input type="text" name="reason" size="100"/>
+    <input type="submit" name="start" value="Indítás"/>
+</form></p>
+
+% }
+
+<%once>;
+my ($sth, $info);
+</%once>
+
+<%init>;
+if (!defined $sth) {
+    $sth = $dbh->prepare("SELECT name, started_at, reason
+                          FROM maintenance JOIN people
+                          ON initiator=neptun LIMIT 1");
+}
+
+if ($maintenance) {
+    $sth->execute;
+    $info = $sth->fetchrow_hashref;
+    $sth->finish;
+}
+</%init>

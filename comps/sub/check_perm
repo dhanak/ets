@@ -28,6 +28,7 @@ if      ($item eq "news") {                       # component
          $item eq "query_details"         ||	  # component
          $item eq "search_form"           ||	  # component
          $item eq "db_archive_form"       ||	  # component
+         $item eq "maintenance_mgmt"      ||      # component
          $item eq "set_parameter"         ||
          $item eq "delete_news"           ||
          $item eq "modify_news"           ||
@@ -37,7 +38,8 @@ if      ($item eq "news") {                       # component
 
 # These are only available if the target is yourself
 } elsif ($item eq "set_responses") {
-    return $data->{NEPTUN} eq uc $neptun;
+    return $m->comp('/sub/logged_in') &&
+           $data->{NEPTUN} eq uc $neptun;
 
 # Checking the user list is also available for non-admin GODs
 } elsif ($item eq "user_mgmt") {		  # component
@@ -52,9 +54,9 @@ if      ($item eq "news") {                       # component
          $item eq "user_results") {		  # component
     return $m->comp('/sub/is_admin') ||
            $m->comp('/sub/is_god')   ||
-           $m->comp('/sub/is_supervisor', neptun => $neptun) ||
            ($m->comp('/sub/logged_in') &&
-            $data->{NEPTUN} eq uc $neptun);
+            ($m->comp('/sub/is_supervisor', neptun => $neptun) ||
+             $data->{NEPTUN} eq uc $neptun));
 
 # Editing a user profile is possible if either:
 #   - you are declared as GOD
@@ -83,8 +85,9 @@ if      ($item eq "news") {                       # component
 } elsif ($item eq "list_supervised_students") {
     return ($m->comp('/sub/is_admin') &&
             $m->comp('/sub/is_supervisor', supervisor => $neptun)) ||
-           ($data->{NEPTUN} eq uc $neptun &&
-            $m->comp('/sub/is_supervisor'));
+           ($m->comp('/sub/logged_in') &&
+            $m->comp('/sub/is_supervisor') &&
+            $data->{NEPTUN} eq uc $neptun);
 
 # Downloading submissions is allowed if:
 #   - you are an administrator
@@ -92,8 +95,9 @@ if      ($item eq "news") {                       # component
 #   - you are downloading your own submissions
 } elsif ($item eq "download_submission") {
     return $m->comp('/sub/is_admin') ||
-           $m->comp('/sub/is_supervisor', neptun => $neptun) ||
-           $data->{NEPTUN} eq uc $neptun;
+           ($m->comp('/sub/logged_in') &&
+            ($m->comp('/sub/is_supervisor', neptun => $neptun) ||
+             $data->{NEPTUN} eq uc $neptun));
 }
 
 return 0;

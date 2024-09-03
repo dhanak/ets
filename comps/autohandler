@@ -26,10 +26,6 @@ sub session_initialize {
                        VALUES (?, ?, NOW())')
         if !defined $statements{NEW};
 
-    $statements{DESTROY} =
-        $dbh->prepare('DELETE FROM session WHERE sid=?')
-        if !defined $statements{DESTROY};
-
     $statements{READ} =
         $dbh->prepare('SELECT data FROM session WHERE sid=?')
         if !defined $statements{READ};
@@ -37,6 +33,10 @@ sub session_initialize {
     $statements{WRITE} =
         $dbh->prepare('UPDATE session SET data=?, last=NOW() WHERE sid=?')
         if !defined $statements{WRITE};
+
+    $statements{IS_MAINT} =
+        $dbh->prepare("SELECT 1 FROM maintenance LIMIT 1")
+        if !defined $statements{IS_MAINT};
 
     return 1;
 }
@@ -125,6 +125,14 @@ sub redirect($%) {
     $m->redirect($page . $args);
 }
 
+sub is_maintenance {
+    my $sth = $statements{IS_MAINT};
+    $sth->execute;
+    my $maint = $sth->fetchrow_array ? 1 : 0;
+    $sth->finish;
+    return $maint;
+}
+
 my $main_comp;
 </%once>
 <%init>;
@@ -138,6 +146,8 @@ if (!valid_sid($sid) || !defined session_read()) {
     $data = {};
     redirect("news");
 }
+
+$maintenance = is_maintenance;
 
 # Allow access to components only in the public_html directory, everything
 # else is hidden by returning 404 (page not found) error.

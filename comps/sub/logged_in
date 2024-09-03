@@ -52,5 +52,5 @@ if ($data->{NEPTUN} && !defined $ENV{OIDC_CLAIM_neptun_code}) {
     redirect("news");
 }
 
-return $data->{KNOWN};
+return $data->{KNOWN} && ($data->{ADMIN} || !$maintenance);
 </%init>
