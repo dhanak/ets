@@ -8,7 +8,7 @@ $spec
 </%args>
 
 <%once>;
-my ($sth);
+my $sth;
 </%once>
 
 <%init>;
@@ -23,7 +23,9 @@ if (!$m->comp('/sub/check_perm', item=>"db_archive_form")) {
     if ($sth->execute($name, $spec)) {
         $data->{MSG} = '<span class="good">Specifikáció felvéve.</span>';
     } else {
-        $data->{MSG} = '<span class="bad">A specifikációt nem sikerült felvenni.</span>';
+        $data->{MSG} =
+            '<span class="bad">A specifikációt nem sikerült felvenni: ' .
+            $sth->errstr . '</span>';
     }
     redirect("db_archive_form");
 }

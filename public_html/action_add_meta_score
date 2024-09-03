@@ -16,8 +16,8 @@ my $sth;
 <%init>;
 if (!defined $sth) {
     $sth =
-	$dbh->prepare("INSERT INTO scores_meta (idx, id, name, formula)
-			      VALUES (?, ?, ?, ?)");
+        $dbh->prepare("INSERT INTO scores_meta (idx, id, name, formula)
+                              VALUES (?, ?, ?, ?)");
 }
 
 if ($formula eq "") {
@@ -33,9 +33,11 @@ if (!defined $id || length $id < 1) {
     redirect("news");
 } else {
     if ($sth->execute($idx, $id, $name, $formula)) {
-	$data->{MSG} = "Pontszámtípus felvéve.";
-    } else { 
-	$data->{MSG} = "A pontszámtípust nem sikerült felvenni.";
+        $data->{MSG} = '<span class="good">Pontszámtípus felvéve.</span>';
+    } else {
+        $data->{MSG} =
+            '<span class="bad">A pontszámtípust nem sikerült felvenni:' .
+            $sth->errstr . '</span>';
     }
 }
 

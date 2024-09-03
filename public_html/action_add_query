@@ -11,28 +11,29 @@ $day
 </%args>
 
 <%once>
-my ($sth, $date);
+my $sth;
 </%once>
 
 <%init>;
 if (!defined $sth) {
     $sth = $dbh->prepare("INSERT INTO queries (type, text, deadline)
-			      VALUES (?, ?, ?)");
+                          VALUES (?, ?, ?)");
 }
 
-$date = sprintf "%04d-%02d-%02d", $year, $month, $day;
+my $date = sprintf "%04d-%02d-%02d", $year, $month, $day;
 
 if (!$m->comp('/sub/check_perm', item => "query_mgmt")) {
     $data->{MSG} = "Nem vagy jogosult a kérdőív módosítására!";
     redirect("news");
 } else {
     if ($sth->execute($type, $text, $date)) {
-	$data->{MSG} = "Kérdés felvéve.";
-	$m->comp('/sub/log', "add query", type      => $type,
-		                          text      => $text,
-		                          deadline  => $date);
-    } else { 
-	$data->{MSG} = "A kérdést nem sikerült felvenni.";
+        $data->{MSG} = '<span class="good">Kérdés felvéve.</span>';
+        $m->comp('/sub/log', "add query", type      => $type,
+                                          text      => $text,
+                                          deadline  => $date);
+    } else {
+        $data->{MSG} = '<span class="bad">A kérdést nem sikerült felvenni: ' .
+            $sth->errstr . '</span>';
     }
     redirect("query_mgmt");
 }

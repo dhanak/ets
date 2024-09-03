@@ -14,19 +14,19 @@ my $sth;
 <%init>;
 if (!defined $sth) {
     $sth = # modify the rank of an entry
-	$dbh->prepare("UPDATE scores_meta SET idx=? WHERE idx=?");
+        $dbh->prepare("UPDATE scores_meta SET idx=? WHERE idx=?");
 }
 
 if (!$m->comp('/sub/check_perm', item => "meta_scores_mgmt")) {
     $data->{MSG} = "Nem vagy jogosult pontszámtípusok módosítására!";
     redirect("news");
-} else { 
-    if ($sth->execute(0,       $idx)  +
-	$sth->execute($idx,   $idx-1) +
-	$sth->execute($idx-1, 0)      != 3) {
-	$data->{MSG} = $sth->errstr;
+} else {
+    if ($sth->execute(0,      $idx)   +
+        $sth->execute($idx,   $idx-1) +
+        $sth->execute($idx-1, 0)      != 3) {
+        $data->{MSG} = $sth->errstr;
     } else {
-	$data->{MSG} = "Pontszámtípusok sorrendje módosítva.";
+        $data->{MSG} = "Pontszámtípusok sorrendje módosítva.";
     }
     redirect("meta_scores_mgmt");
 }

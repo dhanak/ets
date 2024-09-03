@@ -7,14 +7,13 @@ $groupID
 $head
 </%args>
 
-<%once>
-my ($sth, $first_char);
+<%once>;
+my $sth;
 </%once>
 
 <%init>;
 if (!defined $sth) {
-    $sth =
-	$dbh->prepare("INSERT INTO groups (groupID, head) VALUES (?, ?)");
+    $sth = $dbh->prepare("INSERT INTO groups (groupID, head) VALUES (?, ?)");
 }
 
 if (!$m->comp('/sub/check_perm', item => "group_mgmt")) {
@@ -22,10 +21,12 @@ if (!$m->comp('/sub/check_perm', item => "group_mgmt")) {
     redirect("news");
 } else {
     if ($sth->execute($groupID, $head)) {
-	$data->{MSG} = "Csoport felvéve.";
-	$m->comp('/sub/log', "add group", groupID=>$groupID, head=>$head);
-    } else { 
-	$data->{MSG} = "A csoportot nem sikerült felvenni.";
+        $data->{MSG} = '<span class="good">Csoport felvéve.</span>';
+        $m->comp('/sub/log', "add group", groupID => $groupID, head => $head);
+    } else {
+        $data->{MSG} =
+            '<span class="bad">A csoportot nem sikerült felvenni: ' .
+            $sth->errstr . '</span>';
     }
 }
 
