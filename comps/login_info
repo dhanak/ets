@@ -9,7 +9,17 @@ Print information about the user.
 % } elsif ($data->{GOD}) {
 (God)
 % }
- - <& link, href => "action_logout", text => "Kilépés" &>
+- <& link, href => "action_logout", text => "Kilépés" &>
+% if (defined $data->{NEPTUN} && $data->{ADMIN}) {
+  <br/>
+  <label>
+    <input type="checkbox"
+           onclick='window.location.assign("action_toggle_view_mode?mode=" +
+                    (this.checked ? 1 : 0))'
+           <% $data->{USER_VIEW} ? "checked" : "" %>/>
+    felhasználói nézet
+  </label>
+% }
 % } else {
 Vendég - <& link, href => "action_login", text => "Belépés" &>
 % }

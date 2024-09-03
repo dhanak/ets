@@ -15,7 +15,7 @@ if (!defined $sth) {
     $sth = $dbh->prepare("SELECT admin FROM people WHERE neptun=?");
 }
 if (!defined $neptun) {
-    return (defined $data->{NEPTUN} && $data->{ADMIN});
+    return defined $data->{NEPTUN} && $data->{ADMIN} && !$data->{USER_VIEW};
 } else {
     $sth->execute(uc $neptun);
     ($adm) = $sth->fetchrow_array;

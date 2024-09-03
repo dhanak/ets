@@ -1,0 +1,27 @@
+<%doc> This is a -*- mason -*- template.
+Toggle between administrator and regular user view modes for admin users.
+</%doc>
+
+<%args>
+$mode => !$data->{USER_VIEW}
+</%args>
+
+<& html_page, %args &>
+
+<%once>;
+my %args;
+</%once>
+
+<%init>;
+%args = %ARGS;
+delete $args{mode};
+
+if (defined $data->{NEPTUN} && $data->{ADMIN}) {
+    $data->{USER_VIEW} = $mode;
+} else {
+    $data->{MSG} = "Nem vagy jogosult nézetváltásra!";
+}
+
+redirect("news") unless
+    $m->comp('/sub/check_perm', item => $data->{SCREEN}, %args);
+</%init>
