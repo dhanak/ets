@@ -28,9 +28,6 @@ clean:
 eval.ex: | $(LN)
 	$(LN) -sf $(GUTS_ROOT)/eval/$@
 
-.PHONY: depend
-depend: .depend
-
 .depend: $(SOURCES)
 	@for f in $(SOURCES); do \
 		echo -n "$$f" | sed -E -e 's/(^|_)([a-z])/\U\2/g' -e 's/(.+)\.ex/Elixir.\1.beam/g'; \
