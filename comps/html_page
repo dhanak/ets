@@ -58,7 +58,16 @@ defined in $data->{SCREEN}.
 
 <!-- footer -->
 <TR><TD id="footer" colspan="2">
-<ADDRESS><% $sitename %> - <% $ENV{CONTACT} %></ADDRESS>
+<ADDRESS>
+  <% $sitename %>, v<% $ENV{VERSION} %>
+% if ($data->{ADMIN}) {
+  <a href="https://github.com/dhanak/ets/commit/<% $ENV{GIT_HASH} %>"
+     target="github">
+    git:<% $ENV{GIT_HASH} %>
+  </a>
+% }
+  - <% $ENV{CONTACT} %>
+</ADDRESS>
 
 </TABLE>
 

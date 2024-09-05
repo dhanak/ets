@@ -49,6 +49,7 @@ futtatáshoz végezd el a következő lépéseket:
 ### Docker build és futtatás
 
 ```sh
+$ source env.version
 $ docker compose build
 $ docker compose up -d
 ```
