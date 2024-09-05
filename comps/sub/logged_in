@@ -13,6 +13,7 @@ if (!defined $get) {
 }
 
 $name = "$ENV{OIDC_CLAIM_family_name} $ENV{OIDC_CLAIM_given_name}";
+utf8::decode($name);
 
 if ($data->{NEPTUN} && !defined $ENV{OIDC_CLAIM_neptun_code}) {
     $data = {};

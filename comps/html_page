@@ -8,11 +8,11 @@ defined in $data->{SCREEN}.
 <!-- #################### Page Head #################### -->
 
 <HEAD>
-<TITLE><% $ENV{SITENAME} %></TITLE>
+<TITLE><% $sitename %></TITLE>
 <LINK REL="stylesheet" HREF="include/ets.css" TYPE="text/css">
 <META HTTP-EQUIV="content-type" CONTENT="text/html; charset=utf-8">
 <META NAME="author" CONTENT="David Hanak <mailto:dhanak@gmail.com>">
-<META NAME="description" CONTENT="<% $ENV{SITENAME} %>">
+<META NAME="description" CONTENT="<% $sitename %>">
 % if ($screen->attr_exists('prototype_js') || $screen->attr_exists('effects_js') ||
 %     $screen->attr_exists('controls_js') || $screen->attr_exists('window_js')) {
 <script type="text/javascript" src="include/prototype.js"></script>
@@ -58,7 +58,7 @@ defined in $data->{SCREEN}.
 
 <!-- footer -->
 <TR><TD id="footer" colspan="2">
-<ADDRESS><% $ENV{SITENAME} %> - <% $ENV{CONTACT} %></ADDRESS>
+<ADDRESS><% $sitename %> - <% $ENV{CONTACT} %></ADDRESS>
 
 </TABLE>
 
@@ -69,7 +69,9 @@ defined in $data->{SCREEN}.
 </HTML>
 
 <%once>;
-my ($screen);
+my $screen;
+my $sitename = $ENV{SITENAME};
+utf8::decode($sitename);
 </%once>
 
 <%init>
