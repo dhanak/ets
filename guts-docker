@@ -15,30 +15,39 @@ if [[ -z $(docker compose ps -q guts) ]]; then
     exit 1
 fi
 
-if [[ $# -eq 0 || ${1-} == help ]]; then
-    cat <<EOF
-Usage: $0 <command> <args>...
+cmd="${1-help}"; shift || true
+case $cmd in
+    (help)
+        cut -c13- <<'        EOF'
+            Usage: $0 <command> <args>...
 
-Available commands:
+            Available commands:
 
-  help
-           print this help screen
-  shell
-           run a shell in the guts container
-  daemons  <sub-command>
-           run a daemons command in the guts container
-EOF
-    # take the rest of the help from guts
-    exec docker compose exec -T guts ./guts help | tail +4
-elif [[ $* == shell ]]; then
-    # invoke shell or guts command directly
-    exec docker compose exec guts /bin/bash
-elif [[ ${1-} == daemons ]]; then
-    shift                       # drop "daemons"
-    exec docker compose exec -T guts ./daemons "$@"
-elif [[ ${1-} == testd ]]; then
-    # run testd command protected by daemons script
-    exec docker compose exec -T guts ./daemons run ./guts "$@"
-else
-    exec docker compose exec -T guts ./guts "$@"
-fi
+              help
+                       print this help screen
+              bash|sh|shell
+                       run a shell in the guts container
+              daemons  <sub-command>
+                       run a daemons command in the guts container
+        EOF
+        # take the rest of the help from guts
+        exec docker compose exec guts ./guts help | tail +4
+        ;;
+    (bash|sh|shell)
+        # invoke shell or guts command directly
+        exec docker compose exec guts /bin/bash "$@"
+        ;;
+    (daemons)
+        # invoke daemons utility
+        exec docker compose exec guts ./daemons "$@"
+        ;;
+    (testd)
+        # run testd command protected by daemons script
+        exec docker compose exec guts ./daemons run ./guts testd "$@"
+        ;;
+    (*)
+        # run all other commands with guts, without allocating a terminal
+        # (allows forwarding of stdin)
+        exec docker compose exec -T guts ./guts "$cmd" "$@"
+        ;;
+esac

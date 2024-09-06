@@ -70,11 +70,7 @@ list() {
     done
 }
 
-if [[ -z $1 ]]; then
-    set help
-fi
-
-cmd="$1"; shift
+cmd="${1-help}"; shift || true
 uuid="$(uuidgen)"
 case $cmd in
     (help)  echo "$usage" ;;
