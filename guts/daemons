@@ -9,6 +9,7 @@ Where <command> is one of
   check - check for running daemons and restart those not running
   list  - list all guarded daemons (that should be running)
   run   - run a protected daemon
+  kill  - kill a protected daemon
 "
 
 header="# daemon runner process file"
@@ -29,6 +30,14 @@ inffile() {
     return 0
 }
 
+list() {
+    for inffile in "${infdir}"/*.inf; do
+        inffile "${inffile}" || continue
+        source "${inffile}"     # sets pid, psline, wd & command
+        printf "%q " "${command[@]}"; echo
+    done
+}
+
 check() {
     for inffile in "$infdir"/*.inf; do
         inffile "${inffile}" || continue
@@ -38,12 +47,12 @@ check() {
         if [[ "${psline}" != "${psout}" ]]; then
             echo "Restarting ${command[*]}..." >&2
             rm "${inffile}"
-            (cd "$wd" && run "${command[@]}") &
+            (cd "$wd" && start "${command[@]}") &
         fi
     done
 }
 
-run() {
+start() {
     local basename="${infdir}/${uuid}"
     (echo -n "+ "; printf "%q " "$@"; echo) >"${basename}.log"
     "$@" </dev/null >>"${basename}.log" 2>&1 &
@@ -62,20 +71,27 @@ run() {
     fi
 }
 
-list() {
-    for inffile in "${infdir}"/*.inf; do
+stop() {
+    for inffile in "$infdir"/*.inf; do
         inffile "${inffile}" || continue
         source "${inffile}"     # sets pid, psline, wd & command
-        printf "%q " "${command[@]}"; echo
+        if [[ "${command[*]}" == "$*" ]]; then
+            echo "Stopping command '$*'" >&2
+            rm "${inffile}"
+            kill "$pid"
+            return 0
+        fi
     done
+    echo "Daemon running command \"$*\" not found!" >&2
 }
 
 cmd="${1-help}"; shift || true
 uuid="$(uuidgen)"
 case $cmd in
-    (help)  echo "$usage" ;;
-    (check) check "$@" ;;
-    (run)   run "$@" & ;;
-    (list)  list "$@" ;;
-    (*)     echo "$(basename "$0"): unknown command: $cmd"; exit 1 ;;
+    (help)      echo "$usage" ;;
+    (list)      list "$@" ;;
+    (check)     check "$@" ;;
+    (start|run) start "$@" & ;;
+    (stop|kill) stop "$@" ;;
+    (*)         echo "$(basename "$0"): unknown command: $cmd"; exit 1 ;;
 esac

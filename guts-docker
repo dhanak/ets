@@ -1,11 +1,4 @@
 #!/bin/bash
-#
-# Usage:
-#
-# ./guts-docker shell - to run a shell in the container
-# ./guts-docker daemons ... - to run a daemons command in the container
-# ./guts-docker <cmd> <args> - to directly run a guts command in the container
-#
 set -euo pipefail
 
 # check for running container
@@ -15,11 +8,12 @@ if [[ -z $(docker compose ps -q guts) ]]; then
     exit 1
 fi
 
+dce="docker compose exec -T guts"
 cmd="${1-help}"; shift || true
 case $cmd in
     (help)
         cut -c13- <<'        EOF'
-            Usage: $0 <command> <args>...
+            Usage: guts-docker <command> <args>...
 
             Available commands:
 
@@ -30,8 +24,11 @@ case $cmd in
               daemons  <sub-command>
                        run a daemons command in the guts container
         EOF
-        # take the rest of the help from guts
-        exec docker compose exec guts ./guts help | tail +4
+        $dce ./guts help | tail +4
+        cut -c13- <<'        EOF'
+              kill     <config-file>
+                       kill a running testd daemon immediately
+        EOF
         ;;
     (bash|sh|shell)
         # invoke shell or guts command directly
@@ -39,15 +36,19 @@ case $cmd in
         ;;
     (daemons)
         # invoke daemons utility
-        exec docker compose exec guts ./daemons "$@"
+        exec $dce ./daemons "$@"
         ;;
-    (testd)
+    (start)
         # run testd command protected by daemons script
-        exec docker compose exec guts ./daemons run ./guts testd "$@"
+        exec $dce ./daemons start ./guts start "$@"
+        ;;
+    (kill)
+        # stop running testd command protected by daemons script
+        exec $dce ./daemons kill ./guts start "$@"
         ;;
     (*)
         # run all other commands with guts, without allocating a terminal
         # (allows forwarding of stdin)
-        exec docker compose exec -T guts ./guts "$cmd" "$@"
+        exec $dce ./guts "$cmd" "$@"
         ;;
 esac

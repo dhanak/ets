@@ -789,8 +789,10 @@ guts_help :-
     print('           send test reports to students'), nl,
     print('  submit   <config-file> <class> <name>'), nl,
     print('           receive standard input as a homework (for WWW submission, no deadline check)'), nl,
-    print('  testd    <config-file>'), nl,
-    print('           run test daemon with specified configuration'), nl.
+    print('  start    <config-file>'), nl,
+    print('           run test daemon with specified configuration'), nl,
+    print('  stop     <config-file>'), nl,
+    print('           eventually stop a test daemon by writing "halt" to the end of its spoolfile'), nl.
 
 guts_confcsv(Conf) :-
     fail_on_error(load_files([Conf]),
@@ -847,9 +849,12 @@ guts_submit(Conf, Class, Name) :-
     read_lines(Mail),
     receive_homework(Conf, Class, Mail, Name, fail, print).
 
+%% deprecated command, renamed to 'start'
 guts_testd(Conf) :-
+    guts_start(Conf).
+
+guts_start(Conf) :-
     set_prolog_flag(informational, on),
-    info('Reading configuration file', []),
     fail_on_error(load_files([Conf]),
                   error('Couldn''t read configuration file: ~w', [Conf])),
     info('Making directories', []),
@@ -861,6 +866,22 @@ guts_testd(Conf) :-
     info('Starting test loop', []),
     test_loop,
     info('Halting test daemon', []).
+
+guts_stop(Conf) :-
+    set_prolog_flag(informational, on),
+    fail_on_error(load_files([Conf]),
+                  error('Couldn''t read configuration file: ~w', [Conf])),
+    filename(spoolfile, SpoolF),
+    spool_transaction(SpoolF, (
+                          read_file(SpoolF, Jobs0),
+                          (   append(_, [halt], Jobs0)
+                          ->  Jobs = Jobs0
+                          ;   append(Jobs0, [halt], Jobs),
+                              write_file(SpoolF, Jobs)
+                          ))),
+    length(Jobs, NJobs1),
+    NJobs is NJobs1 - 1,
+    info('Job queue closed, ~d jobs remaining before daemon stops.', [NJobs]).
 
 %% action(Action, Args): does action Action with args Args.  Calls guts_<action>
 action(Action0, Args) :-
