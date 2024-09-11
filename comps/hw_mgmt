@@ -6,11 +6,11 @@ Manage HW testclasses and hand-in periods.
 $conf => "env/submit.conf"
 </%args>
 
-<H3 class="topic">HF tesztosztályok</H3>
+<H3 class="topic">Feladattípusok</H3>
 % if (@$classes) {
 <TABLE width="100%">
 <TR>
-<TH width="15%">Osztály
+<TH width="15%">Típus
 <TH width="30%">Név
 <TH width="20%">-tól
 <TH width="20%">-ig

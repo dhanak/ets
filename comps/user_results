@@ -25,7 +25,7 @@ $neptun => $data->{NEPTUN}	# passed through 'action_show_page'
 </TABLE>
 </BLOCKQUOTE>
 
-<H4>Beadott házi feladatok</H4>
+<H4>Beadott feladatok</H4>
 <BLOCKQUOTE>
 <& hw_show_submissions, neptun => $neptun &>
 </BLOCKQUOTE>

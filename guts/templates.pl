@@ -16,7 +16,7 @@ test_class_closed('Határidőn kívüli beadás', Name,
 ill_formed_mail('Hibás levélformátum') :-
     write('A hiba oka ismeretlen.'), nl.
 
-mail_spooled('Házi feladat beadva', ClassName, Version, Pos, Running) :-
+mail_spooled('Feladat beadva', ClassName, Version, Pos, Running) :-
     format('A(z) ~w ~w. verziója megérkezett.~n', [ClassName, Version]),
     write('A feldolgozási sorban '),
     (   Pos = replace(I)

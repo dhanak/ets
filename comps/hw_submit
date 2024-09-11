@@ -7,11 +7,11 @@ $conf => "env/submit.conf"
 $neptun => undef
 </%args>
 
-<h3 class="topic">HF beadás<% $neptun ? " $studname ($neptun) nevében" : "" %></h3>
+<h3 class="topic">Feladatbeadás<% $neptun ? " $studname ($neptun) nevében" : "" %></h3>
 
 % if (exists $data->{ERROR}) {
 <DIV class="error">
-A HF beadásakor az alábbi hiba történt:</p>
+A feladat beadásakor az alábbi hiba történt:</p>
 <PRE><% $data->{ERROR} %></PRE>
 </DIV>
 %   delete $data->{ERROR};
@@ -24,7 +24,7 @@ A HF beadásakor az alábbi hiba történt:</p>
 % }
 
 % if (!@classes) {
-Jelenleg egyik HF típusnak sincs beadási időszaka.
+Jelenleg egyik feladattípusnak sincs beadási időszaka.
 % } else {
 % foreach my $class (@classes) {
 <H4><% ucfirst $class->{name} %></H4>

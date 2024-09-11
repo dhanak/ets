@@ -30,7 +30,7 @@ $modify => 0
          params => { page => "user_results", neptun => $_->{neptun} } &>
   <td><& link, href=>"action_show_page", img => "details.png", text=> "Részletek",
          params => { page => "user_details", neptun => $_->{neptun} } &>
-  <td><& link, href=>"action_show_page", img => "up.png", text=> "HF beadás",
+  <td><& link, href=>"action_show_page", img => "up.png", text=> "Feladatbeadás",
          params => { page => "hw_submit", neptun => $_->{neptun} } &>
 % if ($modify) {
   <td align="center">

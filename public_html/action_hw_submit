@@ -20,7 +20,7 @@ my ($error, $fh, $input, $name, $response, $socket);
 if (!$m->comp('/sub/check_perm', item => "hw_submit") ||
     ($neptun && !$m->comp('/sub/is_supervisor', neptun => $neptun)
      && !$m->comp('/sub/is_admin'))) {
-    $data->{MSG} = "Nem vagy jogosult HF beadására!";
+    $data->{MSG} = "Nem vagy jogosult feladat beadására!";
     redirect("news");
 } else {
     $fh = $m->cgi_object->upload('file');
@@ -48,10 +48,10 @@ if (!$m->comp('/sub/check_perm', item => "hw_submit") ||
         $socket->close();
     }
     if ($error) {
-        $data->{MSG} = "<span class=bad>Sikertelen HF beadás</span>";
+        $data->{MSG} = "<span class=bad>Sikertelen feladatbeadás</span>";
         $data->{ERROR} = $response;
     } else {
-        $data->{MSG} = "<span class=good>Sikeres HF beadás $fname néven</span>";
+        $data->{MSG} = "<span class=good>Sikeres feladatbeadás $fname néven</span>";
         $data->{OUTPUT} = $response;
     }
     redirect("hw_submit", neptun => $neptun);

@@ -25,12 +25,12 @@ Generate context sensitive main menu located on the left side of the screen.
 % }
 
 % if ($m->comp('/sub/check_perm', item => "hw_submit")) {
-<& link, href => "action_show_page", text => "HF beadás",
+<& link, href => "action_show_page", text => "Feladatbeadás",
    params => { page => "hw_submit" } &><BR>
 % }
 
 % if ($m->comp('/sub/check_perm', item => "hw_mgmt")) {
-<& link, href => "action_show_page", text => "HF osztályok",
+<& link, href => "action_show_page", text => "Feladattípusok",
    params => { page => "hw_mgmt" } &><BR>
 % }
 
