@@ -15,7 +15,7 @@ if [[ ${command[0]} == "list-submissions" ]]; then
     class=${command[2]}
     canonical_name=${command[3]}
     cd "${GUTS_WORK_DIR}/hwks/${semester}/${class}/mails" &&
-        ls -1 "${canonical_name}"*
+        ls -1rt "${canonical_name}"*
 elif [[ ${command[0]} == "cat-submission" ]]; then
     semester=${command[1]}
     class=${command[2]}

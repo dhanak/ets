@@ -19,32 +19,32 @@ case $cmd in
 
               help
                        print this help screen
-              bash|sh|shell
+              bash|sh|shell [arguments...]
                        run a shell in the guts container
-              daemons  <sub-command>
-                       run a daemons command in the guts container
         EOF
         $dce ./guts help | tail +4
         cut -c13- <<'        EOF'
               kill     <config-file>
-                       kill a running testd daemon immediately
+                       kill a running test daemon immediately
+              list
+                       list running test daemons
         EOF
         ;;
     (bash|sh|shell)
         # invoke shell or guts command directly
         exec docker compose exec guts /bin/bash "$@"
         ;;
-    (daemons)
-        # invoke daemons utility
-        exec $dce ./daemons "$@"
-        ;;
     (start)
-        # run testd command protected by daemons script
-        exec $dce ./daemons start ./guts start "$@"
+        # run test command protected by daemons script
+        exec $dce ./daemons run ./guts start "$@"
         ;;
     (kill)
         # stop running testd command protected by daemons script
         exec $dce ./daemons kill ./guts start "$@"
+        ;;
+    (list)
+        # invoke daemons utility
+        exec $dce ./daemons list
         ;;
     (*)
         # run all other commands with guts, without allocating a terminal
