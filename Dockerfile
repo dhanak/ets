@@ -156,8 +156,8 @@ RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
 
 # configure UTF-8 locale (for SICStus)
 ENV LANG=en_US.UTF-8
-RUN sed -i -e "s/# $LANG.*/$LANG UTF-8/" /etc/locale.gen && \
-    dpkg-reconfigure --frontend=noninteractive locales && \
+RUN sed -i -e "s/# $LANG/$LANG/" /etc/locale.gen && \
+    locale-gen && \
     update-locale LANG=$LANG
 
 # copy from build image

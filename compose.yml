@@ -78,8 +78,6 @@ services:
       - SMTP_USERNAME=${SMTP_USERNAME-}
       - TZ=${TZ:-Europe/Budapest}
     hostname: guts
-    ports:
-      - 127.0.0.1:31337:31337
     profiles:
       - develop
       - live
