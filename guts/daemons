@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-usage="
+USAGE="
 Usage: $(basename "$0") <command> [args...]
 
 Where <command> is one of
@@ -12,17 +12,18 @@ Where <command> is one of
   kill   - kill a protected daemon
 "
 
-header="# daemon runner process file"
-ps="/bin/ps -oargs= -p"
-infdir="${GUTS_WORK_DIR-${HOME}}/daemons"
-mkdir -p "$infdir"
+HEADER="# daemon runner process file"
+PS="/bin/ps -oargs= -p"
+INFDIR="${GUTS_WORK_DIR-${HOME}}/daemons"
+hash mawk 2>/dev/null && AWK="mawk -W interactive" || AWK="gawk"
 
 # main functions
 
 inffile() {
-    [[ -f ${inffile} ]] || return 1
+    local head
+    [[ -f "$1" ]] || return 1
     read -r head <"$1"
-    if [[ "${head}" != "${header}" ]]; then
+    if [[ "${head}" != "${HEADER}" ]]; then
         echo "Deleting corrupted file $1" >&2
         rm "$1"
         return 1
@@ -31,12 +32,12 @@ inffile() {
 }
 
 status() {
+    local command inffile pid psline psout wd
     printf '\e[4;32m❤    UUID (file name base)                   command\e[0m\n'
-    for inffile in "${infdir}"/*.inf; do
+    for inffile in "${INFDIR}"/*.inf; do
         inffile "${inffile}" || continue
         source "${inffile}"     # sets pid, psline, wd & command
-        local psout
-        psout=$($ps "$pid" || true)
+        psout=$($PS "$pid" || true)
         if [[ "${psline}" == "${psout}" ]]; then
             printf '\e[1;32m✔\e[0m'
         else
@@ -49,61 +50,69 @@ status() {
 }
 
 check() {
-    for inffile in "${infdir}"/*.inf; do
+    local command inffile pid psline psout wd
+    for inffile in "${INFDIR}"/*.inf; do
         inffile "${inffile}" || continue
         source "${inffile}"     # sets pid, psline, wd & command
-        local psout
-        psout=$($ps "$pid" || true)
+        psout=$($PS "$pid" || true)
         if [[ "${psline}" != "${psout}" ]]; then
             echo "Restarting ${command[*]}..." >&2
             rm "${inffile}"
-            (cd "$wd" && start "${command[@]}") &
+            (cd "$wd" && start "${command[@]}")
         fi
     done
 }
 
 start() {
-    local basename="${infdir}/${uuid}"
-    (echo -n "+ "; printf "%q " "$@"; echo) >"${basename}.log"
-    "$@" </dev/null |& \
-        awk -W interactive '{ print strftime("[%F %T %Z]"), $0; }' \
-            >>"${basename}.log" &
-    local pid=$!
-    echo Command started, output redirected to "${basename}.log" >&2
-    local psline
-    psline=$($ps $pid || true)
-    if [[ -n $psline ]]; then
-        local wd="${PWD}"
-        local command=("$@")
-        (echo "${header}"; declare -p command pid psline wd) >"${basename}.inf"
+    local base
+    base="${INFDIR}/$(uuidgen)"
+    start_ "${base}.inf" "$@" | \
+        $AWK '{ print strftime("[%F %T %Z]"), $0; }' >"${base}.log" &
+    echo "Command started, output redirected to ${base}.log" >&2
+}
+
+start_() {
+    local command inffile pid psline wd
+    inffile="$1"; shift
+    # print command in bash -x form
+    printf '+'; printf ' %q' "$@"; printf '\n'
+    # run main command in background
+    "$@" </dev/null 2>&1 &
+    pid=$!
+    psline=$($PS "$pid" || true)
+    if [[ -n "${psline}" ]]; then
+        wd="${PWD}"
+        command=("$@")
+        (echo "${HEADER}"; declare -p command pid psline wd) >"${inffile}"
         wait $pid
-        rm "${basename}.inf"
+        rm "${inffile}"
     else
         echo "Process line not found, command terminated already?" >&2
     fi
 }
 
 stop() {
-    for inffile in "${infdir}"/*.inf; do
+    local command inffile pid psline wd
+    for inffile in "${INFDIR}"/*.inf; do
         inffile "${inffile}" || continue
         source "${inffile}"     # sets pid, psline, wd & command
         if [[ "${command[*]}" == "$*" ]]; then
             echo "Stopping command '$*'" >&2
             rm "${inffile}"
-            kill "$pid"
+            kill "$pid" || true
             return 0
         fi
     done
     echo "Daemon running command \"$*\" not found!" >&2
 }
 
+mkdir -p "${INFDIR}"
 cmd="${1-help}"; shift || true
-uuid="$(uuidgen)"
-case $cmd in
-    (help)        echo "$usage" ;;
+case "${cmd}" in
+    (help)        echo "$USAGE" ;;
     (list|status) status "$@" ;;
     (check)       check "$@" ;;
-    (start|run)   start "$@" & ;;
+    (start|run)   start "$@" ;;
     (stop|kill)   stop "$@" ;;
     (*)           echo "$(basename "$0"): unknown command: $cmd"; exit 1 ;;
 esac
