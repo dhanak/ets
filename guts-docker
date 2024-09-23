@@ -26,8 +26,8 @@ case $cmd in
         cut -c13- <<'        EOF'
               kill     <config-file>
                        kill a running test daemon immediately
-              list
-                       list running test daemons
+              list|status
+                       show status of running test daemons
         EOF
         ;;
     (bash|sh|shell)
@@ -42,9 +42,9 @@ case $cmd in
         # stop running testd command protected by daemons script
         exec $dce ./daemons kill ./guts start "$@"
         ;;
-    (list)
+    (list|status)
         # invoke daemons utility
-        exec $dce ./daemons list
+        exec $dce ./daemons status
         ;;
     (*)
         # run all other commands with guts, without allocating a terminal

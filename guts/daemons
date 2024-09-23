@@ -5,11 +5,11 @@ usage="
 Usage: $(basename "$0") <command> [args...]
 
 Where <command> is one of
-  help  - present this help page
-  check - check for running daemons and restart those not running
-  list  - list all guarded daemons (that should be running)
-  run   - run a protected daemon
-  kill  - kill a protected daemon
+  help   - present this help page
+  status - list all guarded daemons (that should be running)
+  check  - check for running daemons and restart those not running
+  run    - run a protected daemon
+  kill   - kill a protected daemon
 "
 
 header="# daemon runner process file"
@@ -30,16 +30,26 @@ inffile() {
     return 0
 }
 
-list() {
+status() {
+    printf '\e[4;32m❤    UUID (file name base)                   command\e[0m\n'
     for inffile in "${infdir}"/*.inf; do
         inffile "${inffile}" || continue
         source "${inffile}"     # sets pid, psline, wd & command
-        printf "%q " "${command[@]}"; echo
+        local psout
+        psout=$($ps "$pid" || true)
+        if [[ "${psline}" == "${psout}" ]]; then
+            printf '\e[1;32m✔\e[0m'
+        else
+            printf '\e[1;31m✘\e[0m'
+        fi
+        printf '    \e[35m%s\e[0m   ' "$(basename "${inffile}" .inf)"
+        printf " %q" "${command[@]}"
+        echo
     done
 }
 
 check() {
-    for inffile in "$infdir"/*.inf; do
+    for inffile in "${infdir}"/*.inf; do
         inffile "${inffile}" || continue
         source "${inffile}"     # sets pid, psline, wd & command
         local psout
@@ -74,7 +84,7 @@ start() {
 }
 
 stop() {
-    for inffile in "$infdir"/*.inf; do
+    for inffile in "${infdir}"/*.inf; do
         inffile "${inffile}" || continue
         source "${inffile}"     # sets pid, psline, wd & command
         if [[ "${command[*]}" == "$*" ]]; then
@@ -90,10 +100,10 @@ stop() {
 cmd="${1-help}"; shift || true
 uuid="$(uuidgen)"
 case $cmd in
-    (help)      echo "$usage" ;;
-    (list)      list "$@" ;;
-    (check)     check "$@" ;;
-    (start|run) start "$@" & ;;
-    (stop|kill) stop "$@" ;;
-    (*)         echo "$(basename "$0"): unknown command: $cmd"; exit 1 ;;
+    (help)        echo "$usage" ;;
+    (list|status) status "$@" ;;
+    (check)       check "$@" ;;
+    (start|run)   start "$@" & ;;
+    (stop|kill)   stop "$@" ;;
+    (*)           echo "$(basename "$0"): unknown command: $cmd"; exit 1 ;;
 esac

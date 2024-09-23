@@ -424,8 +424,8 @@ create_soft_link(From, To) :-
     ;   split_path(To, Dir, ToF)
     ),
     relative_file_name(Dir, From, FromRel),
-    process_create(path(ln), ['-s', file(FromRel), file(ToF)]
-                   , [wait(exit(0)),cwd(Dir)]).
+    process_create(path(ln), ['-s', file(FromRel), file(ToF)],
+                   [wait(exit(0)),cwd(Dir)]).
 
 %%% run(+CommandWithArgs): run a command with arguments, and succeed if it
 %%% terminates normally.
