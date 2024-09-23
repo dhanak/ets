@@ -55,7 +55,9 @@ check() {
 start() {
     local basename="${infdir}/${uuid}"
     (echo -n "+ "; printf "%q " "$@"; echo) >"${basename}.log"
-    "$@" </dev/null >>"${basename}.log" 2>&1 &
+    "$@" </dev/null |& \
+        awk -W interactive '{ print strftime("[%F %T %Z]"), $0; }' \
+            >>"${basename}.log" &
     local pid=$!
     echo Command started, output redirected to "${basename}.log" >&2
     local psline

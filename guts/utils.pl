@@ -482,3 +482,9 @@ warning(Txt, Args) :-
 %%% :- pred error(+atom, +list(term)).
 error(Txt, Args) :-
     print_message(error, format(Txt, Args)), fail.
+
+:- multifile user:message_hook/3.
+:- dynamic   user:message_hook/3.
+user:message_hook(Severity, _, Lines) :-
+    print_message_lines(user_error, Severity, Lines),
+    flush_output(user_error).
