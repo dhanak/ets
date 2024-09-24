@@ -13,11 +13,20 @@ Where <command> is one of
 "
 
 HEADER="# daemon runner process file"
-PS="/bin/ps -oargs= -p"
 INFDIR="${GUTS_WORK_DIR-${HOME}}/daemons"
 hash mawk 2>/dev/null && AWK="mawk -W interactive" || AWK="gawk"
 
 # main functions
+
+checkcmd() {
+    local command
+    local cmdfile="/proc/$1/cmdline"; shift
+    if [[ -f "${cmdfile}" ]]; then
+        readarray -d '' command <"${cmdfile}"
+        [[ "${*@Q}" == "${command[*]@Q}" ]] && return 0
+    fi
+    return 1
+}
 
 inffile() {
     local head
@@ -32,31 +41,27 @@ inffile() {
 }
 
 status() {
-    local command inffile pid psline psout wd
-    printf '\e[4;32m❤    UUID (file name base)                   command\e[0m\n'
+    local command inffile pid wd
+    echo -e '\e[4;32m❤    UUID (file name base)                   command\e[0m'
     for inffile in "${INFDIR}"/*.inf; do
         inffile "${inffile}" || continue
-        source "${inffile}"     # sets pid, psline, wd & command
-        psout=$($PS "$pid" || true)
-        if [[ "${psline}" == "${psout}" ]]; then
-            printf '\e[1;32m✔\e[0m'
+        source "${inffile}"     # sets command, pid & wd
+        if checkcmd "${pid}" "${command[@]}"; then
+            echo -en '\e[1;32m✔\e[0m'
         else
-            printf '\e[1;31m✘\e[0m'
+            echo -en '\e[1;31m✘\e[0m'
         fi
-        printf '    \e[35m%s\e[0m   ' "$(basename "${inffile}" .inf)"
-        printf " %q" "${command[@]}"
-        echo
+        echo -e "    \e[35m$(basename "${inffile}" .inf)\e[0m    ${command[*]@Q}"
     done
 }
 
 check() {
-    local command inffile pid psline psout wd
+    local command inffile pid wd
     for inffile in "${INFDIR}"/*.inf; do
         inffile "${inffile}" || continue
-        source "${inffile}"     # sets pid, psline, wd & command
-        psout=$($PS "$pid" || true)
-        if [[ "${psline}" != "${psout}" ]]; then
-            echo "Restarting ${command[*]}..." >&2
+        source "${inffile}"     # sets command, pid & wd
+        if ! checkcmd "${pid}" "${command[@]}"; then
+            echo "Restarting ${command[*]@Q}" >&2
             rm "${inffile}"
             (cd "$wd" && start "${command[@]}")
         fi
@@ -66,44 +71,46 @@ check() {
 start() {
     local base
     base="${INFDIR}/$(uuidgen)"
-    start_ "${base}.inf" "$@" | \
+    start_ "${base}.inf" "$@" |
         $AWK '{ print strftime("[%F %T %Z]"), $0; }' >"${base}.log" &
     echo "Command started, output redirected to ${base}.log" >&2
+    sleep 0.2
 }
 
 start_() {
-    local command inffile pid psline wd
+    local cmdfile command inffile pid wd
     inffile="$1"; shift
-    # print command in bash -x form
-    printf '+'; printf ' %q' "$@"; printf '\n'
-    # run main command in background
-    "$@" </dev/null 2>&1 &
+    echo "+ ${*@Q}"             # print command in bash -x form
+    "$@" </dev/null 2>&1 &      # run main command in background
+    sleep 0.1                   # wait for command to settle in
     pid=$!
-    psline=$($PS "$pid" || true)
-    if [[ -n "${psline}" ]]; then
+    cmdfile="/proc/${pid}/cmdline"
+    if [[ -f "${cmdfile}" ]]; then
+        readarray -d '' command <"${cmdfile}"
         wd="${PWD}"
-        command=("$@")
-        (echo "${HEADER}"; declare -p command pid psline wd) >"${inffile}"
-        wait $pid
+        echo -e "${HEADER}\n${command[*]@A}\n${pid@A}\n${wd@A}" >"${inffile}"
+        wait "${pid}"
         rm "${inffile}"
     else
-        echo "Process line not found, command terminated already?" >&2
+        echo "Process not found, command terminated already?" >&2
     fi
 }
 
 stop() {
-    local command inffile pid psline wd
+    local command inffile pid wd
     for inffile in "${INFDIR}"/*.inf; do
         inffile "${inffile}" || continue
-        source "${inffile}"     # sets pid, psline, wd & command
-        if [[ "${command[*]}" == "$*" ]]; then
-            echo "Stopping command '$*'" >&2
+        source "${inffile}"     # sets command, pid & wd
+        if [[ "${*@Q}" == "${command[*]@Q}" ]]; then
+            if checkcmd "${pid}" "${command[@]}"; then
+                echo "Stopping command '$*'" >&2
+                kill "${pid}" || true
+            fi
             rm "${inffile}"
-            kill "$pid" || true
             return 0
         fi
     done
-    echo "Daemon running command \"$*\" not found!" >&2
+    echo "Daemon running command ${*@Q} not found!" >&2
 }
 
 mkdir -p "${INFDIR}"
