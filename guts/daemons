@@ -42,7 +42,7 @@ inffile() {
 
 status() {
     local command inffile pid wd
-    echo -e '\e[4;32m❤    UUID (file name base)                   command\e[0m'
+    echo -e '\e[3;35m❤    UUID (file name base)                   Command\e[0m'
     for inffile in "${INFDIR}"/*.inf; do
         inffile "${inffile}" || continue
         source "${inffile}"     # sets command, pid & wd
@@ -51,7 +51,7 @@ status() {
         else
             echo -en '\e[1;31m✘\e[0m'
         fi
-        echo -e "    \e[35m$(basename "${inffile}" .inf)\e[0m    ${command[*]@Q}"
+        echo -e "    \e[34m$(basename "${inffile}" .inf)\e[0m    ${command[*]@Q}"
     done
 }
 
@@ -101,7 +101,8 @@ stop() {
     for inffile in "${INFDIR}"/*.inf; do
         inffile "${inffile}" || continue
         source "${inffile}"     # sets command, pid & wd
-        if [[ "${*@Q}" == "${command[*]@Q}" ]]; then
+        if [[ "$*" == "$(basename "${inffile}" .inf)" ||
+                  "${*@Q}" == "${command[*]@Q}" ]]; then
             if checkcmd "${pid}" "${command[@]}"; then
                 echo "Stopping command '$*'" >&2
                 kill "${pid}" || true
