@@ -40,6 +40,10 @@ inffile() {
     return 0
 }
 
+infuid() {
+    basename "$1" .inf
+}
+
 status() {
     local command inffile pid wd
     echo -e '\e[3;35m❤    UUID (file name base)                   Command\e[0m'
@@ -51,7 +55,7 @@ status() {
         else
             echo -en '\e[1;31m✘\e[0m'
         fi
-        echo -e "    \e[34m$(basename "${inffile}" .inf)\e[0m    ${command[*]@Q}"
+        echo -e "    \e[34m$(infuid "${inffile}")\e[0m    ${command[*]@Q}"
     done
 }
 
@@ -63,22 +67,22 @@ check() {
         if ! checkcmd "${pid}" "${command[@]}"; then
             echo "Restarting ${command[*]@Q}" >&2
             rm "${inffile}"
-            (cd "$wd" && start "${command[@]}")
+            (cd "$wd" && start "$(infuid "${inffile}")" "${command[@]}")
         fi
     done
 }
 
 start() {
     local base
-    base="${INFDIR}/$(uuidgen)"
+    base="${INFDIR}/$1"; shift
     start_ "${base}.inf" "$@" |
-        $AWK '{ print strftime("[%F %T %Z]"), $0; }' >"${base}.log" &
+        $AWK '{ print strftime("[%F %T %Z]"), $0; }' >>"${base}.log" &
     echo "Command started, output redirected to ${base}.log" >&2
     sleep 0.2
 }
 
 start_() {
-    local cmdfile command inffile pid wd
+    local cmdfile command inffile pid status wd
     inffile="$1"; shift
     echo "+ ${*@Q}"             # print command in bash -x form
     "$@" </dev/null 2>&1 &      # run main command in background
@@ -89,9 +93,18 @@ start_() {
         readarray -d '' command <"${cmdfile}"
         wd="${PWD}"
         echo -e "${HEADER}\n${command[*]@A}\n${pid@A}\n${wd@A}" >"${inffile}"
-        wait "${pid}"
-        rm "${inffile}"
+        set +e                  # don't die if wait returns non-zero code
+        wait "${pid}"           # wait for background command to finish
+        status=$?               # get its exit code
+        if [[ $status -ne 0 ]]; then
+            echo "! ${command[*]@Q} terminated with" \
+                 "SIG$(kill -l ${status}) (${status})"
+        else
+            echo "! ${command[*]@Q} exited normally"
+            rm "${inffile}"
+        fi
     else
+        echo "! ${*@Q} terminated early"
         echo "Process not found, command terminated already?" >&2
     fi
 }
@@ -101,7 +114,7 @@ stop() {
     for inffile in "${INFDIR}"/*.inf; do
         inffile "${inffile}" || continue
         source "${inffile}"     # sets command, pid & wd
-        if [[ "$*" == "$(basename "${inffile}" .inf)" ||
+        if [[ "$*" == "$(infuid "${inffile}")" ||
                   "${*@Q}" == "${command[*]@Q}" ]]; then
             if checkcmd "${pid}" "${command[@]}"; then
                 echo "Stopping command '$*'" >&2
@@ -120,7 +133,7 @@ case "${cmd}" in
     (help)        echo "$USAGE" ;;
     (list|status) status "$@" ;;
     (check)       check "$@" ;;
-    (start|run)   start "$@" ;;
+    (start|run)   start "$(uuidgen)" "$@" ;;
     (stop|kill)   stop "$@" ;;
     (*)           echo "$(basename "$0"): unknown command: $cmd"; exit 1 ;;
 esac

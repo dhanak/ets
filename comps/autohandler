@@ -19,7 +19,6 @@ sub session_initialize {
             return undef;
         }
     }
-    die("DB connection failed") unless $dbh->ping();
 
     $statements{NEW} =
         $dbh->prepare('INSERT INTO session (sid, data, last)
