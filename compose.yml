@@ -71,6 +71,7 @@ services:
       - DB_HOST=mariadb
       - DB_PASSWORD=ets
       - DB_USER=ets
+      - ERL_CRASH_DUMP_BYTES=0
       - SMTP_HELO
       - SMTP_HOST=${SMTP_HOST:-mailcatcher}
       - SMTP_PORT=${SMTP_PORT:-1025}
