@@ -81,15 +81,16 @@ print_lang_tail(Total, Good) :-
     format('~t~d~2+ megoldás jó a ~|~t~d~2+-~p.~n', [Good, Total, Bol]),
     print('------------------------'), nl.
 
-explain_status(timeout, _) :-
-    nl, print('Túllépte az időkorlátot.'), nl, nl.
-explain_status(sizeout, _) :-
-    nl, print('Túllépte a memóriakorlátot (pl. nagy adatstruktúrák miatt)'), nl, nl.
+explain_status(signal(hup), _) :-
+    nl, print('Hibakóddal kilépett (SIGHUP).'), nl, nl.
+explain_status(signal(int), _) :-
+    nl, print('A futás megszakadt (SIGINT).'), nl, nl.
+explain_status(signal(xcpu), _) :-
+    nl, print('Túllépte az időkorlátot (SIGXCPU).'), nl, nl.
+explain_status(signal(xfsz), _) :-
+    nl, print('Túllépte a file-méret korlátot (SIGXFSZ).'), nl, nl.
 explain_status(signal(Signal), _) :-
-    format('~nA futás megszakadt, oka ismeretlen (~d signal).~n',
-           [Signal]).
-explain_status(exception, _) :-
-    nl, print('Kezeletlen kivétel.'), nl, nl.
+    format('~nA futás megszakadt (SIG~w).~n~n', [Signal]).
 explain_status(Status, Time) :-
     format('~nA program lefutott ~g s alatt, a megoldás ', [Time]),
     (   Status = success

@@ -127,13 +127,15 @@ link_files(_, _).
 
 %% exitcode_to_status(+Code, -Status): Status is a term describing exit
 %% code Code.
-exitcode_to_status( 152, Status) :- !, Status = timeout.
-exitcode_to_status( 153, Status) :- !, Status = sizeout.
-exitcode_to_status(   0, Status) :- !, Status = ok.
+exitcode_to_status(   1, Status) :- !, Status = signal(hup).
+exitcode_to_status(   2, Status) :- !, Status = signal(int).
+exitcode_to_status( 152, Status) :- !, Status = signal(xcpu). % external
+exitcode_to_status( 153, Status) :- !, Status = signal(xfsz). % external
 exitcode_to_status(Code, Status) :-
-    (   Code >= 128
-    ->  Signal is Code - 128, Status = signal(Signal)
-    ;   Status = exception
+    (   Code < 128
+    ->  Status = signal(Code)   % internal signal
+    ;   Signal is Code - 128,
+        Status = signal(Signal) % killed externally
     ).
 
 %% predicate_member(+Head, +List, -Body): Succeeds exactly once if a

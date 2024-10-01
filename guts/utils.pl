@@ -1,4 +1,4 @@
-% This is a -*- prolog -*- file.
+﻿% This is a -*- prolog -*- file.
 :- module(utils, [
               fail_on_error/1,	% fail_on_error(+Goal)
               fail_on_error/2,	% fail_on_error(+Goal, +Option)
@@ -311,6 +311,16 @@ write_lines0(S, Lines) :-
     fail.
 write_lines0(_,_).
 
+write_first_n_lines(L, N) :-
+    length(L, LN),
+    (   LN =< N
+    ->  write_lines(L)
+    ;   length(L0, N),
+        append(L0, _, L),
+        write_lines(L0),
+        print('⋮'), nl
+    ).
+
 mktemp(Template, F) :-
     process_create(path(mktemp), ['--tmpdir', Template],
                    [wait(exit(0)),stdout(pipe(Out))]),
@@ -459,7 +469,10 @@ run(Cmd, Args) :-
 time(Cmd, Code, Time) :-
     mktemp('time.XXXXXX', TimeF),
     process_create(path(time), ['-f', '%U', '-o', file(TimeF)|Cmd],
-                   [wait(exit(Code)),stdin(null),stdout(null)]),
+                   [wait(exit(Code)),stdin(null),stdout(null),stderr(pipe(Err))]),
+    read_lines(Err, ErrL),
+    write_lines0(user_error, ErrL),
+    write_first_n_lines(ErrL, 10),
     read_lines(TimeF, TimeL),
     last(TimeL, TimeS),
     number_codes(Time, TimeS),
