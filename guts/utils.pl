@@ -360,7 +360,8 @@ pattern_match0(Name, Name, []).
 %%% :- pred lock(+atom).
 lock(F) :-
     lockfile(F, LockF),
-    process_create(path(dotlockfile), [file(LockF)],
+    % create lockfile with our PID in it, so stale lockfiles can be ignored
+    process_create(path(dotlockfile), ['-lp', file(LockF)],
                    [stdin(null),stdout(null),stderr(pipe(Err)),wait(Exit)]),
     call_cleanup((	 Exit = exit(0) -> true
                  ;	 read_line(Err, ErrorC),
