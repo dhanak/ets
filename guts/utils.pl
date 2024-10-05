@@ -11,6 +11,7 @@
 
               atom_number/2,	% atom_number(?Number, ?Atom)
               atom_concat/2,	% atom_concat(+Atoms, -Concatenated)
+              quoted_concat/2,  % quoted_concat(+Atoms, -Concatenated)
               format_to_atom/3, % format_to_atom(+Format, +Args, -Atom)
               q_encode/2,       % q_encode(+Atom, -Atom)
 
@@ -131,7 +132,7 @@ atom_number(Atom, Number) :-
     number_codes(Number, Codes),
     atom_codes(Atom, Codes).
 
-%%% atom_concat(Atoms, Atom): atom is the concatenation of all atoms in Atoms.
+%%% atom_concat(Atoms, Atom): Atom is the concatenation of all atoms in Atoms.
 %%% :- pred atom_concat(+list(atom), -atom).
 atom_concat([], '').
 atom_concat([Atom0|Atoms], Atom) :-
@@ -141,6 +142,19 @@ atom_concat0([], Atom, Atom).
 atom_concat0([H|T], A0, A) :-
     atom_concat(A0, H, A1),
     atom_concat0(T, A1, A).
+
+%%% quoted_concat(Atoms, Quoted): Quoted is the concatenation of all atoms in
+%%% Atoms, each one wrapped in single quotes, separated by spaces.
+%%% :- pred quoted_concat(+list(atom), -atom).
+quoted_concat([], '').
+quoted_concat([Atom0|Atoms], Quoted) :-
+    format_to_atom('\'~w\'', Atom0, Quoted0),
+    quoted_concat0(Atoms, Quoted0, Quoted).
+
+quoted_concat0([], Quoted, Quoted).
+quoted_concat0([H|T], Quoted0, Quoted) :-
+    format_to_atom('~w \'~w\'', [Quoted0,H], Quoted1),
+    quoted_concat0(T, Quoted1, Quoted).
 
 %%% format_to_atom(+Format, +Args, -Atom): format a specification with arguments
 %%% into an atom, using format_to_codes/3 and atom_codes/2.
@@ -449,20 +463,16 @@ run(Cmd) :-
 %%% run(+CommandWithArgs): run a command with arguments, and succeed if it
 %%% terminates normally.
 run(Cmd, Args) :-
-    (   atom_codes(Cmd, CmdC),
-        member(0'/, CmdC)
-    ->  Path = Cmd
-    ;   Path = path(Cmd)
-    ),
-    process_create(Path, Args,
-                   [wait(Status),stdin(null),stdout(pipe(Out)),stderr(pipe(Err))]),
+    % use sh -c to merge stdout and stderr into a single stream
+    quoted_concat([Cmd|Args], QuotedCmd),
+    atom_concat(QuotedCmd, ' 2>&1', ShCmd),
+    process_create(path(sh), ['-c', ShCmd],
+                   [process(Proc),stdin(null),stdout(pipe(Out)),stderr(null)]),
     read_lines(Out, OutL),
     write_lines(OutL),
-    close(Out),
-    read_lines(Err, ErrL),
-    write_lines(ErrL),
-    close(Err), !,
-    Status = exit(0).
+    close(Out), !,
+    % make sure process exits 0 exit code
+    process_wait(Proc, exit(0)).
 
 %%% time(+CommandWithArgs, -Code, -Time): run a command CommandWithArgs and
 %%% measure its user time in Time, in seconds. The program terminates with exit
@@ -470,10 +480,11 @@ run(Cmd, Args) :-
 time(Cmd, Code, Time) :-
     mktemp('time.XXXXXX', TimeF),
     process_create(path(time), ['-f', '%U', '-o', file(TimeF)|Cmd],
-                   [wait(exit(Code)),stdin(null),stdout(null),stderr(pipe(Err))]),
+                   [process(Proc),stdin(null),stdout(null),stderr(pipe(Err))]),
     read_lines(Err, ErrL),
     write_lines0(user_error, ErrL),
     write_first_n_lines(ErrL, 10),
+    process_wait(Proc, exit(Code)),
     read_lines(TimeF, TimeL),
     last(TimeL, TimeS),
     number_codes(Time, TimeS),

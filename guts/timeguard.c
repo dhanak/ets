@@ -91,14 +91,16 @@ int main(int argc, char *argv[])
     }
   }
   if (mult) {
-    sleep(mult*limit);		/* SIGCHLD wakes us */
+    sleep(mult*limit);          /* SIGCHLD wakes us */
   } else {
     waitpid(pid, &status, 0);
     check_result(status);
   }
 
-  signal(SIGCHLD, SIG_DFL);	/* real time's up! */
+  signal(SIGCHLD, SIG_DFL);     /* real time's up! */
   kill(pid, SIGTERM);
+  sleep(1);
+  kill(pid, SIGKILL);
   exit(SIGXCPU + 128);
 
   return 0;
