@@ -544,14 +544,14 @@ run_lang_test(Name, Lang) :-
     info('Reading language dependant setup file ~w', [SetupF]),
     read_file(SetupF, Setup),
     member(program(Program), Setup),
-    %% delete neccessary files
+    %% delete necessary files
     info('Deleting unnecessary files', []),
     (   member(delete(ToDelete), Setup)
     ->  delete_files(ToDelete)
     ;   ToDelete = []
     ),
     info('Linking files', []),
-    %% link neccessary files
+    %% link necessary files
     (   member(link(ToLink), Setup)
     ->  directory(env(Lang), LangD),
         link_files(LangD, ToLink)
@@ -561,7 +561,7 @@ run_lang_test(Name, Lang) :-
     (   predicate_member(init, Setup, Init) -> true
     ;   Init = true
     ), !,
-    %% run tests and delete neccessary files
+    %% run tests and delete necessary files
     append(ToDelete, ToLink, All),
     (   info('Running initialization code', []),
         call(Init)
@@ -572,7 +572,7 @@ run_lang_test(Name, Lang) :-
     ),
     info('Cleaning up files', []),
     delete_files(All),
-    %% update database if neccessary
+    %% update database if necessary
     (   database(update(Field,Type))
     ->  info('Updating database entries', []),
         testcase_count(Total),

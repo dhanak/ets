@@ -24,13 +24,17 @@ if (!$m->comp('/sub/check_perm', item => "download_submission", neptun => $neptu
     my $socket = new IO::Socket::INET(PeerAddr => $ENV{GUTS_SERVER},
                                       Proto => 'tcp')
         or die "Can't open socket to $ENV{GUTS_SERVER}";
-    $r->content_type("text/plain; charset=utf-8");
     if ($version) {
         # download specific homework file version
         print $socket "cat-submission ${semester} ${class} ${name}.${version}\n";
         $socket->shutdown(SHUT_WR); # send EOF (shut down for writing)
         my $header = <$socket>;
         my ($fn) = ($header =~ /^begin 644 (.*)$/);
+        if ($fn =~ /\.pdf$/) {
+            $r->content_type("application/pdf");
+        } else {
+            $r->content_type("text/plain; charset=utf-8");
+        }
         $r->headers_out()->set('Content-Disposition' =>
                                'inline; filename="' . $fn . '"');
         $m->out(unpack('u', join("", <$socket>))); # uudecode
@@ -38,6 +42,7 @@ if (!$m->comp('/sub/check_perm', item => "download_submission", neptun => $neptu
         # download latest test report
         print $socket "cat-report ${semester} ${class} ${suite} ${name}\n";
         $socket->shutdown(SHUT_WR); # send EOF (shut down for writing)
+        $r->content_type("text/plain; charset=utf-8");
         $r->headers_out()->set('Content-Disposition' =>
                                'inline; filename="test-report.txt"');
         $m->out(<$socket>);
