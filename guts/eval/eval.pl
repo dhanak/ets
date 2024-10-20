@@ -1,4 +1,4 @@
-% This is a -*- prolog -*- file.
+﻿% This is a -*- prolog -*- file.
 :- module(eval, [test/1,test/3,variant/2,sorted_variant/2]).
 :- initialization main.
 
@@ -8,7 +8,7 @@
 :- use_module(library(terms)).
 :- use_module(refsol).
 
-% Haszn<E1>lat
+% Használat
 % sicstus -l eval -a khfx teszt.pl [output]
 
 % main/0
@@ -148,7 +148,7 @@ insert(X, L, [X|L]).
 
 % get_solutons(+Goal, +Vars, -SolGot)
 get_solutons(Goal, Vars, SolsGot) :-
-    findall(Vars, call_residue(Goal,_), SolsGot).
+    findall(Vars, call_residue_vars(Goal,_), SolsGot).
 
 show_test(Vars, Goal, Sols, VarNames) :-
     substitute_varnames(VarNames),
