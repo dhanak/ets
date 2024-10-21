@@ -28,6 +28,8 @@ case $cmd in
                        kill a running test daemon immediately
               list|status
                        show status of running test daemons
+              check|restart
+                       restart failed daemons
         EOF
         ;;
     (bash|sh|shell)
@@ -45,6 +47,10 @@ case $cmd in
     (list|status)
         # invoke daemons utility
         exec $dce ./daemons status
+        ;;
+    (check|restart)
+        # invoke daemons utility
+        exec $dce ./daemons check
         ;;
     (*)
         # run all other commands with guts, without allocating a terminal
