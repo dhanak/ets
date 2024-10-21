@@ -23,5 +23,5 @@ clean:
 	$(RM) $(TARGETS)
 
 %.po: %.pl | $(SICSTUS)
-	echo "catch((compile('$<'),save_files('$<','$*.po')),_,halt(1))." | \
-		$(SICSTUS)
+	$(SICSTUS) -f --noinfo --nologo \
+		--goal "catch((compile('$<'),save_files('$<','$@')),_,halt(1))."

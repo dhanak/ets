@@ -236,7 +236,6 @@ szeres1(T, Sz) :-
     ;   Sz = 'szoros'
     ).
 
-
 % open_file(+File, +Mode, -Stream):
 % A File allomanyt megnyitja a Stream folyam formajaban Mode modban.
 open_file(user, M, S) :-

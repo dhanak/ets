@@ -43,7 +43,7 @@ timeguard: timeguard.c | $(STRIP)
 	$(STRIP) $@
 
 guts.sav: $(PROLOG_SOURCES) mysql.so | $(SICSTUS)
-	 $(SICSTUS) -f --noinfo --nologo \
+	$(SICSTUS) -f --noinfo --nologo \
 		--goal "compile('guts'),save_program('$@'),halt." ${SP_CHECK}
 
 mysql.so: mysql.pl mysql.c | $(MYSQL_CONFIG) $(SPLFR)
