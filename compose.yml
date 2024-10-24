@@ -1,6 +1,9 @@
 services:
   httpd:
     build:
+      args:
+        - GIT_HASH=${GIT_HASH-}
+        - VERSION=${VERSION-}
       context: .
       target: ets
     environment:
@@ -17,7 +20,6 @@ services:
       - EMAIL_SENDER_TRANSPORT_sasl_username=${SMTP_USERNAME-}
       - EMAIL_SENDER_TRANSPORT_ssl=maybestarttls
       - ETS_BASE_URL=${ETS_BASE_URL:-http://localhost:${HTTP_EXTERNAL_PORT:-8080}}
-      - GIT_HASH=${GIT_HASH?Run 'source env.version' before running docker compose!}
       - GUTS_SERVER=guts:31337
       - HTTP_EXTERNAL_PORT=${HTTP_EXTERNAL_PORT:-8080}
       - OIDC_CLIENT_ID
@@ -25,7 +27,6 @@ services:
       - OIDC_SECRET
       - TZ=${TZ:-Europe/Budapest}
       - SITENAME=${SITENAME:-DP Elektronikus Tanársegéd}
-      - VERSION=${VERSION?Run 'source env.version' before running docker compose!}
     hostname: httpd
     ports:
       - 127.0.0.1:${HTTP_EXTERNAL_PORT:-8080}:80

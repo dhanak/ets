@@ -92,6 +92,12 @@ RUN sed -i \
 RUN mkdir ${DB_ARCHIVE_DIR} && chmod a+rwx,+t ${DB_ARCHIVE_DIR}
 VOLUME ${DB_ARCHIVE_DIR}
 
+# build version information from build arguments
+ARG GIT_HASH
+ARG VERSION
+ENV GIT_HASH=${GIT_HASH:?"Run 'source env.version' before running docker compose build!"}
+ENV VERSION=${VERSION:?"Run 'source env.version' before running docker compose build!"}
+
 ##
 ## GUTS install image
 ##
