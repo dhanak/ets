@@ -29,8 +29,8 @@ Jelenleg egyik feladattípusnak sincs beadási időszaka.
 % foreach my $class (@classes) {
 <H4><% ucfirst $class->{name} %></H4>
 <BLOCKQUOTE>
-Beadható <b><& date:display, $class->{start} &> 12:00</b> és
-<b><&  date:display, $class->{end} &> 23:59</b> között.
+Beadható <b><& date:display, $class->{start} &> 00:00</b> és
+<b><&  date:display, $class->{end} &> 24:00</b> között.
 % if (exists $class->{file}) {
 Az állomány neve <tt><% $class->{file} %></tt>.
 % }

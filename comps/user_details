@@ -145,7 +145,7 @@ if (!defined $get_personal_info) {
         $dbh->prepare("SELECT id, type, text, answer, deadline
                        FROM queries LEFT JOIN responses
                        ON queries.id = responses.query AND user = ?
-                       WHERE deadline >= NOW()-1
+                       WHERE deadline >= DATE(NOW())
                        ORDER BY deadline DESC");
     $get_groups =
         $dbh->prepare("SELECT gm.groupID, p.name, p.email
