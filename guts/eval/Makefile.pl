@@ -24,4 +24,4 @@ clean:
 
 %.po: %.pl | $(SICSTUS)
 	$(SICSTUS) -f --noinfo --nologo \
-		--goal "catch((compile('$<'),save_files('$<','$@')),_,halt(1))."
+		--goal "catch((compile('$<'),save_files('$<','$@')),_,halt(1)), halt."
