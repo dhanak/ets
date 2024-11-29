@@ -84,9 +84,10 @@ $neptun => $data->{NEPTUN}	# passed through 'action_show_page'
 <!-- #################### Körkérdések #################### -->
 
 % if (@$queries) {
-% my $editable = $m->comp('/sub/check_perm', item => "set_responses",
+% my $editable = $m->comp('/sub/check_perm',
+%                         item => "set_responses",
 %			  neptun => $neptun);
-% my $disabled = $editable ? "" : "disabled";
+% my $modifiable = 0;
 <H4>Körkérdések</H4>
 <BLOCKQUOTE>
 
@@ -95,6 +96,8 @@ $neptun => $data->{NEPTUN}	# passed through 'action_show_page'
     hidden => { neptun => $neptun,
                 queries => join ",", map {$_->{id}} @$queries } &>
 % foreach $i (@$queries) {
+%   my $disabled = ($editable && $i->{open}) ? "" : "disabled";
+%   $modifiable += ($editable && $i->{open});
     <TR>
     <TD align=right>
     <& date:query, $i->{deadline} &>
@@ -119,10 +122,11 @@ $neptun => $data->{NEPTUN}	# passed through 'action_show_page'
 %     } # foreach
       </SELECT>
 %   } # if
+    <TD><% !$i->{open} ? "lezárva" : $i->{answer} ? "" : "válaszra vár" %>
 % } # foreach
 </TABLE>
 
-% if ($editable) {
+% if ($modifiable) {
 <BR><INPUT TYPE=submit NAME=change VALUE="Módosít">
 % }
 
@@ -132,7 +136,7 @@ $neptun => $data->{NEPTUN}	# passed through 'action_show_page'
 
 <%once>
 my ($get_personal_info, $get_queries, $get_groups, $get_times);
-my ($name, $priv, $email, $row, $queries, $i); #, $files);
+my ($name, $priv, $email, $row, $queries, $i);
 my (@groups);
 
 </%once>
@@ -142,10 +146,10 @@ if (!defined $get_personal_info) {
     $get_personal_info = # get personal information
         $dbh->prepare("SELECT name, admin, email FROM people WHERE neptun=?");
     $get_queries = # get current queries
-        $dbh->prepare("SELECT id, type, text, answer, deadline
+        $dbh->prepare("SELECT id, type, text, answer, deadline,
+                              deadline >= DATE(NOW()) AS open
                        FROM queries LEFT JOIN responses
-                       ON queries.id = responses.query AND user = ?
-                       WHERE deadline >= DATE(NOW())
+                       ON queries.id=responses.query AND user=?
                        ORDER BY deadline DESC");
     $get_groups =
         $dbh->prepare("SELECT gm.groupID, p.name, p.email
