@@ -13,8 +13,8 @@ my ($sth, $response);
 
 <%init>
 if (!defined $sth) {
-    $sth = 
-	$dbh->prepare("SELECT user, name, answer, time FROM responses, people
+    $sth =
+        $dbh->prepare("SELECT user, name, answer, time FROM responses, people
                        WHERE responses.user=people.neptun AND query=?
                        ORDER BY name");
 }
@@ -24,19 +24,18 @@ if (!$m->comp('/sub/check_perm', item => "query_mgmt")) {
     $data->{SCREEN} = 'news';
     $m->comp('html_page');
 } else {
-    $r->content_type("text/plain");
+    $r->content_type("text/plain; charset=utf-8");
     $sth->execute($query);
     while (defined ($response = $sth->fetchrow_hashref)) {
-	$m->out(sprintf "%-10s", $response->{user});
-	$m->out(sprintf "%-30s", $response->{name});
-	$m->out(sprintf "%-25s", $response->{time});
-	if ($type eq "yesno") {
-	    $m->out(uc $response->{answer} eq "Y" ? "Igen" : "Nem");
-	} else {
-	    $m->out($response->{answer});
-	}
-	$m->out('
-');
+        $m->out(sprintf "%-10s", $response->{user});
+        $m->out(sprintf "%-30s", $response->{name});
+        $m->out(sprintf "%-25s", $response->{time});
+        if ($type eq "yesno") {
+            $m->out(uc $response->{answer} eq "Y" ? "Igen" : "Nem");
+        } else {
+            $m->out($response->{answer});
+        }
+        $m->out("\n");
     }
 }
 return;
