@@ -46,7 +46,7 @@ RUN wget -P /tmp \
     cp /tmp/usr/lib/apache2/modules/mod_auth_openidc.so ${HTTPD_PREFIX}/modules
 
 # install perl dependencies
-RUN cpan App::cpanminus && cpanm \
+RUN cpan App::cpanminus && cpanm --notest \
         Apache::DBI \
         CGI \
         Data::Dumper \
