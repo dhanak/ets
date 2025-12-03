@@ -339,6 +339,7 @@ mktemp(Template, F) :-
     process_create(path(mktemp), ['--tmpdir', Template],
                    [wait(exit(0)),stdout(pipe(Out))]),
     read_line(Out, FC),
+    close(Out),
     atom_codes(F, FC).
 
 %%% match(File, Pattern): Pattern wildcard pattern matches file name File.
@@ -471,7 +472,7 @@ run(Cmd, Args) :-
     read_lines(Out, OutL),
     write_lines(OutL),
     close(Out), !,
-    % make sure process exits 0 exit code
+    % make sure process exits with 0 exit code
     process_wait(Proc, exit(0)).
 
 %%% time(+CommandWithArgs, -Code, -Time): run a command CommandWithArgs and
@@ -482,6 +483,7 @@ time(Cmd, Code, Time) :-
     process_create(path(time), ['-f', '%U', '-o', file(TimeF)|Cmd],
                    [process(Proc),stdin(null),stdout(null),stderr(pipe(Err))]),
     read_lines(Err, ErrL),
+    close(Err),
     write_lines0(user_error, ErrL),
     write_first_n_lines(ErrL, 10),
     process_wait(Proc, exit(Code)),
