@@ -80,9 +80,6 @@ filename(report(Name,Lang), F) :-
 filename(setup(Lang), F) :-
     directory(env(Lang), LangD),
     split_path(F, LangD, 'setup').
-filename(timeguard, F) :-
-    environ('GUTS_ROOT', Root),
-    split_path(F, Root, 'timeguard').
 
 %% testfiles(SubDir, Dir, Files): Files is a list of file names in the SubDir
 %% test directory of the current test class.  Dir is the full path of the
@@ -297,7 +294,7 @@ extract(Name, Version, WorkDir, Report) :-
     (   directory_exists(WorkDir) % reset working directory
     %   The following should work but it refuses to delete a nonempty dir
     %-> delete_directory(WorkDir, [if_nonempty(delete)])
-    ->  run(['rm', '-rf', WorkDir])
+    ->  run(rm, ['-rf', WorkDir])
     ;   true
     ),
     make_directory(WorkDir),
@@ -584,10 +581,8 @@ run_lang_test(_,_).			% if initialization fails
 %% run_tests(+Program, -Good): all tests are run with Program, the number good
 %% good solutions is Good.
 run_tests(Program, Good) :-
-    mktemp('solution.XXXXXX', Out),
     findall(1, (get_testfile(N, In, Ref),
-                successful_test(Program, N, In, Out, Ref)), Goods),
-    ensure_success(delete_file(Out)),
+                successful_test(Program, N, In, Ref)), Goods),
     length(Goods, Good),
     testcase_count(Total),
     ensure_success(templates:print_lang_tail(Total, Good)).
@@ -619,30 +614,47 @@ get_testfile(N, In, '/dev/null') :-
     atom_number(NA, N),
     atom_concat([Suite, '/', NA], In).
 
-%% successful_test(+Program, +N, +In, +Out, +Ref): Program runs successfully
-%% on Nth test case stored in In, and the solution produced in Out is the same
-%% as the reference solution stored in Ref.
-successful_test(Program, N, In, Out, Ref) :-
-    filename(timeguard, Guard),
+%% successful_test(+Program, +N, +In, +Ref): Program runs successfully on Nth
+%% test case stored in In, and the solution produced in Out is the same as the
+%% reference solution stored in Ref.
+successful_test(Program, N, In, Ref) :-
+    mktempdir(SandboxDir),
+    call_cleanup(successful_test(SandboxDir, Program, N, In, Ref),
+                 run(rm, ['-rf', SandboxDir])).
+
+successful_test(SandboxDir, Program, N, In, Ref) :-
     timelimits(Default, Limits),
     (   nth1(N, Limits, Limit) -> true
     ;   Limit = Default
     ),
-    atom_number(LimitA, Limit),
     ensure_success(templates:print_testcase(N, Limit)),
     info('Running test ~w with time limit ~w', [N,Limit]),
+    %% prepare sandbox
+    findall(F, file_member_of_directory(_, F), Files),
+    append(Files, [SandboxDir], CpArgs),
+    run(cp, CpArgs),
+    atom_concat([SandboxDir, '/', '__input__'], SandboxIn),
+    atom_concat([SandboxDir, '/', '__output__'], SandboxOut),
+    run(cp, [In, SandboxIn]),
+    %% assemble command line
     (   atom(Program)
-    ->  Cmd = [Program, In, Out]
-    ;   append(Program, [In, Out], Cmd)
+    ->  Cmd = [Program, '__input__', '__output__']
+    ;   append(Program, ['__input__', '__output__'], Cmd)
     ),
-    time([file(Guard), LimitA, '5'|Cmd], Code, Time),
+    format_to_atom('--private=~w', [SandboxDir], PrivateHome),
+    format_to_atom('--rlimit-cpu=~w', [Limit], CpuLimit),
+    %% run test in sandbox
+    time([firejail, '--quiet', '--net=none', '--x11=none', PrivateHome,
+          CpuLimit, '--rlimit-as=3g', '--rlimit-fsize=100m', '--'|Cmd],
+         Code, Time),
+    %% evaluate result
     (   Code = 0
-    ->  evaluate(Ref, Out, Status)
+    ->  evaluate(Ref, SandboxOut, Status)
     ;   exitcode_to_status(Code, Status)
     ),
     ensure_success(templates:explain_status(Status, Time)),
     info('Test ~w resulted in ~w', [N,Status]),
-    Status = success.		% fail if solution is wrong
+    Status = success.           % fail if solution is wrong
 
 %% update_score_field(+Name, +Field, +Score): score field Field for Name is
 %% updated in database with Score.

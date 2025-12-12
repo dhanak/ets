@@ -156,8 +156,8 @@ FROM debian:${DEBIAN_VERSION}-slim AS guts-runtime
 # install extra debian dependencies
 RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     apt-get update && \
-    apt-get install -y busybox curl file locales make procps uuid-runtime \
-        liblockfile-bin libmariadb3 && \
+    apt-get install -y busybox curl file firejail locales make procps \
+        uuid-runtime liblockfile-bin libmariadb3 && \
     busybox --install
 
 # configure UTF-8 locale (for SICStus)
@@ -165,6 +165,10 @@ ENV LANG=en_US.UTF-8
 RUN sed -i -e "s/# $LANG/$LANG/" /etc/locale.gen && \
     locale-gen && \
     update-locale LANG=$LANG
+
+# add new user and add it to the list of firejail users
+RUN adduser --disabled-password guts
+RUN firecfg --add-users guts
 
 # copy from build image
 COPY --from=guts-build /opt/erlang/  /opt/erlang/
@@ -185,12 +189,12 @@ ENV LD_LIBRARY_PATH=/opt/sicstus/lib
 # setup workdir volume
 RUN mkdir ${GUTS_WORK_DIR} && \
     for dir in daemons env hwks spools; do \
-       mkdir ${GUTS_WORK_DIR}/${dir} && chown nobody ${GUTS_WORK_DIR}/${dir}; \
+       mkdir ${GUTS_WORK_DIR}/${dir} && chown guts ${GUTS_WORK_DIR}/${dir}; \
     done
 VOLUME ${GUTS_WORK_DIR}
 
 # change user of the guts process
-USER nobody
+USER guts
 
 # workdir and netcat server command
 WORKDIR ${GUTS_ROOT}

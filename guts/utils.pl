@@ -24,6 +24,7 @@
               write_lines/1,	% write_lines(+Lines)
               write_lines/2,	% write_lines(+File, +Lines)
               mktemp/2,         % mktemp(+Template, -F)
+              mktempdir/1,      % mktempdir(-D)
 
               match/2,              % match(+File, +Pattern)
               match/3,              % match(+File, +Pattern, -Matches)
@@ -192,7 +193,7 @@ q_encode0([C|Cs], Encoded) :-
     ),
     q_encode0(Cs, Es).
 
-%%% :- pred q_encode0(+list(number), -list(number)).
+%%% :- pred get_bytes(+list(number), -list(number)).
 get_bytes(S, Bs) :-
     get_byte(S, B),
     get_bytes(S, B, Bs).
@@ -341,6 +342,13 @@ mktemp(Template, F) :-
     read_line(Out, FC),
     close(Out),
     atom_codes(F, FC).
+
+mktempdir(D) :-
+    process_create(path(mktemp), ['--tmpdir', '--directory'],
+                   [wait(exit(0)),stdout(pipe(Out))]),
+    read_line(Out, DC),
+    close(Out),
+    atom_codes(D, DC).
 
 %%% match(File, Pattern): Pattern wildcard pattern matches file name File.
 %%% :- pred match(+atom, +atom).
