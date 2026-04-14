@@ -24,6 +24,7 @@
               write_lines/1,	% write_lines(+Lines)
               write_lines/2,	% write_lines(+File, +Lines)
               mktemp/2,         % mktemp(+Template, -F)
+              mktempdir/1,      % mktempdir(-D)
 
               match/2,              % match(+File, +Pattern)
               match/3,              % match(+File, +Pattern, -Matches)
@@ -35,6 +36,7 @@
               run/1,                % run(+CommandWithArgs)
               run/2,                % run(+Command, +Args)
               time/3,               % time(+CommandWithArgs, -Code, -Time)
+              time/4,               % time(+CommandWithArgs, -Code, -Time, +Options)
 
               info/2,           % info(+Format, +Args)
               warning/2,		% warning(+Format, +Args)
@@ -342,6 +344,13 @@ mktemp(Template, F) :-
     close(Out),
     atom_codes(F, FC).
 
+mktempdir(D) :-
+    process_create(path(mktemp), ['--tmpdir', '--directory'],
+                   [wait(exit(0)),stdout(pipe(Out))]),
+    read_line(Out, DC),
+    close(Out),
+    atom_codes(D, DC).
+
 %%% match(File, Pattern): Pattern wildcard pattern matches file name File.
 %%% :- pred match(+atom, +atom).
 match(File, Pattern) :-
@@ -479,9 +488,15 @@ run(Cmd, Args) :-
 %%% measure its user time in Time, in seconds. The program terminates with exit
 %%% status Code.
 time(Cmd, Code, Time) :-
+    time(Cmd, Code, Time, []).
+
+%%% time(+CommandWithArgs, -Code, -Time, +Options): like time/3 with options.
+%%% Options: cwd(+Dir) to run in a specific working directory.
+time(Cmd, Code, Time, Options) :-
     mktemp('time.XXXXXX', TimeF),
+    (   member(cwd(Cwd), Options) -> CwdOpt = [cwd(Cwd)] ; CwdOpt = [] ),
     process_create(path(time), ['-f', '%U', '-o', file(TimeF)|Cmd],
-                   [process(Proc),stdin(null),stdout(null),stderr(pipe(Err))]),
+                   [process(Proc),stdin(null),stdout(null),stderr(pipe(Err))|CwdOpt]),
     read_lines(Err, ErrL),
     close(Err),
     write_lines0(user_error, ErrL),

@@ -1,0 +1,4 @@
+# Island profile for sandboxed test execution.
+# Workspace management is disabled; we handle isolation through Landlock
+# access control and explicit sandbox directories in /tmp.
+workspace = false

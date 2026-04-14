@@ -149,6 +149,16 @@ COPY ./guts/ ./
 RUN make && make clean
 
 ##
+## island build image
+##
+FROM rust:bookworm AS island-build
+
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+RUN git clone https://github.com/landlock-lsm/island /usr/src/island
+WORKDIR /usr/src/island
+RUN cargo build --release
+
+##
 ## guts runtime image
 ##
 FROM debian:${DEBIAN_VERSION}-slim AS guts-runtime
@@ -156,8 +166,8 @@ FROM debian:${DEBIAN_VERSION}-slim AS guts-runtime
 # install extra debian dependencies
 RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     apt-get update && \
-    apt-get install -y busybox curl file locales make procps uuid-runtime \
-        liblockfile-bin libmariadb3 && \
+    apt-get install -y busybox curl file locales make procps util-linux \
+        uuid-runtime liblockfile-bin libmariadb3 && \
     busybox --install
 
 # configure UTF-8 locale (for SICStus)
@@ -166,17 +176,28 @@ RUN sed -i -e "s/# $LANG/$LANG/" /etc/locale.gen && \
     locale-gen && \
     update-locale LANG=$LANG
 
-# copy from build image
+# add dedicated user for the guts process
+RUN adduser --disabled-password --gecos '' guts
+
+# copy from build images
 COPY --from=guts-build /opt/erlang/  /opt/erlang/
 COPY --from=guts-build /opt/elixir/  /opt/elixir/
 COPY --from=guts-build /opt/sicstus/ /opt/sicstus/
 COPY --from=guts-build /opt/guts/    /opt/guts/
+COPY --from=island-build /usr/src/island/target/release/island /usr/local/bin/island
 
 ENV GUTS_ROOT=/opt/guts
 ENV GUTS_WORK_DIR=${GUTS_ROOT}/work
 
 # add executable permissions
 RUN chmod -R a+rX ${GUTS_ROOT}
+
+# set up island profile for sandboxed test execution
+ENV XDG_CONFIG_HOME=/opt/island-config
+RUN mkdir -p ${XDG_CONFIG_HOME}/island/profiles/guts/landlock
+COPY guts/island-profile.toml ${XDG_CONFIG_HOME}/island/profiles/guts/profile.toml
+COPY guts/island-landlock.toml ${XDG_CONFIG_HOME}/island/profiles/guts/landlock/custom.toml
+RUN chmod -R a+rX ${XDG_CONFIG_HOME}
 
 # extend path
 ENV PATH=/opt/sicstus/bin:/opt/elixir/bin:/opt/erlang/bin:${PATH}
@@ -185,12 +206,12 @@ ENV LD_LIBRARY_PATH=/opt/sicstus/lib
 # setup workdir volume
 RUN mkdir ${GUTS_WORK_DIR} && \
     for dir in daemons env hwks spools; do \
-       mkdir ${GUTS_WORK_DIR}/${dir} && chown nobody ${GUTS_WORK_DIR}/${dir}; \
+       mkdir ${GUTS_WORK_DIR}/${dir} && chown guts ${GUTS_WORK_DIR}/${dir}; \
     done
 VOLUME ${GUTS_WORK_DIR}
 
 # change user of the guts process
-USER nobody
+USER guts
 
 # workdir and netcat server command
 WORKDIR ${GUTS_ROOT}

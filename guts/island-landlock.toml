@@ -1,0 +1,55 @@
+abi = 6
+
+# Deny every handled access by default.
+[[ruleset]]
+handled_access_fs = ["abi.all"]
+handled_access_net = ["abi.all"]
+scoped = ["abi.all"]
+
+# System executables and libraries.
+[[path_beneath]]
+allowed_access = ["abi.read_execute"]
+parent = [
+    "/bin",
+    "/lib",
+    "/sbin",
+    "/usr",
+]
+
+# Language runtimes installed in /opt.
+[[path_beneath]]
+allowed_access = ["abi.read_execute"]
+parent = [
+    "/opt",
+]
+
+# Safe writable devices.
+[[path_beneath]]
+allowed_access = ["abi.read_write"]
+parent = [
+    "/dev/full",
+    "/dev/null",
+    "/dev/random",
+    "/dev/urandom",
+    "/dev/zero",
+]
+
+# System configuration and introspection files.
+[[path_beneath]]
+allowed_access = [
+    "read_dir",
+    "read_file",
+    "refer",
+]
+parent = [
+    "/etc",
+    "/proc/self",
+    "/proc/cpuinfo",
+]
+
+# Sandbox directory in /tmp for test I/O.
+[[path_beneath]]
+allowed_access = ["abi.read_write"]
+parent = [
+    "/tmp",
+]
