@@ -1,6 +1,7 @@
 ARG APACHE_VERSION=2.4.61
 ARG DEBIAN_VERSION=bookworm
 ARG KEYCLOAK_VERSION=25.0.2
+ARG MAILCATCHER_VERSION=0.9.0
 ARG PERL_VERSION=5.40.0
 ARG MARIADB_VERSION=lts
 
@@ -26,24 +27,35 @@ FROM quay.io/keycloak/keycloak:${KEYCLOAK_VERSION} AS keycloak
 COPY ets-realm.json /opt/keycloak/data/import/
 
 ##
+## Mailcatcher image
+##
+FROM dockage/mailcatcher:${MAILCATCHER_VERSION} AS mailcatcher
+
+##
 ## ETS image
 ##
 FROM motemen/mod_perl:${PERL_VERSION}-${APACHE_VERSION} AS ets
 
 # install extra debian dependencies
+# hadolint ignore=DL3008,DL3015
 RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     apt-get update && \
     apt-get install -y busybox gcc libmariadb-dev make wget \
         # libapache2-mod-auth-openidc dependencies
         libcjose0 libhiredis0.14 && \
-    busybox --install
+    busybox --install && \
+    rm -rf /var/lib/apt/lists/*
 
 # install libapache2-mod-auth-openidc
 ARG MOD_AUTH_OPENIDC_VERSION=2.4.15.7-1.bookworm
-RUN wget -P /tmp \
-    https://github.com/OpenIDC/mod_auth_openidc/releases/download/v${MOD_AUTH_OPENIDC_VERSION%-*}/libapache2-mod-auth-openidc_${MOD_AUTH_OPENIDC_VERSION}_amd64.deb && \
-    dpkg-deb -x /tmp/libapache2-mod-auth-openidc_${MOD_AUTH_OPENIDC_VERSION}_amd64.deb /tmp && \
-    cp /tmp/usr/lib/apache2/modules/mod_auth_openidc.so ${HTTPD_PREFIX}/modules
+RUN set -eu; \
+    file="libapache2-mod-auth-openidc_${MOD_AUTH_OPENIDC_VERSION}_amd64.deb"; \
+    url="https://github.com/OpenIDC/mod_auth_openidc/releases/download"; \
+    wget --progress=dot:giga -P /tmp \
+        "$url/v${MOD_AUTH_OPENIDC_VERSION%-*}/$file"; \
+    dpkg-deb -x "/tmp/$file" /tmp; \
+    cp /tmp/usr/lib/apache2/modules/mod_auth_openidc.so \
+        "${HTTPD_PREFIX}/modules"
 
 # install perl dependencies
 RUN cpan App::cpanminus && cpanm --notest \
@@ -67,8 +79,11 @@ ENV DB_ARCHIVE_DIR=/mnt/archives
 WORKDIR ${ETS_ROOT}
 
 # download TinyMCE community language pack
-RUN mkdir -p public_html/include && \
-    wget -O- https://download.tiny.cloud/tinymce/community/languagepacks/6/hu_HU.zip | \
+# hadolint ignore=DL4006
+RUN set -eu; \
+    url="https://download.tiny.cloud/tinymce/community/languagepacks/6"; \
+    mkdir -p public_html/include; \
+    wget --progress=dot:giga -O- "$url/hu_HU.zip" | \
     unzip - -d public_html/include/
 
 # copy contents
@@ -85,8 +100,9 @@ RUN mkdir mason && chown www-data:www-data mason && chmod a+rwx,+t /tmp
 RUN sed -i \
         -e 's/LoadModule mpm_event/#LoadModule mpm_event/' \
         -e 's/#LoadModule mpm_prefork/LoadModule mpm_prefork/' \
-        ${HTTPD_PREFIX}/conf/httpd.conf && \
-    cat apache/openidc.conf apache/ets.conf >>${HTTPD_PREFIX}/conf/httpd.conf
+        "${HTTPD_PREFIX}/conf/httpd.conf" && \
+    cat apache/openidc.conf apache/ets.conf \
+        >>"${HTTPD_PREFIX}/conf/httpd.conf"
 
 # set up volume
 RUN mkdir ${DB_ARCHIVE_DIR} && chmod a+rwx,+t ${DB_ARCHIVE_DIR}
@@ -109,17 +125,25 @@ ARG SICSTUS_VERSION=4.9.0
 ARG SICSTUS_PLATFORM=x86_64-linux-glibc2.28
 
 # download and install kerl, install erlang
-RUN wget https://raw.githubusercontent.com/kerl/kerl/master/kerl && \
+RUN wget --progress=dot:giga \
+        https://raw.githubusercontent.com/kerl/kerl/master/kerl && \
     chmod a+x kerl && \
-    KERL_DEBUG=1 ./kerl build-install ${ERLANG_VERSION} ${ERLANG_VERSION} /opt/erlang
+    KERL_DEBUG=1 ./kerl build-install \
+        ${ERLANG_VERSION} ${ERLANG_VERSION} /opt/erlang
 
 # download and extract elixir
-RUN wget -O/dev/shm/elixir.zip \
+RUN wget --progress=dot:giga -O/dev/shm/elixir.zip \
     "https://builds.hex.pm/builds/elixir/v${ELIXIR_VERSION}.zip" && \
     unzip -d/opt/elixir /dev/shm/elixir.zip
 
 # download and extract prolog from SICStus website
-RUN wget -O- https://sicstus.sics.se/sicstus/products4/sicstus/${SICSTUS_VERSION}/binaries/linux/sp-${SICSTUS_VERSION}-${SICSTUS_PLATFORM}.tar.gz | tar xz
+# hadolint ignore=DL4006
+RUN set -eu; \
+    base="https://sicstus.sics.se/sicstus/products4/sicstus"; \
+    file="sp-${SICSTUS_VERSION}-${SICSTUS_PLATFORM}.tar.gz"; \
+    wget --progress=dot:giga -O- \
+        "$base/${SICSTUS_VERSION}/binaries/linux/$file" | \
+    tar xz
 
 WORKDIR /usr/src/app/sp-${SICSTUS_VERSION}-${SICSTUS_PLATFORM}
 
@@ -153,12 +177,25 @@ RUN make && make clean
 ##
 FROM debian:${DEBIAN_VERSION}-slim AS guts-runtime
 
+ARG ZEROBOX_VERSION=0.3.3
+ARG ZEROBOX_REPO=https://raw.githubusercontent.com/afshinm/zerobox
+
 # install extra debian dependencies
+# hadolint ignore=DL3008,DL3015
 RUN --mount=type=cache,id=apt-global,sharing=locked,target=/var/cache/apt \
     apt-get update && \
-    apt-get install -y busybox curl file locales make procps uuid-runtime \
-        liblockfile-bin libmariadb3 && \
-    busybox --install
+    apt-get install -y bubblewrap busybox curl file locales make procps \
+        uuid-runtime liblockfile-bin libmariadb3 && \
+    busybox --install && \
+    chmod 0755 /usr/bin/bwrap && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL -o /tmp/install-zerobox.sh \
+        "${ZEROBOX_REPO}/v${ZEROBOX_VERSION}/install.sh" && \
+    ZEROBOX_INSTALL=/usr/local \
+    ZEROBOX_VERSION=${ZEROBOX_VERSION} \
+    sh /tmp/install-zerobox.sh && \
+    rm /tmp/install-zerobox.sh
 
 # configure UTF-8 locale (for SICStus)
 ENV LANG=en_US.UTF-8
@@ -174,9 +211,12 @@ COPY --from=guts-build /opt/guts/    /opt/guts/
 
 ENV GUTS_ROOT=/opt/guts
 ENV GUTS_WORK_DIR=${GUTS_ROOT}/work
+ENV ZEROBOX_HOME=${GUTS_ROOT}/zerobox
 
 # add executable permissions
 RUN chmod -R a+rX ${GUTS_ROOT}
+
+RUN mkdir ${ZEROBOX_HOME} && chown nobody ${ZEROBOX_HOME}
 
 # extend path
 ENV PATH=/opt/sicstus/bin:/opt/elixir/bin:/opt/erlang/bin:${PATH}

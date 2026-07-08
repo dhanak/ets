@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+
+set -u
+
+readonly ERR_USAGE=1
+readonly ERR_INVVAL=3
+readonly ERR_EXEC=6
+readonly SIGXCPU_EXIT=152
+
+usage() {
+    printf '%s\n' \
+        "Usage: timeguard <time limit> <realtime multiplier> <program> [args]" \
+        >&2
+}
+
+is_nonnegative_integer() {
+    case "$1" in
+        ''|*[!0-9]*)
+            return 1
+            ;;
+    esac
+}
+
+is_positive_integer() {
+    is_nonnegative_integer "$1" && [ "$1" -gt 0 ]
+}
+
+set_limit() {
+    if ! ulimit "$1" "$2"; then
+        echo "Failed to set $3 limit." >&2
+        exit "$ERR_EXEC"
+    fi
+}
+
+map_status() {
+    case "$1" in
+        # Preserve old timeguard behaviour: SIGKILL also reports CPU timeout.
+        124|137)
+            exit "$SIGXCPU_EXIT"
+            ;;
+        *)
+            exit "$1"
+            ;;
+    esac
+}
+
+if [ "$#" -lt 3 ]; then
+    usage
+    exit "$ERR_USAGE"
+fi
+
+limit=$1
+mult=$2
+shift 2
+
+if ! is_positive_integer "$limit"; then
+    echo "Time limit must be a positive integer value!" >&2
+    exit "$ERR_INVVAL"
+fi
+
+if ! is_nonnegative_integer "$mult"; then
+    echo "Realtime multiplier must be a non-negative integer value!" >&2
+    exit "$ERR_INVVAL"
+fi
+
+if ! command -v zerobox >/dev/null 2>&1; then
+    echo "zerobox is required but was not found in PATH." >&2
+    exit "$ERR_EXEC"
+fi
+
+set_limit -c 0 core
+set_limit -t "$limit" CPU
+set_limit -f 102400 "file size"
+set_limit -v 3145728 memory
+
+cwd=$(pwd -P) || exit "$ERR_EXEC"
+sandbox=(
+    zerobox
+    --strict-sandbox
+    -C "$cwd"
+    --allow-write="$cwd"
+    --allow-env=PATH,USER,SHELL,TERM,LANG,LC_ALL,LD_LIBRARY_PATH
+    --env "HOME=$cwd"
+    --
+)
+
+if [ "$mult" -gt 0 ]; then
+    wall_time=$((limit * mult))
+    timeout -k 1s "${wall_time}s" "${sandbox[@]}" "$@"
+    map_status "$?"
+fi
+
+"${sandbox[@]}" "$@"
+map_status "$?"

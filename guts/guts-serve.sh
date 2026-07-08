@@ -8,7 +8,7 @@
 #
 set -euo pipefail
 
-read -a command
+read -ar command
 if [[ ${command[0]} == "list-submissions" ]]; then
     # list homework submission files
     semester=${command[1]}

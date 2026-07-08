@@ -1,0 +1,6 @@
+{
+  "rules": {
+    "no-build-and-image": 0,
+    "service-image-require-explicit-tag": 0
+  }
+}
