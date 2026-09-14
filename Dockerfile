@@ -230,6 +230,7 @@ RUN mkdir ${GUTS_WORK_DIR} && \
 VOLUME ${GUTS_WORK_DIR}
 
 # change user of the guts process
+# hadolint ignore=DL3066
 USER nobody
 
 # workdir and netcat server command

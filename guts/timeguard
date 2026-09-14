@@ -74,6 +74,7 @@ set_limit -f 102400 "file size"
 set_limit -v 3145728 memory
 
 cwd=$(pwd -P) || exit "$ERR_EXEC"
+# shellcheck disable=SC2054
 sandbox=(
     zerobox
     --strict-sandbox

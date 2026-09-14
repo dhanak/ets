@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC1090
 set -euo pipefail
 
 USAGE="
@@ -75,6 +76,7 @@ check() {
 start() {
     local base
     base="${INFDIR}/$1"; shift
+    # shellcheck disable=SC2016
     start_ "${base}.inf" "$@" |
         $AWK '{ print strftime("[%F %T %Z]"), $0; }' >>"${base}.log" &
     echo "Command started, output redirected to ${base}.log" >&2
